@@ -7,6 +7,7 @@ namespace robot {
         void set_right(char);
         void set_puf();
         void set_led(int, bool);
+        void set_leds(bool);
         bool update();
         char message[3];
         easy_tcp::Connection connection;

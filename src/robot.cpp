@@ -1,13 +1,17 @@
 #include <robot.h>
+#include <chrono>
+#include <thread>
 
 using namespace easy_tcp;
+using namespace std;
+
 namespace robot {
     Robot::Robot(const std::string &ip, int port):
             connection(Connection::connect_remote(ip, port)){
         message[0] = 0;
         message[1] = 0;
         message[2] = 0;
-        need_update = false;
+        set_leds(true);
     }
 
     void Robot::set_left(char left) {
@@ -47,4 +51,8 @@ namespace robot {
         need_update = true;
         update();
    }
+
+    void Robot::set_leds(bool val) {
+        for (int i=0; i<3;i++) set_led(i,val);
+    }
 }
