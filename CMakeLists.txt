@@ -7,6 +7,7 @@ project( robot_lib
         DESCRIPTION "Cellworld vr utilities"
         LANGUAGES CXX)
 
+find_package(Json-cpp REQUIRED)
 find_package(Easy-tcp REQUIRED)
 
 ###
@@ -14,7 +15,7 @@ find_package(Easy-tcp REQUIRED)
 ###
 
 set(robot_lib_files
-        src/robot.cpp )
+        src/robot.cpp include/robot_simulator.h src/robot_simulator.cpp)
 
 add_library(robot_lib ${robot_lib_files})
 

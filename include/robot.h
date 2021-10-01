@@ -10,8 +10,9 @@ namespace robot {
         void set_leds(bool);
         bool update();
         char message[3];
+        ~Robot();
+    private:
         easy_tcp::Connection connection;
         bool need_update = false;
-        ~Robot();
     };
 }
