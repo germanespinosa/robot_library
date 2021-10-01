@@ -14,25 +14,30 @@ int main(int argc, char *argv[])
 {
     if (argc != 3) {
         cout << "Wrong parameters." << endl;
-        cout << "Usage: ./fake_robot [destination_folder] [spawn_location]" << endl;
+        cout << "Usage: ./fake_robot [port] [log_file]" << endl;
         exit(1);
     }
-    int port = 80;
-    string destination_folder (argv[1]);
-//    Vr_service::set_destination_folder(destination_folder);
-//    Vr_service::new_experiment();
-    string location_s(argv[3]);
-    auto spawn_location = Json_create<Location>(location_s);
-
+    int port = atoi(argv[1]);
+    string log_file (argv[2]);
+    Robot_simulator::set_log_file_name(log_file);
 
     // start server on port 65123
-    Server<Robot_simulator> server ;
+    Robot_simulator::start_simulation({0,0}, 0, 100);
+    Server<Robot_simulator> server;
     if (server.start(port)) {
         std::cout << "Server setup succeeded on port " << port << std::endl;
     } else {
         std::cout << "Server setup failed " << std::endl;
         return EXIT_FAILURE;
     }
-    while(1);
+    while(1){
+        string firstName;
+        cout << "Stop fake_robot (N/y)? ";
+        cin >> firstName; // get user input from the keyboard
+        if (firstName == "y") {
+            break;
+        }
+    };
+    Robot_simulator::end_simulation();
     return 0;
 }

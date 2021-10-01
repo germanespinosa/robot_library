@@ -5,20 +5,27 @@ namespace robot {
 
     struct Robot_state : json_cpp::Json_object  {
         Json_object_members(
+                Add_member(time_stamp);
                 Add_member(location);
                 Add_member(rotation);
-                Add_optional_member(left);
-                Add_optional_member(right);
-                Add_optional_member(led0);
-                Add_optional_member(led1);
-                Add_optional_member(led2);
-                Add_optional_member(puff);
+                Add_member(left);
+                Add_member(right);
+                Add_member(led0);
+                Add_member(led1);
+                Add_member(led2);
+                Add_member(puff);
                 )
+        json_cpp::Json_date time_stamp;
         cell_world::Location location;
         double rotation;
         int left, right;
         bool led0, led1, led2, puff;
         void update();
+        void update(double);
+
+    private:
+        std::chrono::time_point<std::chrono::system_clock> last_update;
+        bool initialized = false;
     };
 
     struct Robot_simulator : easy_tcp::Service {
@@ -28,6 +35,7 @@ namespace robot {
         static void set_robot_radius(double);
         static void set_robot_speed(double);
         static void set_robot_rotation_speed(double);
+        static void set_log_file_name(std::string);
         static void start_simulation(cell_world::Location, double, unsigned int);
         static void end_simulation();
         static Robot_state get_robot_state();

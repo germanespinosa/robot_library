@@ -2,6 +2,10 @@
 #include <robot_simulator.h>
 #include <json_cpp.h>
 #include <mutex>
+#include <iostream>
+#include <fstream>
+#include <atomic>
+#include <chrono>
 
 using namespace json_cpp;
 using namespace std;
@@ -17,20 +21,24 @@ namespace robot {
     mutex rm;
 
     void Robot_state::update() {
+        auto now = std::chrono::system_clock::now();
+        auto elapsed = 0;
+        if (initialized)
+            elapsed = ((double)std::chrono::duration_cast<std::chrono::milliseconds>(now - last_update).count()) / 1000;
+        update(elapsed);
+        last_update = now;
+        initialized = true;
+    }
+
+    void Robot_state::update(double elapsed) {
         rm.lock();
-        double dl = ((double)left) / 128.0 * robot_rotation_speed; // convert motor signal to angle
-        double dr = ((double)right) / 128.0 * robot_rotation_speed; // convert motor signal to angle
+        time_stamp = json_cpp::Json_date::now();
+        double dl = ((double)left) / 128.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
+        double dr = -((double)right) / 128.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
+        double d = ((double)left + (double)right) / 256.0 * robot_speed * elapsed; // convert motor signal to speed
         rm.unlock();
-        Location lw = location.move(rotation-M_PI/2 + dl, robot_radius); // rotate left wheel angle with respect of robot center
-        Location rw = location.move(rotation+M_PI/2 + dr, robot_radius); // rotate right wheel angle with respect of robot center
-
-        Location heading = (lw + rw) / 2;
-
-        if (dl-dr)
-            rotation = location.atan(heading);
-        else
-            rotation += dl;
-        location = location.move(rotation,robot_speed * location.dist(heading));
+        rotation = rotation + dl + dr;
+        location = location.move(rotation,d);
     }
 
     void Robot_simulator::on_connect() {
@@ -59,12 +67,17 @@ namespace robot {
     }
 
     unsigned int robot_interval = 200;
-    bool robot_running = false;
+    atomic<bool> robot_running = false;
+    string log_file;
     void simulation (){
+        ofstream log;
+        log.open(log_file);
         while (robot_running){
             robot_state.update();
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            log << robot_state << endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(robot_interval));
         }
+        log.close();
     }
 
     thread simulation_thread;
@@ -90,6 +103,14 @@ namespace robot {
     void Robot_simulator::end_simulation() {
         robot_running = false;
         simulation_thread.join();
+    }
+
+    void Robot_simulator::set_robot_rotation_speed(double rotation_speed) {
+        robot_rotation_speed = rotation_speed;
+    }
+
+    void Robot_simulator::set_log_file_name(std::string file_name) {
+        log_file = file_name;
     }
 
 }

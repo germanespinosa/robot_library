@@ -47,7 +47,7 @@ target_include_directories(robot_lib
 target_link_libraries( robot_lib
         PUBLIC
         ${CELLWORLD_TOOLS_LIBRARIES}
-        easy-tcp)
+        easy-tcp json-cpp cellworld)
 
 ###
 ### UTILITIES SETUP
@@ -56,7 +56,7 @@ target_link_libraries( robot_lib
 include_directories( include )
 
 add_executable(fake_robot src/tool/fake_robot.cpp)
-target_link_libraries( fake_robot PUBLIC robot_lib json-cpp easy-tcp cellworld)
+target_link_libraries( fake_robot PUBLIC robot_lib )
 
 
 ###
