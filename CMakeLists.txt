@@ -9,7 +9,10 @@ project( robot_lib
 
 find_package(Json-cpp REQUIRED)
 find_package(Easy-tcp REQUIRED)
+find_package(Cellworld REQUIRED)
+find_package(Threads)
 
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-pthread")
 ###
 ### MAIN LIBRARY SETUP
 ###
@@ -45,6 +48,16 @@ target_link_libraries( robot_lib
         PUBLIC
         ${CELLWORLD_TOOLS_LIBRARIES}
         easy-tcp)
+
+###
+### UTILITIES SETUP
+###
+
+include_directories( include )
+
+add_executable(fake_robot src/tool/fake_robot.cpp)
+target_link_libraries( fake_robot PUBLIC robot_lib json-cpp easy-tcp cellworld)
+
 
 ###
 ### TESTS
