@@ -58,6 +58,8 @@ include_directories( include )
 add_executable(fake_robot src/tool/fake_robot.cpp)
 target_link_libraries( fake_robot PUBLIC robot_lib )
 
+add_executable(stop_fake_robot src/tool/stop_fake_robot.cpp)
+target_link_libraries( stop_fake_robot PUBLIC robot_lib )
 
 ###
 ### TESTS

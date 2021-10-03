@@ -32,12 +32,13 @@ namespace robot {
         void on_connect() override;
         void on_incoming_data(const char *, int) override;
         void on_disconnect() override;
-        static void set_robot_radius(double);
         static void set_robot_speed(double);
         static void set_robot_rotation_speed(double);
         static void set_log_file_name(std::string);
         static void start_simulation(cell_world::Location, double, unsigned int);
         static void end_simulation();
+        static bool is_running();
+        static int port();
         static Robot_state get_robot_state();
     };
 }

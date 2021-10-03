@@ -1,4 +1,5 @@
 #include <math.h>
+#include <cell_world_tools.h>
 #include <robot_simulator.h>
 #include <json_cpp.h>
 #include <mutex>
@@ -15,8 +16,11 @@ namespace robot {
 
     double robot_speed = 1;
     double robot_rotation_speed = M_PI / 2; //90 degrees at full speed
-    double robot_radius= .02;
     Robot_state robot_state;
+    unsigned int robot_interval = 200;
+    atomic<bool> robot_running = false;
+    atomic<bool> robot_finished = false;
+    string log_file;
 
     mutex rm;
 
@@ -51,6 +55,25 @@ namespace robot {
             robot_state.left = buff[0];
             robot_state.right = buff[1];
             rm.unlock();
+        } else {
+            string message_s (buff);
+            try {
+                auto message = json_cpp::Json_create<Message>(message_s);
+                if (message.command == "stop") {
+                    end_simulation();
+                    Message response;
+                    response.command = "result";
+                    response.content = "ok";
+                    send_data(response.to_json());
+                } else if (message.command == "get_sgent_info") {
+                    Message response;
+                    response.command = "set_agent_info";
+                    response.content = robot_state.to_json();
+                    send_data(response.to_json());
+                }
+            } catch (...) {
+
+            }
         }
     }
 
@@ -58,17 +81,10 @@ namespace robot {
         Service::on_disconnect();
     }
 
-    void Robot_simulator::set_robot_radius(double radius) {
-        robot_radius = radius;
-    }
-
     void Robot_simulator::set_robot_speed(double speed) {
         robot_speed = speed;
     }
 
-    unsigned int robot_interval = 200;
-    atomic<bool> robot_running = false;
-    string log_file;
     void simulation (){
         ofstream log;
         log.open(log_file);
@@ -103,6 +119,7 @@ namespace robot {
     void Robot_simulator::end_simulation() {
         robot_running = false;
         simulation_thread.join();
+        robot_finished = true;
     }
 
     void Robot_simulator::set_robot_rotation_speed(double rotation_speed) {
@@ -111,6 +128,15 @@ namespace robot {
 
     void Robot_simulator::set_log_file_name(std::string file_name) {
         log_file = file_name;
+    }
+
+    bool Robot_simulator::is_running() {
+        return !robot_finished;
+    }
+
+    int Robot_simulator::port() {
+        string port_str (std::getenv("FAKE_ROBOT_PORT")?std::getenv("FAKE_ROBOT_PORT"):"5000");
+        return atoi(port_str.c_str());
     }
 
 }
