@@ -35,7 +35,7 @@ namespace robot {
         time_stamp = json_cpp::Json_date::now();
         double dl = ((double)left) / 128.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
         double dr = -((double)right) / 128.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
-        double d = ((double)left + (double)right) / 256.0 * robot_speed * elapsed; // convert motor signal to speed
+        double d = ((double)left + (double)right) / 255.0 * robot_speed * elapsed; // convert motor signal to speed
         rm.unlock();
         rotation = rotation + dl + dr;
         location = location.move(rotation,d);
