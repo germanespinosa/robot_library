@@ -33,6 +33,7 @@ int main(int argc, char *argv[])
     while(Robot_simulator::is_running()){
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     };
-    Robot_simulator::end_simulation();
+    cout << "fake robot stopped" << endl;
+    server.stop();
     return 0;
 }

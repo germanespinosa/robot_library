@@ -65,7 +65,7 @@ namespace robot {
                     response.command = "result";
                     response.content = "ok";
                     send_data(response.to_json());
-                } else if (message.command == "get_sgent_info") {
+                } else if (message.command == "get_agent_info") {
                     Message response;
                     response.command = "set_agent_info";
                     response.content = robot_state.to_json();
