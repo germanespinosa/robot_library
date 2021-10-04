@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     string result_str(connection.buffer);
     Message result;
     result_str >> result;
-    auto ai = Json_create<Agent_info>(result.content);
+    auto ai = Json_create<Robot_state>(result.content);
     cout << ai << endl;
     return 0;
 }
