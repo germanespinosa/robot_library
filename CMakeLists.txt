@@ -64,6 +64,11 @@ target_link_libraries( stop_fake_robot PUBLIC robot_lib )
 add_executable(get_fake_robot_info src/tool/get_agent_info.cpp)
 target_link_libraries( get_fake_robot_info PUBLIC robot_lib )
 
+add_executable(robot src/tool/robot.cpp)
+target_link_libraries( robot PUBLIC robot_lib )
+
+add_executable(convert src/tool/convert.cpp)
+target_link_libraries( convert PUBLIC robot_lib )
 
 ###
 ### TESTS

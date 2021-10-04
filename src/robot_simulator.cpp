@@ -12,10 +12,10 @@ using namespace cell_world;
 
 namespace robot {
 
-    double robot_speed = 1;
+    double robot_speed = .1;
     double robot_rotation_speed = M_PI / 2; //90 degrees at full speed
     Robot_state robot_state;
-    unsigned int robot_interval = 200;
+    unsigned int robot_interval = 50;
     atomic<bool> robot_running = false;
     atomic<bool> robot_finished = false;
     mutex rm;
@@ -37,8 +37,10 @@ namespace robot {
         double dl = ((double)left) / 128.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
         double dr = -((double)right) / 128.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
         double d = ((double)left + (double)right) / 255.0 * robot_speed * elapsed; // convert motor signal to speed
-        rotation = rotation + dl + dr;
-        location = location.move(rotation,d);
+        rotation = Visibility_cone::normalize(rotation + dl + dr);
+        auto new_location = location.move(rotation,d);
+        if (new_location.x >= 0 && new_location.x <= 1 && new_location.y >=0 && new_location.y <= 1)
+            location = location.move(rotation,d);
         rm.unlock();
     }
 
@@ -96,6 +98,7 @@ namespace robot {
         ofstream log;
         while (robot_running){
             robot_state.update();
+            cout << robot_state.to_agent_info() << endl;
             std::this_thread::sleep_for(std::chrono::milliseconds(robot_interval));
         }
         log.close();
