@@ -3,8 +3,6 @@
 #include <robot_simulator.h>
 #include <json_cpp.h>
 #include <mutex>
-#include <iostream>
-#include <fstream>
 #include <atomic>
 #include <chrono>
 
