@@ -20,15 +20,14 @@ namespace robot {
     unsigned int robot_interval = 200;
     atomic<bool> robot_running = false;
     atomic<bool> robot_finished = false;
-    string log_file;
-
     mutex rm;
 
     void Robot_state::update() {
         auto now = std::chrono::system_clock::now();
-        auto elapsed = 0;
-        if (initialized)
-            elapsed = ((double)std::chrono::duration_cast<std::chrono::milliseconds>(now - last_update).count()) / 1000;
+        double elapsed = 0;
+        if (initialized) {
+            elapsed = ((double) std::chrono::duration_cast<std::chrono::milliseconds>(now - last_update).count()) / 1000.0;
+        }
         update(elapsed);
         last_update = now;
         initialized = true;
@@ -40,9 +39,19 @@ namespace robot {
         double dl = ((double)left) / 128.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
         double dr = -((double)right) / 128.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
         double d = ((double)left + (double)right) / 255.0 * robot_speed * elapsed; // convert motor signal to speed
-        rm.unlock();
         rotation = rotation + dl + dr;
         location = location.move(rotation,d);
+        rm.unlock();
+    }
+
+    cell_world::Agent_info Robot_state::to_agent_info() const {
+        rm.lock();
+        Agent_info info;
+        info.agent_name = "robot";
+        info.location = location;
+        info.theta = rotation;
+        rm.unlock();
+        return info;
     }
 
     void Robot_simulator::on_connect() {
@@ -68,7 +77,7 @@ namespace robot {
                 } else if (message.command == "get_agent_info") {
                     Message response;
                     response.command = "set_agent_info";
-                    response.content = robot_state.to_json();
+                    response.content = robot_state.to_agent_info().to_json();
                     send_data(response.to_json());
                 }
             } catch (...) {
@@ -87,10 +96,8 @@ namespace robot {
 
     void simulation (){
         ofstream log;
-        log.open(log_file);
         while (robot_running){
             robot_state.update();
-            log << robot_state << endl;
             std::this_thread::sleep_for(std::chrono::milliseconds(robot_interval));
         }
         log.close();
@@ -124,10 +131,6 @@ namespace robot {
 
     void Robot_simulator::set_robot_rotation_speed(double rotation_speed) {
         robot_rotation_speed = rotation_speed;
-    }
-
-    void Robot_simulator::set_log_file_name(std::string file_name) {
-        log_file = file_name;
     }
 
     bool Robot_simulator::is_running() {

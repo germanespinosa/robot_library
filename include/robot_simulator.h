@@ -1,5 +1,6 @@
 #include <easy_tcp.h>
 #include <cell_world.h>
+#include <cell_world_tools/agent_info.h>
 
 namespace robot {
 
@@ -18,10 +19,11 @@ namespace robot {
         json_cpp::Json_date time_stamp;
         cell_world::Location location;
         double rotation;
-        int left, right;
+        char left, right;
         bool led0, led1, led2, puff;
         void update();
         void update(double);
+        cell_world::Agent_info to_agent_info() const;
 
     private:
         std::chrono::time_point<std::chrono::system_clock> last_update;
@@ -34,7 +36,6 @@ namespace robot {
         void on_disconnect() override;
         static void set_robot_speed(double);
         static void set_robot_rotation_speed(double);
-        static void set_log_file_name(std::string);
         static void start_simulation(cell_world::Location, double, unsigned int);
         static void end_simulation();
         static bool is_running();

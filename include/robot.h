@@ -11,6 +11,7 @@ namespace robot {
         bool update();
         char message[3];
         ~Robot();
+        static int port();
     private:
         easy_tcp::Connection connection;
         bool need_update = false;

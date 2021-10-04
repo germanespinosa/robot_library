@@ -49,7 +49,12 @@ namespace robot {
         message[2] = 0;
         need_update = true;
         update();
-   }
+    }
+
+    int Robot::port() {
+        string port_str (std::getenv("ROBOT_PORT")?std::getenv("ROBOT_PORT"):"5500");
+        return atoi(port_str.c_str());
+    }
 
     void Robot::set_leds(bool val) {
         for (int i=0; i<3;i++) set_led(i,val);
