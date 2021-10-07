@@ -9,7 +9,7 @@ project( robot_lib
 
 find_package(Json-cpp REQUIRED)
 find_package(Easy-tcp REQUIRED)
-find_package(Cellworld REQUIRED)
+find_package(Cellworld_tools REQUIRED)
 find_package(Threads)
 
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-pthread")
@@ -18,7 +18,9 @@ set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-pthread")
 ###
 
 set(robot_lib_files
-        src/robot.cpp include/robot_simulator.h src/robot_simulator.cpp)
+        src/robot.cpp
+        src/robot_simulator.cpp
+        src/pid_controller.cpp)
 
 add_library(robot_lib ${robot_lib_files})
 
@@ -47,7 +49,7 @@ target_include_directories(robot_lib
 target_link_libraries( robot_lib
         PUBLIC
         ${CELLWORLD_TOOLS_LIBRARIES}
-        easy-tcp json-cpp cellworld)
+        easy-tcp)
 
 ###
 ### UTILITIES SETUP

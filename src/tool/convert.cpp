@@ -1,6 +1,6 @@
 #include <fstream>
 #include <iostream>
-
+#include <cell_world_tools/agent_info.h>
 
 using namespace std;
 
@@ -17,10 +17,20 @@ int main(int argc, char *argv[]){
     string line;
     ofile << "[";
     std::getline(ifile, line);
-    ofile << line;
+    cell_world::Agent_info ai;
+    bool first =true;
     while (!ifile.eof()) {
         std::getline(ifile, line);
-        ofile << "," << endl << line;
+        try{
+            line >> ai;
+            if (!first) {
+                ofile << "," << endl;
+            }
+            first = false;
+            ofile << ai;
+        }catch(...){
+        }
+
     }
     ofile << "]";
 

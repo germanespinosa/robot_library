@@ -15,6 +15,7 @@ namespace robot {
     double robot_speed = .1;
     double robot_rotation_speed = M_PI / 2; //90 degrees at full speed
     Robot_state robot_state;
+    cell_world::Cell_group robot_cells;
     unsigned int robot_interval = 50;
     atomic<bool> robot_running = false;
     atomic<bool> robot_finished = false;
@@ -50,6 +51,12 @@ namespace robot {
         info.agent_name = "robot";
         info.location = location;
         info.theta = rotation;
+        auto cell_id = robot_cells.find(info.location);
+        if (cell_id == Not_found){
+            info.coordinates = Cell::ghost_cell().coordinates;
+        }else{
+            info.coordinates = robot_cells[cell_id].coordinates;
+        }
         rm.unlock();
         return info;
     }
@@ -106,7 +113,8 @@ namespace robot {
 
     thread simulation_thread;
 
-    void Robot_simulator::start_simulation(Location location, double rotation, unsigned int interval) {
+    void Robot_simulator::start_simulation(const cell_world::Cell_group &cell_group,Location location, double rotation, unsigned int interval) {
+        robot_cells = cell_group;
         robot_state.location = location;
         robot_state.rotation = rotation;
         robot_state.left = 0;

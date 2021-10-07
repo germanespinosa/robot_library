@@ -1,3 +1,4 @@
+#pragma once
 #include <easy_tcp.h>
 #include <cell_world.h>
 #include <cell_world_tools/agent_info.h>
@@ -36,7 +37,7 @@ namespace robot {
         void on_disconnect() override;
         static void set_robot_speed(double);
         static void set_robot_rotation_speed(double);
-        static void start_simulation(cell_world::Location, double, unsigned int);
+        static void start_simulation(const cell_world::Cell_group &, cell_world::Location, double, unsigned int);
         static void end_simulation();
         static bool is_running();
         static int port();
