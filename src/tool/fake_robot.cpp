@@ -12,13 +12,13 @@ using namespace robot;
 
 struct Parameters : Parameters_builder{
     World world;
-    Location location;
+    Coordinates coordinates;
     double theta;
     int interval;
     int port;
     Parameters_definitions({
         Add_web_resource(world, ({"world"}));
-        Add_value(location);
+        Add_value(coordinates);
         Add_value(theta);
         Add_value(interval);
         Add_value(port);
@@ -30,8 +30,10 @@ int main(int argc, char *argv[])
     Parameters p;
     p.load(argc, argv);
     Cell_group cells = p.world.create_cell_group();
+    Map map(cells);
     // start server on port 65123
-    Robot_simulator::start_simulation(cells, p.location, p.theta, p.interval);
+    Location location = map[p.coordinates].location;
+    Robot_simulator::start_simulation(cells, location, p.theta, p.interval);
     Server<Robot_simulator> server;
     if (!server.start(p.port)) {
         std::cout << "Server setup failed " << std::endl;

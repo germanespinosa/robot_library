@@ -9,7 +9,7 @@ project( robot_lib
 
 find_package(Json-cpp REQUIRED)
 find_package(Easy-tcp REQUIRED)
-find_package(Cellworld_tools REQUIRED)
+find_package(Cellworld REQUIRED)
 find_package(Threads)
 
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-pthread")
@@ -20,7 +20,8 @@ set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-pthread")
 set(robot_lib_files
         src/robot.cpp
         src/robot_simulator.cpp
-        src/pid_controller.cpp)
+        src/pid_controller.cpp
+        src/gamepad.cpp)
 
 add_library(robot_lib ${robot_lib_files})
 
@@ -69,9 +70,11 @@ target_link_libraries( get_fake_robot_info PUBLIC robot_lib )
 add_executable(robot src/tool/robot.cpp)
 target_link_libraries( robot PUBLIC robot_lib )
 
-add_executable(convert src/tool/convert.cpp)
+add_executable(convert src/tool/convert.cpp src/tool/gamepad.cpp)
 target_link_libraries( convert PUBLIC robot_lib )
 
+add_executable(gamepad src/tool/gamepad.cpp)
+target_link_libraries( gamepad PUBLIC robot_lib )
 ###
 ### TESTS
 ###

@@ -38,7 +38,7 @@ namespace robot {
         double dl = ((double)left) / 128.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
         double dr = -((double)right) / 128.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
         double d = ((double)left + (double)right) / 255.0 * robot_speed * elapsed; // convert motor signal to speed
-        rotation = Visibility_cone::normalize(rotation + dl + dr);
+        rotation = normalize(rotation + dl + dr);
         auto new_location = location.move(rotation,d);
         if (new_location.x >= 0 && new_location.x <= 1 && new_location.y >=0 && new_location.y <= 1)
             location = location.move(rotation,d);

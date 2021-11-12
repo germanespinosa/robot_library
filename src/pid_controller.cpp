@@ -12,7 +12,7 @@ namespace robot{
             return out;
         }
         double destination_rotation = inputs.location.atan(inputs.destination);
-        error = Visibility_cone::angle_difference(inputs.rotation, destination_rotation) * Visibility_cone::direction(inputs.rotation, destination_rotation);
+        error = angle_difference(inputs.rotation, destination_rotation) * direction(inputs.rotation, destination_rotation);
         normalized_error = normalize_error(error);
         error_derivative = last_error - error;
         last_error = error;

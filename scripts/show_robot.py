@@ -1,10 +1,31 @@
-import math
+import socket
+import time
+import json
+sock = socket.socket()
+host = "127.0.0.1" # Agent_ifo provider (location, rotation)
+port = 5000
+sock.connect((host, port))
+time.sleep(.1)
 
+request = json.dumps({"command": "get_agent_info", "content": ""}).encode('utf-8')
+
+def get_agent_info():
+    sock.send(request)
+    time.sleep(.1)
+    data = sock.recv(8192)
+    while True:
+        datas = data.decode('utf-8')
+        response = json.loads(datas[:-1])
+        if "command" in response and response["command"] == "set_agent_info":
+            return json.loads(response["content"])
+
+
+import math
 import matplotlib.pyplot as plt
 from world import World
-import numpy as np
 
-world = World("hexa_00_00_mice")
+
+world = World("hexa_10_05_mice")
 plt.ion()
 fig = plt.figure(figsize=(10, 9))
 ax = fig.add_subplot(111)
@@ -34,82 +55,34 @@ centery = (ymax-ymin) / 2
 walls_drawing = ax.scatter([0.5], [0.5], c="white", alpha=1, marker=(6, 0, 90), s=300000, edgecolors="black", linewidths=1)
 cells_drawing = ax.scatter(cellx, celly, c=cellc, alpha=1, marker=(6, 0, 0), s=850, edgecolors="lightgrey", linewidths=1)
 
+tx = []
+ty = []
 
-lx = np.linspace(0, 1, 200)
-ly = np.sin(lx * 8) / 3 + .5
+agent_info = get_agent_info()
+tx.append(agent_info["location"]["x"])
+ty.append(agent_info["location"]["y"])
+rotation = 120 - agent_info["theta"] * 180 / math.pi
 
-trajectory, = ax.plot(lx[:1], ly[:1], 'r-') # Returns a tuple of line objects, thus the comma
-agent_body, = ax.plot(ly[0], ly[0], marker="o", c="lightblue", markersize=20)
-agent_dir, = ax.plot(ly[0], ly[0], marker=(3, 0, 0), c="blue", markersize=15)
+trajectory, = ax.plot(tx,ty, 'r-') # Returns a tuple of line objects, thus the comma
+agent_body, = ax.plot(tx[-1], ty[-1], marker="o", c="lightblue", markersize=20)
+agent_dir, = ax.plot(tx[-1], ty[-1], marker=(3, 0, 0), c="blue", markersize=15)
 
-for i in range(2, 200):
-    trajectory.set_xdata(lx[:i])
-    trajectory.set_ydata(ly[:i])
-    agent_dir.set_xdata(lx[i])
-    agent_dir.set_ydata(ly[i])
-    agent_dir.set_marker((3, 0, 120 - math.atan2(lx[i]-lx[i-1], ly[i]-ly[i-1]) * 180 / math.pi))
 
-    agent_body.set_xdata(lx[i])
-    agent_body.set_ydata(ly[i])
+while agent_info:
+    agent_info = get_agent_info()
+    print(agent_info)
+    tx.append(agent_info["location"]["x"])
+    ty.append(agent_info["location"]["y"])
+    rotation = 120 - agent_info["theta"] * 180 / math.pi
+    trajectory.set_xdata(tx)
+    trajectory.set_ydata(ty)
+    agent_dir.set_xdata(tx[-1])
+    agent_dir.set_ydata(ty[-1])
+    agent_dir.set_marker((3, 0, rotation))
+
+    agent_body.set_xdata(tx[-1])
+    agent_body.set_ydata(ty[-1])
 
     fig.canvas.draw()
     fig.canvas.flush_events()
     plt.pause(.001)
-
-
-
-
-
-
-#import httpimport
-#with httpimport.remote_repo(['world', 'web_resources', 'display', 'map', 'heat_map', 'graph'], 'https://raw.githubusercontent.com/germanespinosa/cellworld/master/python/'):
-
-import matplotlib.pyplot as plt
-import numpy as np
-#
-# x = np.linspace(0, 6*np.pi, 100)
-# y = np.sin(x)
-#
-# # You probably won't need this if you're embedding things in a tkinter plot...
-# plt.ion()
-#
-# fig = plt.figure()
-# ax = fig.add_subplot(111)
-# line1, = ax.plot(x, y, 'r-') # Returns a tuple of line objects, thus the comma
-#
-# for phase in np.linspace(0, 10*np.pi, 500):
-#     line1.set_ydata(np.sin(x + phase))
-#     fig.canvas.draw()
-#     fig.canvas.flush_events()
-#
-# import math
-# import time
-#
-# from world import World
-# from heat_map import Heat_map
-# from display import Display
-# from IPython import display
-# from matplotlib import pyplot as plt
-# from IPython.display import clear_output
-#
-# world = World("hexa_00_00_mice")
-# hm = Heat_map(world)
-#
-# plt.ion()
-# d = Display(hm)
-#
-# while True:
-#     for i in range(1000):
-#         clear_output(wait=True)
-#         d.prepare()
-#         d.agents = []
-#         d.add_agent((.5,.5), math.pi * 2 / 1000 * i, .1, "o", 20, "red", "robot")
-#         d.fig.canvas.draw()
-#         d.fig.canvas.flush_events()
-#
-#
-#     # display.clear_output(wait=False)
-#     # time.sleep(.5)
-# d.show();
-#
-#
