@@ -1,5 +1,5 @@
 #include <math.h>
-#include <cell_world_tools.h>
+#include <cell_world.h>
 #include <robot_simulator.h>
 #include <json_cpp.h>
 #include <mutex>
@@ -45,12 +45,12 @@ namespace robot {
         rm.unlock();
     }
 
-    cell_world::Agent_info Robot_state::to_agent_info() const {
+    Step Robot_state::to_agent_info() const {
         rm.lock();
-        Agent_info info;
-        info.agent_name = "robot";
+        Step info;
+        info.agent_name = "predator";
         info.location = location;
-        info.theta = rotation;
+        info.rotation = rotation;
         auto cell_id = robot_cells.find(info.location);
         if (cell_id == Not_found){
             info.coordinates = Cell::ghost_cell().coordinates;
@@ -75,16 +75,16 @@ namespace robot {
             string message_s (buff);
             try {
                 auto message = json_cpp::Json_create<Message>(message_s);
-                if (message.command == "stop") {
+                if (message.title == "stop") {
                     end_simulation();
                     Message response;
-                    response.command = "result";
-                    response.content = "ok";
+                    response.title = "result";
+                    response.body = "ok";
                     send_data(response.to_json());
-                } else if (message.command == "get_agent_info") {
+                } else if (message.title == "get_agent_info") {
                     Message response;
-                    response.command = "set_agent_info";
-                    response.content = robot_state.to_agent_info().to_json();
+                    response.title = "set_agent_info";
+                    response.body = robot_state.to_agent_info().to_json();
                     send_data(response.to_json());
                 }
             } catch (...) {

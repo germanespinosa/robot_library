@@ -1,7 +1,6 @@
 #pragma once
 #include <easy_tcp.h>
 #include <cell_world.h>
-#include <cell_world_tools/agent_info.h>
 
 namespace robot {
 
@@ -24,7 +23,7 @@ namespace robot {
         bool led0, led1, led2, puff;
         void update();
         void update(double);
-        cell_world::Agent_info to_agent_info() const;
+        cell_world::Step to_agent_info() const;
 
     private:
         std::chrono::time_point<std::chrono::system_clock> last_update;

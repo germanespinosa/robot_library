@@ -7,8 +7,8 @@ project( robot_lib
         DESCRIPTION "Cellworld vr utilities"
         LANGUAGES CXX)
 
-find_package(Json-cpp REQUIRED)
 find_package(Easy-tcp REQUIRED)
+find_package(Params-cpp REQUIRED)
 find_package(Cellworld REQUIRED)
 find_package(Threads)
 
@@ -49,8 +49,9 @@ target_include_directories(robot_lib
 
 target_link_libraries( robot_lib
         PUBLIC
-        ${CELLWORLD_TOOLS_LIBRARIES}
-        easy-tcp)
+        ${CELLWORLD_LIBRARIES}
+        easy-tcp
+        params-cpp)
 
 ###
 ### UTILITIES SETUP
@@ -70,11 +71,12 @@ target_link_libraries( get_fake_robot_info PUBLIC robot_lib )
 add_executable(robot src/tool/robot.cpp)
 target_link_libraries( robot PUBLIC robot_lib )
 
-add_executable(convert src/tool/convert.cpp src/tool/gamepad.cpp)
+add_executable(convert src/tool/convert.cpp)
 target_link_libraries( convert PUBLIC robot_lib )
 
 add_executable(gamepad src/tool/gamepad.cpp)
 target_link_libraries( gamepad PUBLIC robot_lib )
+
 ###
 ### TESTS
 ###

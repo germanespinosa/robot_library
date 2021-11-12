@@ -1,5 +1,5 @@
 #include <iostream>
-#include <cell_world_tools.h>
+#include <cell_world.h>
 #include <robot_simulator.h>
 #include <easy_tcp.h>
 
@@ -12,8 +12,7 @@ using namespace robot;
 int main(int argc, char *argv[])
 {
     Connection connection = Connection::connect_remote("127.0.0.1", Robot_simulator::port());
-    Message message;
-    message.command = "get_agent_info";
+    Message message ("get_agent_info");
     string msg_string;
     msg_string << message;
     connection.send_data(msg_string.c_str(), msg_string.size() + 1);
@@ -21,7 +20,6 @@ int main(int argc, char *argv[])
     string result_str(connection.buffer);
     Message result;
     result_str >> result;
-    auto ai = Json_create<Robot_state>(result.content);
-    cout << ai << endl;
+    cout << result.get_body<Robot_state>() << endl;
     return 0;
 }
