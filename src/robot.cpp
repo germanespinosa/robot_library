@@ -40,6 +40,8 @@ namespace robot {
         if (!need_update) return true;
         bool res = connection.send_data(message,3);
         message[2] &=~(1UL << 3);
+        message[2] &=~(1UL << 4);
+        message[2] &=~(1UL << 5);
         return res;
     }
 
@@ -58,5 +60,13 @@ namespace robot {
 
     void Robot::set_leds(bool val) {
         for (int i=0; i<3;i++) set_led(i,val);
+    }
+
+    void Robot::increase_brightness() {
+        set_led(4,true);
+    }
+
+    void Robot::decrease_brightness() {
+        set_led(5,true);
     }
 }

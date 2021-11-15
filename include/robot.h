@@ -9,6 +9,8 @@ namespace robot {
         void set_puf();
         void set_led(int, bool);
         void set_leds(bool);
+        void increase_brightness();
+        void decrease_brightness();
         bool update();
         char message[3];
         ~Robot();
