@@ -7,12 +7,9 @@ project( robot_lib
         DESCRIPTION "Cellworld vr utilities"
         LANGUAGES CXX)
 
-find_package(Easy-tcp REQUIRED)
 find_package(Params-cpp REQUIRED)
 find_package(Cellworld REQUIRED)
-find_package(Threads)
 
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-pthread")
 ###
 ### MAIN LIBRARY SETUP
 ###
@@ -32,12 +29,6 @@ set_target_properties(robot_lib
         CXX_EXTENSIONS Off
         VERSION ${PROJECT_VERSION})
 
-if(MSVC)
-    target_compile_options(robot_lib PRIVATE /W4)
-else(MSVC)
-    target_compile_options(robot_lib PRIVATE -Wall -Wextra -pedantic)
-endif(MSVC)
-
 target_include_directories(robot_lib
         SYSTEM INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -50,7 +41,6 @@ target_include_directories(robot_lib
 target_link_libraries( robot_lib
         PUBLIC
         ${CELLWORLD_LIBRARIES}
-        easy-tcp
         params-cpp)
 
 ###
@@ -102,7 +92,8 @@ if (CMAKE_BUILD_TYPE MATCHES Release)
             EXPORT_LINK_INTERFACE_LIBRARIES)
 
     export(TARGETS robot_lib FILE Robot_libConfig.cmake)
-    install(CODE "FILE(APPEND ${CMAKE_INSTALL_FULL_DATADIR}/cmake/Robot_lib/Robot_libConfig.cmake \"find_package(Easy-tcp REQUIRED)\n\") ")
-    install(CODE "FILE(APPEND ${CMAKE_INSTALL_FULL_DATADIR}/cmake/Robot_lib/Robot_libConfig.cmake \"set(ROBOT_LIBRARIES robot_lib easy-tcp)\n\") ")
+    install(CODE "FILE(APPEND ${CMAKE_INSTALL_FULL_DATADIR}/cmake/Robot_lib/Robot_libConfig.cmake \"find_package(Params-cpp REQUIRED)\n\") ")
+    install(CODE "FILE(APPEND ${CMAKE_INSTALL_FULL_DATADIR}/cmake/Robot_lib/Robot_libConfig.cmake \"find_package(Cellworld REQUIRED)\n\") ")
+    install(CODE "FILE(APPEND ${CMAKE_INSTALL_FULL_DATADIR}/cmake/Robot_lib/Robot_libConfig.cmake \"set(ROBOT_LIBRARIES ${CELLWORLD_LIBRARIES} params-cpp )\n\") ")
 
 endif()
