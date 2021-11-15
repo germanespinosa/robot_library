@@ -13,7 +13,7 @@ using namespace cell_world;
 namespace robot {
 
     double robot_speed = .1;
-    double robot_rotation_speed = M_PI / 2; //90 degrees at full speed
+    double robot_rotation_speed = M_PI / 2; // 90 degrees at full speed
     Robot_state robot_state;
     cell_world::Cell_group robot_cells;
     unsigned int robot_interval = 50;
@@ -75,15 +75,15 @@ namespace robot {
             string message_s (buff);
             try {
                 auto message = json_cpp::Json_create<Message>(message_s);
-                if (message.title == "stop") {
+                if (message.header == "stop") {
                     end_simulation();
                     Message response;
-                    response.title = "result";
+                    response.header = "result";
                     response.body = "ok";
                     send_data(response.to_json());
-                } else if (message.title == "get_agent_info") {
+                } else if (message.header == "get_agent_info") {
                     Message response;
-                    response.title = "set_agent_info";
+                    response.header = "set_agent_info";
                     response.body = robot_state.to_agent_info().to_json();
                     send_data(response.to_json());
                 }

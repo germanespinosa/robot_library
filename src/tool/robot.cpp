@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
     double rotation;
     bool goal = false;
     Message request;
-    request.title = "get_agent_info";
+    request.header = "get_agent_info";
     auto request_str = request.to_json();
     tracking.send_data(request_str.c_str(), request_str.size());
     Pid_inputs pi;
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
             string data (tracking.buffer);
             Message message;
             data >> message;
-            if (message.title == "set_agent_info"){
+            if (message.header == "set_agent_info"){
                 auto info = message.get_body<Step>();
                 location = info.location;
                 rotation = info.rotation;
