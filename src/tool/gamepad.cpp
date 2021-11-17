@@ -1,10 +1,29 @@
 #include <gamepad.h>
 #include <robot.h>
 #include <iostream>
+#include <agent_tracking.h>
+
+#define puff_delay 5
 
 using namespace std;
 using namespace robot;
+using namespace cell_world;
+
+
+
 int main(int argc, char *argv[]){
+    agent_tracking::Time_stamp prey_ts;
+    agent_tracking::Time_stamp predator_ts;
+    mutex mtx_update;
+    agent_tracking::Client tracking;
+    cell_world::Location prey_location {-10000,-10000};
+    cell_world::Location predator_location {10000,10000};
+    double predator_rotation;
+    agent_tracking::Time_stamp puff_timer;
+    agent_tracking::Time_stamp robot_update;
+    puff_timer.reset();
+    tracking.connect();
+    tracking.register_consumer();
     if (argc != 2) {
         cout << "Wrong parameters." << endl;
         cout << "Usage: ./joystick [device_path]" << endl;
@@ -21,7 +40,8 @@ int main(int argc, char *argv[]){
     bool update;
     bool enabled = true;
     bool enabled_l = true;
-
+    predator_ts.reset();
+    prey_ts.reset();
     while (h){
         update = false;
         int left = -j.axes[1] * 3 /  256 / 4;
@@ -36,20 +56,52 @@ int main(int argc, char *argv[]){
         pleft = left;
         pright = right;
 
-        for (int i = 0;i<j.axes.size();i++) {
-            cout << j.axes[i] << "\t";
+//       for (int i = 0;i<j.axes.size();i++) {
+//            cout << j.axes[i] << "\t";
+//       }
+//	     for (int i = 0;i<j.buttons.size();i++) {
+//            cout << j.buttons[i].state << "\t";
+//       }
+//       cout << endl;
+
+        if (tracking.contains("predator_step")){
+            Step predator_step = tracking.get_last_message("predator_step").get_body<Step>();
+            predator_location = predator_step.location;
+            predator_rotation = predator_step.rotation;
+            predator_ts.reset();
+        }
+        if (predator_ts.to_seconds() > 2){
+            predator_location = {10000,10000};
+        }
+        if (tracking.contains("prey_step")){
+            Step predator_step = tracking.get_last_message("prey_step").get_body<Step>();
+            prey_location = predator_step.location;
+            prey_ts.reset();
+        }
+        if (prey_ts.to_seconds() > 2){
+            prey_location = {-10000,-10000};
         }
 
-	    for (int i = 0;i<j.buttons.size();i++) {
-            cout << j.buttons[i].state << "\t";
+        auto distance = predator_location.dist(prey_location);
+        auto theta = predator_location.atan(prey_location);
+
+        //cout << prey_location << predator_location << " distance: " << distance << endl;
+
+        if (j.buttons[1].state == 1) {
+            robot.set_leds(false);
+            update = true;
+        }
+        if (j.buttons[0].state == 1) {
+            robot.set_leds(true);
+            update = true;
         }
 
-        cout << endl;
-
-        if (j.buttons[5].state == 1){
+        if ( puff_timer.to_seconds() > puff_delay && (j.buttons[5].state == 1 || ( distance < 100))){
             if (enabled) {
                 robot.set_puf();
-                //server.send_data(message.c_str(), message.size()+1);
+                tracking.update_puff();
+                puff_timer.reset();
+                prey_location = {-10000,-10000};
                 update = true;
             }
             enabled = false;
@@ -71,61 +123,9 @@ int main(int argc, char *argv[]){
         if (update) {
             robot.update();
         }
-
         usleep(30000);
-
         if (j.buttons[8].state == 1) h = false;
     }
 }
 
 
-/*
-    auto server = Connection::connect_remote("192.168.137.1", 4000);
-    string message = "{\"command\":\"update_puff\",\"content\":\"\"}";
-    //Robot robot("192.168.137.155",80);
-    string device("/dev/input/js0");
-    Gamepad j(device);
-    bool h = true;
-    bool enabled = true;
-    int pleft = 0;
-    int pright = 0;
-    bool update = false;
-    while (h){
-        update = false;
-        int left = -j.axes[1] * 3 /  256 / 4;
-        int right = -j.axes[4] * 3 / 256 / 4;
-
-//        cout << j.axes[0] << "\t" << j.axes[1] << "\t" << j.axes[2] << "\t" << j.axes[3] << "\t" << j.axes[4] << "\t" << j.axes[5] << "\t";
-//	    for (int i = 0;i<j.buttons.size();i++) {
-//            cout << j.buttons[i].state << "\t";
-//        }
-//	    cout << j.buttons[5].state << "\t" << (int) left << "\t" << (int) right << endl;
-
-
-        if (j.buttons[8].state == 1) h = false;
-
-//        if (pleft != left || pright != right) {
-//            robot.set_left(left);
-//            robot.set_right(right);
-//            update = true;
-//        }
-        pleft = left;
-        pright = right;
-        if (j.buttons[5].state == 1){
-            if (enabled) {
-//                robot.set_puf();
-                server.send_data(message.c_str(), message.size()+1);
-                update = true;
-            }
-            enabled = false;
-        } else {
-            enabled = true;
-        }
-        if (update) {
-//            robot.update();
-        }
-        usleep(30000);
-    }
-    return 0;
-    }
- */

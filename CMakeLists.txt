@@ -8,7 +8,7 @@ project( robot_lib
         LANGUAGES CXX)
 
 find_package(Params-cpp REQUIRED)
-find_package(Cellworld REQUIRED)
+find_package(Agent_tracking REQUIRED)
 
 ###
 ### MAIN LIBRARY SETUP
@@ -40,7 +40,7 @@ target_include_directories(robot_lib
 
 target_link_libraries( robot_lib
         PUBLIC
-        ${CELLWORLD_LIBRARIES}
+        ${AGENT_TRACKING_LIBRARIES}
         params-cpp)
 
 ###
