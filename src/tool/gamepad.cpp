@@ -44,8 +44,8 @@ int main(int argc, char *argv[]){
     prey_ts.reset();
     while (h){
         update = false;
-        int left = -j.axes[1] * 3 /  256 / 4;
-        int right = -j.axes[4] * 3 / 256 / 4;
+        int left = -j.axes[1] * 3 /  256 / 3;
+        int right = -j.axes[4] * 3 / 256 / 3;
 
         if (pleft != left || pright != right) {
             robot.set_left(left);
