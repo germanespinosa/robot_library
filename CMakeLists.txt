@@ -17,10 +17,12 @@ find_package(Agent_tracking REQUIRED)
 set(robot_lib_files
         src/robot.cpp
         src/robot_simulator.cpp
-        src/pid_controller.cpp
-        src/gamepad.cpp)
+        src/pid_controller.cpp)
 
 add_library(robot_lib ${robot_lib_files})
+
+add_library(gamepad_lib src/gamepad.cpp)
+
 
 set_target_properties(robot_lib
         PROPERTIES
@@ -61,11 +63,8 @@ target_link_libraries( get_fake_robot_info PUBLIC robot_lib )
 add_executable(robot src/tool/robot.cpp)
 target_link_libraries( robot PUBLIC robot_lib )
 
-add_executable(convert src/tool/convert.cpp)
-target_link_libraries( convert PUBLIC robot_lib )
-
 add_executable(gamepad src/tool/gamepad.cpp)
-target_link_libraries( gamepad PUBLIC robot_lib )
+target_link_libraries( gamepad PUBLIC robot_lib gamepad_lib )
 
 ###
 ### TESTS

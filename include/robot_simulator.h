@@ -1,6 +1,7 @@
 #pragma once
 #include <easy_tcp.h>
 #include <cell_world.h>
+#include <agent_tracking/service.h>
 
 namespace robot {
 
@@ -23,11 +24,30 @@ namespace robot {
         bool led0, led1, led2, puff;
         void update();
         void update(double);
-        cell_world::Step to_agent_info() const;
+        cell_world::Step to_step() const;
 
     private:
         std::chrono::time_point<std::chrono::system_clock> last_update;
         bool initialized = false;
+    };
+
+    struct Tracking_simulator : agent_tracking::Service {
+
+        // routes
+        //experiment
+        void new_experiment(const std::string &) override {};
+        void new_episode(agent_tracking::New_episode_message) override {};
+        void end_episode() override {};
+        //camera
+        void update_background() override {};
+        void reset_cameras() override {};
+        void update_puff() override {};
+        //visualization
+        void show_occlusions(const std::string &) override {};
+        void hide_occlusions() override {};
+
+        //unrouted
+        void unrouted_message(const cell_world::Message &) override;
     };
 
     struct Robot_simulator : easy_tcp::Service {

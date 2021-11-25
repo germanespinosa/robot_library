@@ -5,21 +5,27 @@
 #include <mutex>
 #include <atomic>
 #include <chrono>
+#include <agent_tracking/time_stamp.h>
 
 using namespace json_cpp;
 using namespace std;
 using namespace cell_world;
+using namespace agent_tracking;
 
 namespace robot {
 
     double robot_speed = .1;
     double robot_rotation_speed = M_PI / 2; // 90 degrees at full speed
     Robot_state robot_state;
-    cell_world::Cell_group robot_cells;
+    Cell_group robot_cells;
+    Tracking_simulator robot_tracker;
+    Time_stamp robot_time_stamp;
+    int frame_number = 0;
+    mutex rm;
+
     unsigned int robot_interval = 50;
     atomic<bool> robot_running = false;
     atomic<bool> robot_finished = false;
-    mutex rm;
 
     void Robot_state::update() {
         auto now = std::chrono::system_clock::now();
@@ -28,9 +34,11 @@ namespace robot {
             elapsed = ((double) std::chrono::duration_cast<std::chrono::milliseconds>(now - last_update).count()) / 1000.0;
         }
         update(elapsed);
+        robot_tracker.send_update(Message("predator_step",robot_state.to_step()));
         last_update = now;
         initialized = true;
     }
+
 
     void Robot_state::update(double elapsed) {
         rm.lock();
@@ -45,8 +53,7 @@ namespace robot {
         rm.unlock();
     }
 
-    Step Robot_state::to_agent_info() const {
-        rm.lock();
+    Step Robot_state::to_step() const {
         Step info;
         info.agent_name = "predator";
         info.location = location;
@@ -57,7 +64,8 @@ namespace robot {
         }else{
             info.coordinates = robot_cells[cell_id].coordinates;
         }
-        rm.unlock();
+        info.time_stamp = robot_time_stamp.to_seconds();
+        info.frame = ++frame_number;
         return info;
     }
 
@@ -81,11 +89,6 @@ namespace robot {
                     response.header = "result";
                     response.body = "ok";
                     send_data(response.to_json());
-                } else if (message.header == "get_agent_info") {
-                    Message response;
-                    response.header = "set_agent_info";
-                    response.body = robot_state.to_agent_info().to_json();
-                    send_data(response.to_json());
                 }
             } catch (...) {
 
@@ -105,11 +108,12 @@ namespace robot {
         ofstream log;
         while (robot_running){
             robot_state.update();
-            cout << robot_state.to_agent_info() << endl;
+            cout << robot_state.to_step() << endl;
             std::this_thread::sleep_for(std::chrono::milliseconds(robot_interval));
         }
         log.close();
     }
+
 
     thread simulation_thread;
 
@@ -125,6 +129,7 @@ namespace robot {
         robot_state.led2 = false;
         robot_interval = interval;
         robot_running = true;
+        robot_tracker.start(agent_tracking::Service::get_port());
         simulation_thread=thread(&simulation);
     }
 
@@ -151,4 +156,7 @@ namespace robot {
         return atoi(port_str.c_str());
     }
 
+    void Tracking_simulator::unrouted_message(const Message &m) {
+        cout << "Unrouted message: " << m << endl;
+    }
 }

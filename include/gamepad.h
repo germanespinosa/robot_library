@@ -9,6 +9,7 @@
 #include <mutex>
 #include <vector>
 #include <queue>
+
 namespace robot {
 
     struct Gamepad {

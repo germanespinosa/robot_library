@@ -31,6 +31,7 @@ int main(int argc, char *argv[])
     auto interval = stoi(p.get(interval_key));
     auto spawn_coordinates_str = p.get(spawn_coordinates_key);
     Coordinates spawn_coordinates;
+    cout << spawn_coordinates_str << endl;
     try {
         spawn_coordinates = json_cpp::Json_create<Coordinates>(spawn_coordinates_str);
     } catch (...) {

@@ -1,7 +1,8 @@
 #include <gamepad.h>
 #include <robot.h>
 #include <iostream>
-#include <agent_tracking.h>
+#include <agent_tracking/client.h>
+#include <agent_tracking/time_stamp.h>
 
 #define puff_delay 5
 
