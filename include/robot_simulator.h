@@ -31,35 +31,15 @@ namespace robot {
         bool initialized = false;
     };
 
-    struct Tracking_simulator : agent_tracking::Service {
-
-        // routes
-        //experiment
-        void new_experiment(const std::string &) override {};
-        void new_episode(agent_tracking::New_episode_message) override {};
-        void end_episode() override {};
-        //camera
-        void update_background() override {};
-        void reset_cameras() override {};
-        void update_puff() override {};
-        //visualization
-        void show_occlusions(const std::string &) override {};
-        void hide_occlusions() override {};
-
-        //unrouted
-        void unrouted_message(const cell_world::Message &) override;
-    };
-
     struct Robot_simulator : easy_tcp::Service {
         void on_connect() override;
         void on_incoming_data(const char *, int) override;
         void on_disconnect() override;
         static void set_robot_speed(double);
         static void set_robot_rotation_speed(double);
-        static void start_simulation(const cell_world::Cell_group &, cell_world::Location, double, unsigned int);
+        static void start_simulation(cell_world::World world, cell_world::Location, double, unsigned int);
         static void end_simulation();
         static bool is_running();
-        static int port();
         static Robot_state get_robot_state();
     };
 }

@@ -5,7 +5,7 @@
 #include <mutex>
 #include <atomic>
 #include <chrono>
-#include <agent_tracking/time_stamp.h>
+#include <tracking_simulator.h>
 
 using namespace json_cpp;
 using namespace std;
@@ -18,8 +18,10 @@ namespace robot {
     double robot_rotation_speed = M_PI / 2; // 90 degrees at full speed
     Robot_state robot_state;
     Cell_group robot_cells;
-    Tracking_simulator robot_tracker;
-    Time_stamp robot_time_stamp;
+    Timer robot_time_stamp;
+    World robot_world;
+    Polygon habitat_polygon;
+    Polygon_list cell_polygons;
     int frame_number = 0;
     mutex rm;
 
@@ -34,7 +36,6 @@ namespace robot {
             elapsed = ((double) std::chrono::duration_cast<std::chrono::milliseconds>(now - last_update).count()) / 1000.0;
         }
         update(elapsed);
-        robot_tracker.send_update(Message("predator_step",robot_state.to_step()));
         last_update = now;
         initialized = true;
     }
@@ -48,8 +49,17 @@ namespace robot {
         double d = ((double)left + (double)right) / 255.0 * robot_speed * elapsed; // convert motor signal to speed
         rotation = normalize(rotation + dl + dr);
         auto new_location = location.move(rotation,d);
-        if (new_location.x >= 0 && new_location.x <= 1 && new_location.y >=0 && new_location.y <= 1)
-            location = location.move(rotation,d);
+        if (habitat_polygon.contains(new_location)) {
+//            bool in_cell=false;
+//            for (auto &p: cell_polygons) {
+//                if (p.contains(new_location)) {
+//                    in_cell = true;
+//                    break;
+//                }
+//            }
+//            if (!in_cell)
+            location = location.move(rotation, d);
+        }
         rm.unlock();
     }
 
@@ -108,7 +118,8 @@ namespace robot {
         ofstream log;
         while (robot_running){
             robot_state.update();
-            cout << robot_state.to_step() << endl;
+            auto step = robot_state.to_step();
+            Tracking_simulator::send_update(step);
             std::this_thread::sleep_for(std::chrono::milliseconds(robot_interval));
         }
         log.close();
@@ -117,8 +128,14 @@ namespace robot {
 
     thread simulation_thread;
 
-    void Robot_simulator::start_simulation(const cell_world::Cell_group &cell_group,Location location, double rotation, unsigned int interval) {
-        robot_cells = cell_group;
+    void Robot_simulator::start_simulation(cell_world::World world, Location location, double rotation, unsigned int interval) {
+        robot_world = world;
+        habitat_polygon = Polygon(robot_world.space.center, robot_world.space.shape, robot_world.space.transformation);
+        cell_polygons.clear();
+        for (auto &cell:robot_world.cells) {
+            cell_polygons.push_back(Polygon(cell.location,robot_world.cell_shape, robot_world.cell_transformation));
+        }
+        robot_cells = robot_world.create_cell_group();
         robot_state.location = location;
         robot_state.rotation = rotation;
         robot_state.left = 0;
@@ -129,7 +146,9 @@ namespace robot {
         robot_state.led2 = false;
         robot_interval = interval;
         robot_running = true;
-        robot_tracker.start(agent_tracking::Service::get_port());
+        if (!Tracking_simulator::start()) {
+            throw runtime_error("failed to start tracking simulator");
+        }
         simulation_thread=thread(&simulation);
     }
 
@@ -151,12 +170,4 @@ namespace robot {
         return !robot_finished;
     }
 
-    int Robot_simulator::port() {
-        string port_str (std::getenv("FAKE_ROBOT_PORT")?std::getenv("FAKE_ROBOT_PORT"):"5000");
-        return atoi(port_str.c_str());
-    }
-
-    void Tracking_simulator::unrouted_message(const Message &m) {
-        cout << "Unrouted message: " << m << endl;
-    }
 }

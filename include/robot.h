@@ -3,7 +3,10 @@
 
 namespace robot {
     struct Robot {
-        Robot(const std::string &, int);
+        Robot();
+        bool connect();
+        bool connect(const std::string &);
+        bool connect(const std::string &, int);
         void set_left(char);
         void set_right(char);
         void set_puf();
@@ -16,7 +19,7 @@ namespace robot {
         ~Robot();
         static int port();
     private:
-        easy_tcp::Connection connection;
+        easy_tcp::Connection connection{-1};
         bool need_update = false;
     };
 }

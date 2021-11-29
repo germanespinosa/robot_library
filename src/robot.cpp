@@ -5,8 +5,7 @@ using namespace easy_tcp;
 using namespace std;
 
 namespace robot {
-    Robot::Robot(const std::string &ip, int port):
-            connection(Connection::connect_remote(ip, port)){
+    Robot::Robot(){
         message[0] = 0;
         message[1] = 0;
         message[2] = 0;
@@ -54,7 +53,7 @@ namespace robot {
     }
 
     int Robot::port() {
-        string port_str (std::getenv("ROBOT_PORT")?std::getenv("ROBOT_PORT"):"5500");
+        string port_str (std::getenv("ROBOT_PORT")?std::getenv("ROBOT_PORT"):"4500");
         return atoi(port_str.c_str());
     }
 
@@ -68,5 +67,22 @@ namespace robot {
 
     void Robot::decrease_brightness() {
         set_led(5,true);
+    }
+
+    bool Robot::connect(const string &ip, int port) {
+        try {
+            connection = connection.connect_remote(ip, port);
+            return true;
+        } catch(...) {
+            return false;
+        }
+    }
+
+    bool Robot::connect(const string &ip) {
+        return connect(ip, port());
+    }
+
+    bool Robot::connect() {
+        return connect("127.0.0.1");
     }
 }

@@ -17,7 +17,8 @@ find_package(Agent_tracking REQUIRED)
 set(robot_lib_files
         src/robot.cpp
         src/robot_simulator.cpp
-        src/pid_controller.cpp)
+        src/pid_controller.cpp
+        src/tracking_simulator.cpp)
 
 add_library(robot_lib ${robot_lib_files})
 
@@ -40,6 +41,8 @@ target_include_directories(robot_lib
         PRIVATE
         include )
 
+message("${AGENT_TRACKING_LIBRARIES}")
+
 target_link_libraries( robot_lib
         PUBLIC
         ${AGENT_TRACKING_LIBRARIES}
@@ -51,17 +54,14 @@ target_link_libraries( robot_lib
 
 include_directories( include )
 
-add_executable(fake_robot src/tool/fake_robot.cpp)
-target_link_libraries( fake_robot PUBLIC robot_lib )
+add_executable(robot src/tool/fake_robot.cpp)
+target_link_libraries( robot PUBLIC robot_lib )
 
 add_executable(stop_fake_robot src/tool/stop_fake_robot.cpp)
 target_link_libraries( stop_fake_robot PUBLIC robot_lib )
 
-add_executable(get_fake_robot_info src/tool/get_agent_info.cpp)
-target_link_libraries( get_fake_robot_info PUBLIC robot_lib )
-
-add_executable(robot src/tool/robot.cpp)
-target_link_libraries( robot PUBLIC robot_lib )
+add_executable(controller src/tool/controller.cpp)
+target_link_libraries( controller PUBLIC robot_lib )
 
 add_executable(gamepad src/tool/gamepad.cpp)
 target_link_libraries( gamepad PUBLIC robot_lib gamepad_lib )

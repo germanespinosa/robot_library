@@ -1,13 +1,20 @@
 #include<catch.h>
 #include<robot.h>
 #include<robot_simulator.h>
+#include<tracking_simulator.h>
 #include<unistd.h>
+#include <agent_tracking/client.h>
 
+
+using namespace agent_tracking;
+using namespace cell_world;
 using namespace robot;
 using namespace std;
 
+/*
 TEST_CASE("robot") {
-    Robot r("192.168.137.155",80);
+    Robot r;
+    r.connect("192.168.137.155",80);
     //Robot r("127.0.0.1",6000);
     sleep(1);
     r.set_left(100);
@@ -34,32 +41,33 @@ TEST_CASE("robot") {
         }
     }
 }
+*/
 
-using namespace robot;
+//
+//TEST_CASE("robot_simulation"){
+//    Robot_state state;
+//    state.location = {0,0};
+//    state.rotation = 0;
+//    state.left = 0;
+//    state.right = 0;
+//    state.update(.1);
+//    cout << state << endl;
+//    state.left = 50;
+//    state.right = 50;
+//    state.update(.1);
+//    cout << state << endl;
+//    state.left = -50;
+//    state.right = -50;
+//    state.update(.1);
+//    cout << state << endl;
+//    state.update(.1);
+//    cout << state << endl;
+//    state.update(.1);
+//    cout << state << endl;
+//    state.left = 0;
+//    state.update(.1);
+//    cout << state << endl;
+//    state.update(.1);
+//    cout << state << endl;
+//}
 
-TEST_CASE("robot_simulation"){
-    Robot_state state;
-    state.location = {0,0};
-    state.rotation = 0;
-    state.left = 0;
-    state.right = 0;
-    state.update(.1);
-    cout << state << endl;
-    state.left = 50;
-    state.right = 50;
-    state.update(.1);
-    cout << state << endl;
-    state.left = -50;
-    state.right = -50;
-    state.update(.1);
-    cout << state << endl;
-    state.update(.1);
-    cout << state << endl;
-    state.update(.1);
-    cout << state << endl;
-    state.left = 0;
-    state.update(.1);
-    cout << state << endl;
-    state.update(.1);
-    cout << state << endl;
-}

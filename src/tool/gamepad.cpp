@@ -2,7 +2,6 @@
 #include <robot.h>
 #include <iostream>
 #include <agent_tracking/client.h>
-#include <agent_tracking/time_stamp.h>
 
 #define puff_delay 5
 
@@ -13,15 +12,15 @@ using namespace cell_world;
 
 
 int main(int argc, char *argv[]){
-    agent_tracking::Time_stamp prey_ts;
-    agent_tracking::Time_stamp predator_ts;
+    Timer prey_ts;
+    Timer predator_ts;
     mutex mtx_update;
     agent_tracking::Client tracking;
     cell_world::Location prey_location {-10000,-10000};
     cell_world::Location predator_location {10000,10000};
     double predator_rotation;
-    agent_tracking::Time_stamp puff_timer;
-    agent_tracking::Time_stamp robot_update;
+    Timer puff_timer;
+    Timer robot_update;
     puff_timer.reset();
     tracking.connect();
     tracking.register_consumer();
@@ -32,7 +31,8 @@ int main(int argc, char *argv[]){
     }
 
     string device_path (argv[1]);
-    Robot robot("192.168.137.155",80);
+    Robot robot;
+    robot.connect();
     Gamepad j(device_path);
 
     int pleft = 0;
