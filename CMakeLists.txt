@@ -15,11 +15,9 @@ FILE(DOWNLOAD
 
 include(${CMAKE_CURRENT_BINARY_DIR}/dependencies.cmake)
 ###
-
+string(APPEND CMAKE_CXX_FLAGS " -pthread ")
 install_dependency(https://github.com/germanespinosa/cellworld Cellworld)
-
 install_dependency(https://github.com/germanespinosa/params-cpp Params-cpp)
-
 install_dependency(https://github.com/germanespinosa/agent_tracking Agent_tracking)
 
 ###
@@ -57,8 +55,11 @@ message("${AGENT_TRACKING_LIBRARIES}")
 
 target_link_libraries( robot_lib
         PUBLIC
-        ${AGENT_TRACKING_LIBRARIES}
-        params-cpp)
+        cellworld
+        easy-tcp
+        json-cpp
+        params-cpp
+        agent_tracking)
 
 ###
 ### UTILITIES SETUP
