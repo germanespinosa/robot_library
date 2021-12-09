@@ -19,7 +19,6 @@ string(APPEND CMAKE_CXX_FLAGS " -pthread ")
 install_dependency(https://github.com/germanespinosa/cellworld Cellworld)
 install_dependency(https://github.com/germanespinosa/params-cpp Params-cpp)
 install_dependency(https://github.com/germanespinosa/agent_tracking Agent_tracking)
-
 ###
 ### MAIN LIBRARY SETUP
 ###
@@ -82,7 +81,9 @@ target_link_libraries( gamepad PUBLIC robot_lib gamepad_lib )
 ###
 ### TESTS
 ###
-find_package(CatchTests CONFIG QUIET)
+install_dependency(https://github.com/germanespinosa/catch CatchTests)
+test_library(robot_lib)
+
 
 ###
 ### LIBRARY INSTALLATION
