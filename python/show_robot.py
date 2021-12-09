@@ -2,6 +2,9 @@ from cellworld_py import *
 from agent_tracking_py import Agent_tracking, Filter
 import subprocess
 
+controller = Message_client()
+controller.connect("127.0.0.1", 4520)
+
 tracker = Agent_tracking()
 tracker.filter = Filter(.8, 10, 5)
 tracker.register_consumer()
@@ -31,11 +34,11 @@ def onclick(event):
     if destination_cell.occluded:
         print("can't navigate to an occluded cell")
         return
-    p = subprocess.Popen(["wsl", "-e", "/mnt/c/Research/robot/robot_library/cmake-build-debug/controller", "-o", occlusions, "-d", str(destination_cell.location), "-n", ".001", "-fd", ".001", "-br", ".001"])
+    controller.connection.send(Message("set_destination", destination_cell.location))
+#   p = subprocess.Popen(["wsl", "-e", "/mnt/c/Research/robot/robot_library/cmake-build-debug/controller", "-o", occlusions, "-d", str(destination_cell.location), "-n", ".001", "-fd", ".001", "-br", ".001"])
+
 
 cid = display.fig.canvas.mpl_connect('button_press_event', onclick)
-
-
 while t:
     robot = tracker.current_states["predator"].copy()
     display.agent(step=tracker.current_states["predator"], color="dimgray", show_trajectory=True)
