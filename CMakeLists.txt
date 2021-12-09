@@ -7,8 +7,18 @@ project( robot_lib
         DESCRIPTION "Cellworld vr utilities"
         LANGUAGES CXX)
 
-find_package(Params-cpp REQUIRED)
-find_package(Agent_tracking REQUIRED)
+### download and install dependency library
+string(TIMESTAMP v)
+FILE(DOWNLOAD
+        https://raw.githubusercontent.com/germanespinosa/dependencies/main/dependencies.cmake?${v}
+        ${CMAKE_CURRENT_BINARY_DIR}/dependencies.cmake)
+
+include(${CMAKE_CURRENT_BINARY_DIR}/dependencies.cmake)
+###
+string(APPEND CMAKE_CXX_FLAGS " -pthread ")
+install_dependency(https://github.com/germanespinosa/cellworld Cellworld)
+install_dependency(https://github.com/germanespinosa/params-cpp Params-cpp)
+install_dependency(https://github.com/germanespinosa/agent_tracking Agent_tracking)
 
 ###
 ### MAIN LIBRARY SETUP
@@ -45,8 +55,11 @@ message("${AGENT_TRACKING_LIBRARIES}")
 
 target_link_libraries( robot_lib
         PUBLIC
-        ${AGENT_TRACKING_LIBRARIES}
-        params-cpp)
+        cellworld
+        easy-tcp
+        json-cpp
+        params-cpp
+        agent_tracking)
 
 ###
 ### UTILITIES SETUP
