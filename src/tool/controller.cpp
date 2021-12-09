@@ -31,8 +31,9 @@ int main(int argc, char *argv[])
     auto tracker_ip = p.get(ip_key, "127.0.0.1");
 
     Coordinates destination_coord;
+    Location destination;
     try {
-        destination_coord = json_cpp::Json_create<Coordinates>(destination_str);
+        destination = json_cpp::Json_create<Location>(destination_str);
     } catch (...) {
         cout << "Wrong parameters "<< endl;
         exit(1);
@@ -40,6 +41,8 @@ int main(int argc, char *argv[])
 
     auto wc = Resources::from("world_configuration").key("hexagonal").get_resource<World_configuration>();
     auto wi = Resources::from("world_implementation").key("hexagonal").key("mice").get_resource<World_implementation>();
+    auto dst_space = wi.space;
+    auto src_space = Resources::from("world_implementation").key("hexagonal").key("cv").get_resource<World_implementation>().space;
     auto occlusions = Resources::from("cell_group").key("hexagonal").key(occlusions_name).key("occlusions").get_resource<Cell_group_builder>();
     auto pb = Resources::from("paths").key("hexagonal").key(occlusions_name).key("astar").get_resource<Path_builder>();
     World world(wc, wi, occlusions);
@@ -48,13 +51,11 @@ int main(int argc, char *argv[])
     Paths paths = world.create_paths(pb);
 
     auto robot_transformation = wi.cell_transformation;
-    robot_transformation.size *= 1.5;
+    robot_transformation.size *= 1.25;
 
-    Location_visibility navigability(cells,wc.cell_shape,wi.cell_transformation);
+    Location_visibility navigability(cells,wc.cell_shape,robot_transformation);
 
     Map map (cells);
-    Location destination = map[destination_coord].location;
-
     auto pid_parameters = json_cpp::Json_from_file<Pid_parameters>("../config/pid.json");
     Pid_controller controller (pid_parameters);
     cout << "Robot testing app" << endl;
@@ -86,29 +87,22 @@ int main(int argc, char *argv[])
     Pid_inputs pi;
     Location next_step;
     while (!goal){
+        // receives the predator location in cv implementation and converts to mice
         auto predator = tracker.get_current_state("predator");
-        cout << "state :" <<  predator << endl;
-        Cell current_cell = map[predator.coordinates];
-        Coordinates next_coordinates = predator.coordinates + paths.get_move(current_cell,map[destination_coord]);
-        Cell next_cell = map[next_coordinates];
-        Cell confirmed = Cell::ghost_cell();
-        if (navigability.is_visible(predator.location,destination)) confirmed = destination_coord;
-        while(navigability.is_visible(predator.location,next_cell.location) && confirmed.coordinates != destination_coord){
-            cout << " from " << confirmed.coordinates << " to " << destination_coord << endl;
-            confirmed = next_cell;
-            cout << "confirmed: " << confirmed << endl;
-            auto move = paths.get_move(confirmed,map[destination_coord]);
-            if (move==Move{0,0}) {
-                cout << "unable to navigate to destination" << endl;
-                exit(1);
-            }
-            next_coordinates = confirmed.coordinates + move;
-            next_cell = map[next_coordinates];
-            cout << "trying: " << next_cell << endl;
+        predator.location = dst_space.transform(predator.location,src_space);
+        auto predator_cell = map[predator.coordinates];
+        //
+
+        next_step = destination;
+        while (!navigability.is_visible(predator.location,next_step)) // if the destination is not navigable
+        {
+            // it aims for one step back
+            auto &next_step_cell = map.cells[map.cells.find(next_step)];
+            auto move = paths.get_move(next_step_cell, predator_cell);
+            next_step = map[next_step_cell.coordinates + move].location;
         }
-        cout << "goal: " << destination << " - current: " << predator.location << " - distance :" << predator.location.dist(destination) << endl;
-        next_step = next_cell.location;
-        goal = predator.location.dist(destination) < .03;
+
+        goal = predator.location.dist(destination) < .06;
         if (!goal) {
             pi.location = predator.location;
             pi.rotation = predator.rotation;
@@ -117,7 +111,7 @@ int main(int argc, char *argv[])
             robot.set_left(robot_command.left);
             robot.set_right(robot_command.right);
             robot.update();
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
     cout << "finished!" << endl;

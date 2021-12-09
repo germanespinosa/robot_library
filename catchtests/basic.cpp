@@ -47,7 +47,7 @@ TEST_CASE("robot") {
 //TEST_CASE("robot_simulation"){
 //    Robot_state state;
 //    state.location = {0,0};
-//    state.rotation = 0;
+//    state.theta = 0;
 //    state.left = 0;
 //    state.right = 0;
 //    state.update(.1);

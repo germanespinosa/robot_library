@@ -9,7 +9,7 @@ namespace robot {
         Json_object_members(
                 Add_member(time_stamp);
                 Add_member(location);
-                Add_member(rotation);
+                Add_member(theta);
                 Add_member(left);
                 Add_member(right);
                 Add_member(led0);
@@ -19,7 +19,7 @@ namespace robot {
                 )
         json_cpp::Json_date time_stamp;
         cell_world::Location location;
-        double rotation;
+        double theta;
         char left, right;
         bool led0, led1, led2, puff;
         void update();

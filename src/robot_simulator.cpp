@@ -47,18 +47,12 @@ namespace robot {
         double dl = ((double)left) / 128.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
         double dr = -((double)right) / 128.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
         double d = ((double)left + (double)right) / 255.0 * robot_speed * elapsed; // convert motor signal to speed
-        rotation = normalize(rotation + dl + dr);
-        auto new_location = location.move(rotation,d);
+        theta = normalize(theta + dl + dr);
+        auto new_location = location.move(theta, d);
         if (habitat_polygon.contains(new_location)) {
-//            bool in_cell=false;
-//            for (auto &p: cell_polygons) {
-//                if (p.contains(new_location)) {
-//                    in_cell = true;
-//                    break;
-//                }
-//            }
-//            if (!in_cell)
-            location = location.move(rotation, d);
+            if (!cell_polygons.contains(new_location)) {
+                location = location.move(theta, d);
+            }
         }
         rm.unlock();
     }
@@ -67,7 +61,7 @@ namespace robot {
         Step info;
         info.agent_name = "predator";
         info.location = location;
-        info.rotation = rotation;
+        info.rotation = to_degrees(theta);
         auto cell_id = robot_cells.find(info.location);
         if (cell_id == Not_found){
             info.coordinates = Cell::ghost_cell().coordinates;
@@ -132,12 +126,13 @@ namespace robot {
         robot_world = world;
         habitat_polygon = Polygon(robot_world.space.center, robot_world.space.shape, robot_world.space.transformation);
         cell_polygons.clear();
-        for (auto &cell:robot_world.cells) {
-            cell_polygons.push_back(Polygon(cell.location,robot_world.cell_shape, robot_world.cell_transformation));
+        auto occluded_cells = robot_world.create_cell_group().occluded_cells();
+        for (auto &cell:occluded_cells) {
+            cell_polygons.push_back(Polygon(cell.get().location,robot_world.cell_shape, robot_world.cell_transformation));
         }
         robot_cells = robot_world.create_cell_group();
         robot_state.location = location;
-        robot_state.rotation = rotation;
+        robot_state.theta = rotation;
         robot_state.left = 0;
         robot_state.right = 0;
         robot_state.puff = false;

@@ -22,11 +22,14 @@ namespace robot {
         void show_occlusions(const std::string &) override {};
         void hide_occlusions() override {};
         //unrouted
-        void unrouted_message(const cell_world::Message &) override;
     };
+
     struct Tracking_simulator{
         static bool start();
         static bool send_update(const cell_world::Step &);
         static bool stop();
+        static void set_noise(double );
+        static void set_bad_reads(double );
+        static void set_frame_drop(double );
     };
 }

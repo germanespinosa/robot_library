@@ -4,6 +4,7 @@
 #include <robot.h>
 #include <params_cpp.h>
 #include <agent_tracking/client.h>
+#include <tracking_simulator.h>
 
 using namespace std;
 using namespace json_cpp;
@@ -16,19 +17,31 @@ using namespace robot;
 int main(int argc, char *argv[])
 {
     Key spawn_coordinates_key{"-s","--spawn_coordinates"};
-    Key rotation_key{"-r","--rotation"};
+    Key rotation_key{"-r","--theta"};
     Key interval_key{"-i","--interval"};
+    Key frame_drop_key{"-fd","--frame_drop"};
+    Key noise_key{"-n","--noise"};
+    Key bad_reads_key{"-br","--bad_reads"};
 
     Parser p(argc, argv);
     auto wc = Resources::from("world_configuration").key("hexagonal").get_resource<World_configuration>();
     auto wi = Resources::from("world_implementation").key("hexagonal").key("mice").get_resource<World_implementation>();
-    World world(wc, wi);
+    auto occlusions = Resources::from("cell_group").key("hexagonal").key("10_05").key("occlusions").get_resource<Cell_group_builder>();
+    World world(wc, wi, occlusions);
 
     Cell_group cells = world.create_cell_group();
     Map map(cells);
     auto rotation = stof(p.get(rotation_key));
     auto interval = stoi(p.get(interval_key));
     auto spawn_coordinates_str = p.get(spawn_coordinates_key);
+    auto frame_drop = stof(p.get(frame_drop_key,".1"));
+    auto noise = stof(p.get(noise_key,".001"));
+    auto bad_reads = stof(p.get(bad_reads_key,".01"));
+
+    Tracking_simulator::set_frame_drop(frame_drop);
+    Tracking_simulator::set_noise(noise);
+    Tracking_simulator::set_bad_reads(bad_reads);
+
     Coordinates spawn_coordinates;
     cout << spawn_coordinates_str << endl;
     try {
