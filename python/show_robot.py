@@ -1,6 +1,5 @@
 from cellworld_py import *
 from agent_tracking_py import Agent_tracking, Filter
-import subprocess
 
 controller = Message_client()
 controller.connect("127.0.0.1", 4520)
@@ -13,10 +12,10 @@ t = Timer(12000)
 
 occlusions = "10_05"
 
-world = World.get_from_parameters_names("hexagonal", "cv", "10_05")
+world = World.get_from_parameters_names("hexagonal", "cv", occlusions )
 src_space = world.implementation.space
 
-mice_world = World.get_from_parameters_names("hexagonal", "mice", "10_05")
+mice_world = World.get_from_parameters_names("hexagonal", "mice", occlusions)
 dst_space = mice_world.implementation.space
 
 while not tracker.contains_agent_state("predator"):
@@ -35,7 +34,8 @@ def onclick(event):
         print("can't navigate to an occluded cell")
         return
     controller.connection.send(Message("set_destination", destination_cell.location))
-#   p = subprocess.Popen(["wsl", "-e", "/mnt/c/Research/robot/robot_library/cmake-build-debug/controller", "-o", occlusions, "-d", str(destination_cell.location), "-n", ".001", "-fd", ".001", "-br", ".001"])
+    while not controller.messages.contains("set_destination_result"):
+        pass
 
 
 cid = display.fig.canvas.mpl_connect('button_press_event', onclick)

@@ -126,6 +126,7 @@ int main(int argc, char *argv[])
             // it aims for one step back
             auto &next_step_cell = map.cells[map.cells.find(next_step)];
             auto move = paths.get_move(next_step_cell, predator_cell);
+            if (move == Move{0,0}) break;
             next_step = map[next_step_cell.coordinates + move].location;
         }
 

@@ -7,14 +7,8 @@ project( robot_lib
         DESCRIPTION "Cellworld vr utilities"
         LANGUAGES CXX)
 
-### download and install dependency library
-string(TIMESTAMP v)
-FILE(DOWNLOAD
-        https://raw.githubusercontent.com/germanespinosa/dependencies/main/dependencies.cmake?${v}
-        ${CMAKE_CURRENT_BINARY_DIR}/dependencies.cmake)
+find_package(Dependencies)
 
-include(${CMAKE_CURRENT_BINARY_DIR}/dependencies.cmake)
-###
 string(APPEND CMAKE_CXX_FLAGS " -pthread ")
 install_dependency(https://github.com/germanespinosa/cellworld Cellworld)
 install_dependency(https://github.com/germanespinosa/params-cpp Params-cpp)
