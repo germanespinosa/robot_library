@@ -30,12 +30,12 @@ int main(int argc, char *argv[])
     auto wi = Resources::from("world_implementation").key("hexagonal").key("mice").get_resource<World_implementation>();
     auto occlusions = Resources::from("cell_group").key("hexagonal").key(occlusions_name).key("occlusions").get_resource<Cell_group_builder>();
     World world(wc, wi, occlusions);
-
+    auto default_coordinates = world.create_cell_group().free_cells().random_cell().coordinates.to_json();
     Cell_group cells = world.create_cell_group();
     Map map(cells);
-    auto rotation = stof(p.get(rotation_key));
-    auto interval = stoi(p.get(interval_key));
-    auto spawn_coordinates_str = p.get(spawn_coordinates_key);
+    auto rotation = stof(p.get(rotation_key,"0"));
+    auto interval = stoi(p.get(interval_key,"100"));
+    auto spawn_coordinates_str = p.get(spawn_coordinates_key, default_coordinates);
     auto frame_drop = stof(p.get(frame_drop_key,".1"));
     auto noise = stof(p.get(noise_key,".001"));
     auto bad_reads = stof(p.get(bad_reads_key,".01"));
