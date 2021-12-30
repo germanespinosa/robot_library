@@ -49,7 +49,7 @@ target_include_directories(robot_lib
 
 target_link_libraries( robot_lib
         LINK_PUBLIC
-         agent_tracking
+        agent_tracking
         params-cpp)
 
 ###
@@ -73,8 +73,8 @@ target_link_libraries( gamepad PUBLIC robot_lib gamepad_lib)
 ###
 ### TESTS
 ###
-#install_dependency(https://github.com/germanespinosa/catch CatchTests)
-#test_library(robot_lib)
+install_dependency(https://github.com/germanespinosa/catch CatchTests)
+test_library(robot_lib)
 
 
 ###

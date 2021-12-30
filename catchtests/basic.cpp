@@ -71,3 +71,6 @@ TEST_CASE("robot") {
 //    cout << state << endl;
 //}
 
+TEST_CASE("catch!"){
+    CHECK(1==1);
+}
