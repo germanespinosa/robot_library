@@ -1,9 +1,5 @@
-import httpimport
+import dependencies
+dependencies.install_dependency("https://github.com/germanespinosa/cellworld_py/raw/master/python-build/cellworld_py.0.0.001.zip")
+dependencies.install_dependency("https://github.com/germanespinosa/agent_tracking/raw/master/python/python-build/agent_tracking_py.0.0.001.zip")
 
-with httpimport.remote_repo(["cellworld_py_setup"], "https://raw.githubusercontent.com/germanespinosa/cellworld_py/master/"):
-    import cellworld_py_setup
-cellworld_py_setup.install(version="1.3", force=True)
 
-with httpimport.remote_repo(["agent_tracking_py_setup"], "https://raw.githubusercontent.com/germanespinosa/agent_tracking/master/python/"):
-    import agent_tracking_py_setup
-agent_tracking_py_setup.install(version="1.1.002", force=True)

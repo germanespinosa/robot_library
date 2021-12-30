@@ -12,7 +12,7 @@ using namespace easy_tcp;
 using namespace robot;
 using namespace cell_world;
 using namespace params_cpp;
-
+using namespace tcp_messages;
 
 Location destination;
 atomic<bool> puff = false;

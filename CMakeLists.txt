@@ -12,7 +12,10 @@ find_package(Dependencies)
 string(APPEND CMAKE_CXX_FLAGS " -pthread ")
 install_dependency(https://github.com/germanespinosa/cellworld Cellworld)
 install_dependency(https://github.com/germanespinosa/params-cpp Params-cpp)
+install_dependency(https://github.com/germanespinosa/tcp-messages Tcp_messages)
 install_dependency(https://github.com/germanespinosa/agent_tracking Agent_tracking)
+
+
 ###
 ### MAIN LIBRARY SETUP
 ###
@@ -44,15 +47,10 @@ target_include_directories(robot_lib
         PRIVATE
         include )
 
-message("${AGENT_TRACKING_LIBRARIES}")
-
 target_link_libraries( robot_lib
-        PUBLIC
-        cellworld
-        easy-tcp
-        json-cpp
-        params-cpp
-        agent_tracking)
+        LINK_PUBLIC
+         agent_tracking
+        params-cpp)
 
 ###
 ### UTILITIES SETUP
@@ -61,22 +59,22 @@ target_link_libraries( robot_lib
 include_directories( include )
 
 add_executable(robot src/tool/fake_robot.cpp)
-target_link_libraries( robot PUBLIC robot_lib )
+target_link_libraries( robot PUBLIC robot_lib)
 
 add_executable(stop_fake_robot src/tool/stop_fake_robot.cpp)
-target_link_libraries( stop_fake_robot PUBLIC robot_lib )
+target_link_libraries( stop_fake_robot PUBLIC robot_lib)
 
 add_executable(controller src/tool/controller.cpp)
-target_link_libraries( controller PUBLIC robot_lib )
+target_link_libraries( controller PUBLIC robot_lib)
 
 add_executable(gamepad src/tool/gamepad.cpp)
-target_link_libraries( gamepad PUBLIC robot_lib gamepad_lib )
+target_link_libraries( gamepad PUBLIC robot_lib gamepad_lib)
 
 ###
 ### TESTS
 ###
-install_dependency(https://github.com/germanespinosa/catch CatchTests)
-test_library(robot_lib)
+#install_dependency(https://github.com/germanespinosa/catch CatchTests)
+#test_library(robot_lib)
 
 
 ###

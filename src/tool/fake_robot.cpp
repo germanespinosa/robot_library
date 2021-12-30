@@ -22,11 +22,13 @@ int main(int argc, char *argv[])
     Key frame_drop_key{"-fd","--frame_drop"};
     Key noise_key{"-n","--noise"};
     Key bad_reads_key{"-br","--bad_reads"};
+    Key occlusions_key{"-o","--occlusions"};
 
     Parser p(argc, argv);
+    auto occlusions_name = p.get(occlusions_key);
     auto wc = Resources::from("world_configuration").key("hexagonal").get_resource<World_configuration>();
     auto wi = Resources::from("world_implementation").key("hexagonal").key("mice").get_resource<World_implementation>();
-    auto occlusions = Resources::from("cell_group").key("hexagonal").key("10_05").key("occlusions").get_resource<Cell_group_builder>();
+    auto occlusions = Resources::from("cell_group").key("hexagonal").key(occlusions_name).key("occlusions").get_resource<Cell_group_builder>();
     World world(wc, wi, occlusions);
 
     Cell_group cells = world.create_cell_group();

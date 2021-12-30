@@ -1,18 +1,20 @@
-from cellworld_py import *
-from agent_tracking_py import Agent_tracking, Filter
+from cellworld import World, Timer, Display, Space, Location
+from tcp_messages import Message, Client
 
-controller = Message_client()
+from agent_tracking_py import Agent_tracking, Filtered_client
+
+controller = Client()
 controller.connect("127.0.0.1", 4520)
 
 tracker = Agent_tracking()
-tracker.filter = Filter(.8, 10, 5)
+#tracker.filter = Filter(.8, 10, 5)
 tracker.register_consumer()
 
 t = Timer(12000)
 
 occlusions = "10_05"
 
-world = World.get_from_parameters_names("hexagonal", "cv", occlusions )
+world = World.get_from_parameters_names("hexagonal", "cv", occlusions)
 src_space = world.implementation.space
 
 mice_world = World.get_from_parameters_names("hexagonal", "mice", occlusions)
@@ -41,7 +43,7 @@ def onclick(event):
 cid = display.fig.canvas.mpl_connect('button_press_event', onclick)
 while t:
     robot = tracker.current_states["predator"].copy()
-    display.agent(step=tracker.current_states["predator"], color="dimgray", show_trajectory=True)
+    display.agent(step=tracker.current_states["predator"], color="dimgray")
     rotation = robot.rotation
     display.update()
 

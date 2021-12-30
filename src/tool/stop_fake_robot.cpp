@@ -9,6 +9,7 @@ using namespace json_cpp;
 using namespace cell_world;
 using namespace easy_tcp;
 using namespace robot;
+using namespace tcp_messages;
 
 int main(int argc, char *argv[])
 {

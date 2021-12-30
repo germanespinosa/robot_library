@@ -11,6 +11,7 @@ using namespace json_cpp;
 using namespace std;
 using namespace cell_world;
 using namespace agent_tracking;
+using namespace tcp_messages;
 
 namespace robot {
 
