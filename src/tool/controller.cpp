@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     Paths paths = world.create_paths(pb);
 
     auto robot_transformation = wi.cell_transformation;
-    robot_transformation.size *= 1.25;
+    robot_transformation.size *= 1.4;
 
     Location_visibility navigability(cells,wc.cell_shape,robot_transformation);
 

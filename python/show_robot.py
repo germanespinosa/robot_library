@@ -1,7 +1,7 @@
 from cellworld import World, Timer, Display, Space, Location
 from tcp_messages import Message, Client
 
-from agent_tracking_py import Agent_tracking, Filtered_client
+from cellworld_tracking import Agent_tracking, Filtered_client
 
 controller = Client()
 controller.connect("127.0.0.1", 4520)
@@ -23,7 +23,7 @@ dst_space = mice_world.implementation.space
 while not tracker.contains_agent_state("predator"):
     pass
 
-display = Display(world, animated=True)
+display = Display(world, fig_size=(9, 8), animated=True)
 
 robot = tracker.current_states["predator"].copy()
 
@@ -43,7 +43,7 @@ def onclick(event):
 cid = display.fig.canvas.mpl_connect('button_press_event', onclick)
 while t:
     robot = tracker.current_states["predator"].copy()
-    display.agent(step=tracker.current_states["predator"], color="dimgray")
+    display.agent(step=tracker.current_states["predator"], color="red")
     rotation = robot.rotation
     display.update()
 

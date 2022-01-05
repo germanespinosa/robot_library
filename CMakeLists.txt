@@ -14,7 +14,7 @@ install_dependency(https://github.com/germanespinosa/cellworld Cellworld)
 install_dependency(https://github.com/germanespinosa/params-cpp Params-cpp)
 install_dependency(https://github.com/germanespinosa/tcp-messages Tcp_messages)
 install_dependency(https://github.com/germanespinosa/agent_tracking Agent_tracking)
-
+install_dependency(https://github.com/germanespinosa/gamepad_lib Gamepad_lib)
 
 ###
 ### MAIN LIBRARY SETUP
@@ -27,9 +27,6 @@ set(robot_lib_files
         src/tracking_simulator.cpp)
 
 add_library(robot_lib ${robot_lib_files})
-
-add_library(gamepad_lib src/gamepad.cpp)
-
 
 set_target_properties(robot_lib
         PROPERTIES

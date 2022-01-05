@@ -1,14 +1,14 @@
-#include <gamepad.h>
 #include <robot.h>
 #include <iostream>
 #include <agent_tracking/client.h>
+#include <gamepad_lib/include/gamepad.h>
 
 #define puff_delay 5
 
 using namespace std;
 using namespace robot;
 using namespace cell_world;
-
+using namespace gamepad;
 
 
 int main(int argc, char *argv[]){
