@@ -10,11 +10,11 @@ project( robot_lib
 find_package(Dependencies)
 
 string(APPEND CMAKE_CXX_FLAGS " -pthread ")
+install_dependency(https://github.com/germanespinosa/gamepad_lib Gamepad_lib)
 install_dependency(https://github.com/germanespinosa/cellworld Cellworld)
 install_dependency(https://github.com/germanespinosa/params-cpp Params-cpp)
 install_dependency(https://github.com/germanespinosa/tcp-messages Tcp_messages)
 install_dependency(https://github.com/germanespinosa/agent_tracking Agent_tracking)
-install_dependency(https://github.com/germanespinosa/gamepad_lib Gamepad_lib)
 
 ###
 ### MAIN LIBRARY SETUP

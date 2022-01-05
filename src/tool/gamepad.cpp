@@ -24,15 +24,17 @@ int main(int argc, char *argv[]){
     puff_timer.reset();
     tracking.connect();
     tracking.register_consumer();
-    if (argc != 2) {
+    if (argc != 3) {
         cout << "Wrong parameters." << endl;
-        cout << "Usage: ./joystick [device_path]" << endl;
+        cout << "Usage: ./joystick [device_path] [robot_ip]" << endl;
         exit(1);
     }
 
     string device_path (argv[1]);
+    string robot_ip (argv[2]);
+
     Robot robot;
-    robot.connect();
+    robot.connect(robot_ip);
     Gamepad j(device_path);
 
     int pleft = 0;
