@@ -47,8 +47,8 @@ int main(int argc, char *argv[]){
     prey_ts.reset();
     while (h){
         update = false;
-        int left = -j.axes[1] * 3 /  256 / 3;
-        int right = -j.axes[4] * 3 / 256 / 3;
+        int left = -j.axes[1] * 2 /  256 / 3;
+        int right = -j.axes[4] * 2 / 256 / 3;
 
         if (pleft != left || pright != right) {
             robot.set_left(left);
@@ -102,6 +102,7 @@ int main(int argc, char *argv[]){
         if ( puff_timer.to_seconds() > puff_delay && (j.buttons[5].state == 1 || ( distance < 100))){
             if (enabled) {
                 robot.set_puf();
+                //tracking.update_puff();
                 puff_timer.reset();
                 prey_location = {-10000,-10000};
                 update = true;
