@@ -24,6 +24,7 @@ namespace robot {
         cell_world::Location destination;
     };
 
+    // values located in robot_library/config/pid.json
     struct Pid_parameters : json_cpp::Json_object{
         Json_object_members(
                 Add_member(P_value);
