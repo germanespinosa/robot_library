@@ -15,7 +15,7 @@ namespace robot {
     double bad_reads = .01; // 1% of reads are bad
 
     bool Tracking_simulator::start() {
-        int port = agent_tracking::Service::get_port();
+        int port = agent_tracking::Tracking_service::get_port();
         return robot_tracker.start(port);
     }
 

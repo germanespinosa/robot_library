@@ -4,7 +4,7 @@
 #include <iostream>
 #include <robot.h>
 #include <pid_controller.h>
-#include <agent_tracking/client.h>
+#include <agent_tracking/tracking_client.h>
 
 using namespace agent_tracking;
 using namespace std;
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
     cout << "Robot testing app" << endl;
     cout << "-----------------" << endl;
     cout << " destination: " <<  destination << endl;
-    agent_tracking::Client tracker;
+    agent_tracking::Tracking_client tracker;
     cout << "starting tracker connection ..." << flush;
     if (tracker.connect(tracker_ip)) {
         if (!tracker.register_consumer()) {

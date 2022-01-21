@@ -3,7 +3,7 @@
 #include <robot_simulator.h>
 #include <robot.h>
 #include <params_cpp.h>
-#include <agent_tracking/client.h>
+#include <agent_tracking/tracking_client.h>
 #include <tracking_simulator.h>
 
 using namespace std;
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
         std::cout << "Server setup failed " << std::endl;
         return EXIT_FAILURE;
     }
-    agent_tracking::Client tracker;
+    agent_tracking::Tracking_client tracker;
     tracker.connect();
     tracker.register_consumer();
     while (Robot_simulator::is_running())
