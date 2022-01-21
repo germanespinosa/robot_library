@@ -1,12 +1,12 @@
 from cellworld import World, Timer, Display, Space, Location
-from tcp_messages import Message, Client
+from tcp_messages import Message, MessageClient
+from cellworld_tracking import TrackingClient
 
-from cellworld_tracking import Agent_tracking, Filtered_client
-
-controller = Client()
+controller = MessageClient()
 controller.connect("127.0.0.1", 4520)
 
-tracker = Agent_tracking()
+tracker = TrackingClient()
+tracker.connect("127.0.0.1")
 #tracker.filter = Filter(.8, 10, 5)
 tracker.register_consumer()
 
