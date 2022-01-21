@@ -1,6 +1,6 @@
 #include <robot.h>
 #include <iostream>
-#include <agent_tracking/client.h>
+#include <agent_tracking/tracking_client.h>
 #include <gamepad_lib/include/gamepad.h>
 
 #define puff_delay 5
@@ -15,7 +15,7 @@ int main(int argc, char *argv[]){
     Timer prey_ts;
     Timer predator_ts;
     mutex mtx_update;
-    agent_tracking::Client tracking;
+    agent_tracking::Tracking_client tracking;
     cell_world::Location prey_location {-10000,-10000};
     cell_world::Location predator_location {10000,10000};
     double predator_rotation;
@@ -102,7 +102,6 @@ int main(int argc, char *argv[]){
         if ( puff_timer.to_seconds() > puff_delay && (j.buttons[5].state == 1 || ( distance < 100))){
             if (enabled) {
                 robot.set_puf();
-                tracking.update_puff();
                 puff_timer.reset();
                 prey_location = {-10000,-10000};
                 update = true;
