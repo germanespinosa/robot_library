@@ -17,14 +17,17 @@ using namespace tcp_messages;
 Location destination;
 atomic<bool> puff = false;
 atomic<bool> active = true;
+atomic<bool> pause = false;
 
 struct Controller_service : Message_service{
     Routes(
             Add_route("set_destination", set_destination, Location);
             Add_route("activate_puff", activate_puff);
             Add_route("stop_controller", stop_controller);
+            Add_route("pause_controller", pause_controller);
             );
     void set_destination(Location new_destination){
+        pause = false;
         destination = new_destination;
         send_message(Message("set_destination_result", "ok"));
     }
@@ -36,6 +39,11 @@ struct Controller_service : Message_service{
         active = false;
         send_message(Message("stop_controller_result", "ok"));
     }
+    void pause_controller(){
+        pause = true;
+        send_message(Message("pause_controller_result", "ok"));
+    }
+
 };
 
 
@@ -166,6 +174,12 @@ int main(int argc, char *argv[])
             robot.set_puf();
             puff = false;
         }
+
+        if (pause){
+            robot.set_left(0);
+            robot.set_right(0);
+        }
+
         robot.update();
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
