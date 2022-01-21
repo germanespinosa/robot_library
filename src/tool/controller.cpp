@@ -52,8 +52,8 @@ int main(int argc, char *argv[])
         exit(1);
     }
     auto occlusions_name = p.get(occlusions_key);
-    //auto robot_ip = p.get(ip_key, "127.0.0.1");
-    auto robot_ip = p.get(ip_key, "192.168.137.155");
+    auto robot_ip = p.get(ip_key, "127.0.0.1");
+    //auto robot_ip = p.get(ip_key, "192.168.137.155");
     auto tracker_ip = p.get(tracker_key, "127.0.0.1");
 
     Coordinates destination_coord;
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     Paths paths = world.create_paths(pb);
 
     auto robot_transformation = wi.cell_transformation;
-    robot_transformation.size *= 1.4; // 1.4
+    robot_transformation.size *= 1.25; // 1.4
 
     Location_visibility navigability(cells,wc.cell_shape,robot_transformation);
 
@@ -174,6 +174,9 @@ int main(int argc, char *argv[])
 //        robot.update();
     }
 
+    //If the controller is inactive, stop the motors
+    robot.set_left(0);
+    robot.set_right(0);
     cout << "finished!" << endl;
     return 0;
 }

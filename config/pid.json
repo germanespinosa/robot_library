@@ -1,6 +1,6 @@
 {
-  "P_value" : 9,
-  "I_value" : 0,
-  "D_value" : 100,
-  "speed"   : 60
+  "P_value" : 80.0,
+  "I_value" : 0.1,
+  "D_value" : 5.0,
+  "speed"   : 100
 }

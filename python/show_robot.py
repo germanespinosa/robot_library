@@ -13,7 +13,7 @@ tracker.register_consumer()
 t = Timer(12000)
 
 # occlusions = "10_05"
-occlusions = "04_05"
+occlusions = "00_00"
 
 world = World.get_from_parameters_names("hexagonal", "cv", occlusions)
 src_space = world.implementation.space
@@ -42,6 +42,18 @@ def onclick(event):
 
 
 cid = display.fig.canvas.mpl_connect('button_press_event', onclick)
+
+def on_keypress(event):
+    if event.key == "ctrl+c":
+        print("Keyboard Interrupt Recieved -- Stopping Controller")
+        controller.connection.send(Message("stop_controller"))
+        #TODO: also stop the timer t / use a different setup for the main control loop
+        #ASK: should this resend message on communciation failure? not much elese we can do...
+        while not controller.messages.contains("stop_controller_result"):
+            pass
+
+cid_keypress = display.fig.canvas.mpl_connect('key_press_event', on_keypress)
+
 while t:
     robot = tracker.current_states["predator"].copy()
     display.agent(step=tracker.current_states["predator"], color="red")
