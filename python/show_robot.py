@@ -12,7 +12,8 @@ tracker.register_consumer()
 
 t = Timer(12000)
 
-occlusions = "10_05"
+# occlusions = "10_05"
+occlusions = "04_05"
 
 world = World.get_from_parameters_names("hexagonal", "cv", occlusions)
 src_space = world.implementation.space
