@@ -6,6 +6,7 @@
 namespace robot {
 
     struct Tracking_simulator_service : agent_tracking::Tracking_service {
+
     };
 
     struct Tracking_simulator{
