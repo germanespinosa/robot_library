@@ -13,6 +13,7 @@ string(APPEND CMAKE_CXX_FLAGS " -pthread ")
 install_dependency(https://github.com/germanespinosa/gamepad_lib Gamepad_lib)
 install_dependency(https://github.com/germanespinosa/cellworld Cellworld)
 install_dependency(https://github.com/germanespinosa/params-cpp Params-cpp)
+install_dependency(https://github.com/germanespinosa/easy-tcp Easy-tcp)
 install_dependency(https://github.com/germanespinosa/tcp-messages Tcp_messages)
 install_dependency(https://github.com/germanespinosa/agent_tracking Agent_tracking)
 
@@ -24,7 +25,8 @@ set(robot_lib_files
         src/robot.cpp
         src/robot_simulator.cpp
         src/pid_controller.cpp
-        src/tracking_simulator.cpp)
+        src/tracking_simulator.cpp
+        src/gamepad_wrapper.cpp)
 
 add_library(robot_lib ${robot_lib_files})
 
@@ -47,7 +49,8 @@ target_include_directories(robot_lib
 target_link_libraries( robot_lib
         LINK_PUBLIC
         agent_tracking
-        params-cpp)
+        params-cpp
+        gamepad_lib)
 
 ###
 ### UTILITIES SETUP
@@ -65,13 +68,16 @@ add_executable(controller src/tool/controller.cpp)
 target_link_libraries( controller PUBLIC robot_lib)
 
 add_executable(gamepad src/tool/gamepad.cpp)
-target_link_libraries( gamepad PUBLIC robot_lib gamepad_lib)
+target_link_libraries( gamepad PUBLIC robot_lib)
 
 ###
 ### TESTS
 ###
 install_dependency(https://github.com/germanespinosa/catch CatchTests)
-test_library(robot_lib)
+
+test_library(robot_lib catchtests/basic.cpp)
+
+test_library(robot_lib catchtests/ip_controller.cpp)
 
 
 ###
