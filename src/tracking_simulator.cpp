@@ -7,7 +7,7 @@ using namespace agent_tracking;
 using namespace tcp_messages;
 
 namespace robot {
-    easy_tcp::Server<Tracking_simulator_service> robot_tracker;
+    Tracking_server robot_tracker;
     Space src_space = Resources::from("world_implementation").key("hexagonal").key("mice").get_resource<World_implementation>().space;
     Space dst_space = Resources::from("world_implementation").key("hexagonal").key("cv").get_resource<World_implementation>().space;
     double frame_drop = .1; //send 90% of the updates (simulates missing frames)
@@ -35,8 +35,7 @@ namespace robot {
             transformed_step.location.x += Chance::dice_double(-dst_space.transformation.size / 4, dst_space.transformation.size / 4);
             transformed_step.location.y -= Chance::dice_double(-dst_space.transformation.size / 4, dst_space.transformation.size / 4);
         }
-        auto msg = Message(step.agent_name + "_step", transformed_step);
-        Tracking_simulator_service::send_update(msg);
+        robot_tracker.send_step(transformed_step);
         return true;
     }
 
