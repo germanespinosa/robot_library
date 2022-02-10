@@ -112,6 +112,7 @@ int main(int argc, char *argv[])
                 .key("cv")
                 .get_resource<World_implementation>();
         src_space = tracker_implementation.space;
+
         if (!tracker.register_consumer()) {
             cout << " failed." << endl;
             exit(1);

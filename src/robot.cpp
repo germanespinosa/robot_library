@@ -53,7 +53,7 @@ namespace robot {
     }
 
     int Robot::port() {
-        string port_str (std::getenv("ROBOT_PORT")?std::getenv("ROBOT_PORT"):"4500");
+        string port_str (std::getenv("ROBOT_PORT")?std::getenv("ROBOT_PORT"):"4500");   // 4500
         return atoi(port_str.c_str());
     }
 
