@@ -4,11 +4,6 @@
 #include <agent_tracking/tracking_service.h>
 
 namespace robot {
-
-    struct Tracking_simulator_service : agent_tracking::Tracking_service {
-
-    };
-
     struct Tracking_simulator{
         static bool start();
         static bool send_update(const cell_world::Step &);

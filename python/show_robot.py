@@ -2,19 +2,18 @@ from cellworld import World, Timer, Display, Space, Location
 from tcp_messages import Message, MessageClient
 from cellworld_tracking import TrackingClient
 
+# connect to controller
 controller = MessageClient()
-controller.connect("127.0.0.1", 4520)
+controller.connect("127.0.0.1", 4520) #4520
+#
 
 tracker = TrackingClient()
-tracker.connect("127.0.0.1")
-#tracker.filter = Filter(.8, 10, 5)
-tracker.register_consumer()
+tracker.connect("127.0.0.1") # port is 4510 see tracking client
+tracker.subscribe()
 
 t = Timer(12000)
 
-# occlusions = "10_05"
-occlusions = "00_00"
-
+occlusions = "10_05"
 world = World.get_from_parameters_names("hexagonal", "cv", occlusions)
 src_space = world.implementation.space
 
@@ -23,7 +22,7 @@ dst_space = mice_world.implementation.space
 
 while not tracker.contains_agent_state("predator"):
     pass
-
+print('j')
 display = Display(world, fig_size=(9, 8), animated=True)
 
 robot = tracker.current_states["predator"].copy()
@@ -44,16 +43,6 @@ def onclick(event):
 cid = display.fig.canvas.mpl_connect('button_press_event', onclick)
 
 def on_keypress(event):
-    # if event.key == "ctrl+c":
-    #     print("Keyboard Interrupt Recieved -- Stopping Controller")
-    #     controller.connection.send(Message("stop_controller"))
-    #
-    #     # also stop the timer t / use a different setup for the main control loop
-    #     #ASK: should this resend message on communciation failure? not much elese we can do...
-    #
-    #     while not controller.messages.contains("stop_controller_result"):
-    #         pass
-
     if event.key == "p":
         print("Keyboard Interrupt Recieved -- Pausing Controller")
         controller.connection.send(Message("pause_controller"))
@@ -72,6 +61,7 @@ while t:
     display.agent(step=tracker.current_states["predator"], color="red")
     rotation = robot.rotation
     display.update()
+    print("run")
 
 
 tracker.unregister_consumer()
