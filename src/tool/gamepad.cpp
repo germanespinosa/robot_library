@@ -31,15 +31,18 @@ int main(int argc, char *argv[]){
     Timer puff_timer;
     Timer robot_update;
     puff_timer.reset();
-    tracking.connect();
-    tracking.register_consumer();
-    if (argc != 3) {
-        cout << "Wrong parameters." << endl;
-        cout << "Usage: ./joystick [device_path] [robot_ip]" << endl;
-        exit(1);
+    if (!tracking.connect())
+    {
+        cout << "Unable to connect to Tracking service." <<  endl;
+        exit(0);
     }
+    tracking.register_consumer();
     Robot robot;
-    robot.connect(robot_ip);
+    if (!robot.connect(robot_ip))
+    {
+        cout << "Unable to connect to robot." <<  endl;
+        exit(0);
+    }
     Gamepad *j;
 
     if (port_str.empty()) {
@@ -63,25 +66,26 @@ int main(int argc, char *argv[]){
     while (h){
         update = false;
         int left = -j->axes[1] * 2 /  256 / 3;
-        int right = -j->axes[4] * 2 / 256 / 3;
+        int right = -j->axes[3] * 2 / 256 / 3;
 
         if (pleft != left || pright != right) {
             robot.set_left(left);
             robot.set_right(right);
             update = true;
+            cout << "left: " << left << " right: " << right << endl;
         }
 
         pleft = left;
         pright = right;
 
-        for (int i = 0;i<j->axes.size();i++) {
-            cout << j->axes[i] << "\t";
-        }
-         for (int i = 0;i<j->buttons.size();i++) {
-            cout << j->buttons[i].state << "\t";
-        }
-        cout << endl;
-
+//        for (int i = 0;i<j->axes.size();i++) {
+//            if (j->axes[i])
+//                cout << "axis " << i << ": " << j->axes[i] << endl;
+//        }
+//         for (int i = 0;i<j->buttons.size();i++) {
+//             if (j->buttons[i].state == 1)
+//                 cout << "button " << i << ": " << j->buttons[i].state << "\t";
+//        }
         if (tracking.contains("predator_step")){
             Step predator_step = tracking.get_last_message("predator_step").get_body<Step>();
             predator_location = predator_step.location;
