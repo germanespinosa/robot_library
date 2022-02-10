@@ -15,7 +15,7 @@ namespace robot {
     double bad_reads = .01; // 1% of reads are bad
 
     bool Tracking_simulator::start() {
-        int port = Tracking_service::get_port();
+        int port = agent_tracking::Tracking_service::get_port();
         return robot_tracker.start(port);
     }
 
@@ -35,8 +35,7 @@ namespace robot {
             transformed_step.location.x += Chance::dice_double(-dst_space.transformation.size / 4, dst_space.transformation.size / 4);
             transformed_step.location.y -= Chance::dice_double(-dst_space.transformation.size / 4, dst_space.transformation.size / 4);
         }
-        auto msg = Message(step.agent_name + "_step", transformed_step);
-        robot_tracker.broadcast_subscribed(msg);
+        robot_tracker.send_step(transformed_step);
         return true;
     }
 
