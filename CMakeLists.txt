@@ -26,7 +26,9 @@ set(robot_lib_files
         src/robot_simulator.cpp
         src/pid_controller.cpp
         src/tracking_simulator.cpp
-        src/gamepad_wrapper.cpp)
+        src/gamepad_wrapper.cpp
+        src/controller_service.cpp
+        src/controller_client.cpp)
 
 add_library(robot_lib ${robot_lib_files})
 

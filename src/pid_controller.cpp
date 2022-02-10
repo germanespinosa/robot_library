@@ -14,7 +14,7 @@ namespace robot{
         in = inputs;
         auto dist = inputs.location.dist(inputs.destination);
         // 0.01
-        if ( dist < .15) {
+        if ( dist < .05) {
             out.left = 0;
             out.right = 0;
             return out;
