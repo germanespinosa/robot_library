@@ -70,6 +70,8 @@ int main(int argc, char *argv[])
     auto wi = Resources::from("world_implementation").key("hexagonal").key("mice").get_resource<World_implementation>();
     auto dst_space = wi.space;
     auto occlusions = Resources::from("cell_group").key("hexagonal").key(occlusions_name).key("occlusions").get_resource<Cell_group_builder>();
+
+    // get paths from cellworld_data github
     auto pb = Resources::from("paths").key("hexagonal").key(occlusions_name).key("astar").get_resource<Path_builder>();
     World world(wc, wi, occlusions);
     Cell_group cells = world.create_cell_group();
