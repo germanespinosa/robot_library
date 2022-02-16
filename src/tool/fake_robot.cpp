@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     Parser p(argc, argv);
     auto occlusions_name = p.get(occlusions_key);
     auto wc = Resources::from("world_configuration").key("hexagonal").get_resource<World_configuration>();
-    auto wi = Resources::from("world_implementation").key("hexagonal").key("mice").get_resource<World_implementation>();
+    auto wi = Resources::from("world_implementation").key("hexagonal").key("canonical").get_resource<World_implementation>();
     auto occlusions = Resources::from("cell_group").key("hexagonal").key(occlusions_name).key("occlusions").get_resource<Cell_group_builder>();
     World world(wc, wi, occlusions);
     auto default_coordinates = world.create_cell_group().free_cells().random_cell().coordinates.to_json();

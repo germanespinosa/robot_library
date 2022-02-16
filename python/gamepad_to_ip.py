@@ -49,7 +49,7 @@ pygame.init()
 #connect to gamepad_wrapper
 client = MessageClient()
 
-client.connect("172.30.234.93",6500)
+client.connect("127.0.0.1",4600)
 # Set the width and height of the screen (width, height).
 screen = pygame.display.set_mode((500, 700))
 
