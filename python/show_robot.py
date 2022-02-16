@@ -5,15 +5,15 @@ from cellworld_tracking import TrackingClient
 # connect to controller
 controller = MessageClient()
 controller.connect("127.0.0.1", 4520) #4520
-#
+
 
 tracker = TrackingClient()
 tracker.connect("127.0.0.1") # port is 4510 see tracking client
-tracker.subscribe()
+tracker.subscribe() # get broadcasted messages
 
 t = Timer(12000)
 
-occlusions = "10_05"
+occlusions = "04_05"
 world = World.get_from_parameters_names("hexagonal", "cv", occlusions)
 src_space = world.implementation.space
 
@@ -22,10 +22,11 @@ dst_space = mice_world.implementation.space
 
 while not tracker.contains_agent_state("predator"):
     pass
-print('j')
+
 display = Display(world, fig_size=(9, 8), animated=True)
 
-robot = tracker.current_states["predator"].copy()
+robot = tracker.current_states["predator"].copy()   #ROBOT {"time_stamp":55.7808,"agent_name":"predator","frame":557,"coordinates":{"x":-3,"y":9},"location":{"x":459.522,"y":934.431},"rotation":115.453,"data":""}
+
 
 def onclick(event):
     location = Space.transform_to(Location(event.xdata, event.ydata), src_space, dst_space)  # event.x, event.y
@@ -61,7 +62,7 @@ while t:
     display.agent(step=tracker.current_states["predator"], color="red")
     rotation = robot.rotation
     display.update()
-    print("run")
+
 
 
 tracker.unregister_consumer()

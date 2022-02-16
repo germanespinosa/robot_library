@@ -19,6 +19,7 @@ atomic<bool> puff = false;
 atomic<bool> active = true;
 atomic<bool> pause = false;
 
+
 struct Controller_service : Message_service{
     Routes(
             Add_route("set_destination", set_destination, Location);
@@ -69,17 +70,26 @@ int main(int argc, char *argv[])
     auto wc = Resources::from("world_configuration").key("hexagonal").get_resource<World_configuration>();
     auto wi = Resources::from("world_implementation").key("hexagonal").key("mice").get_resource<World_implementation>();
     auto dst_space = wi.space;
-    auto occlusions = Resources::from("cell_group").key("hexagonal").key(occlusions_name).key("occlusions").get_resource<Cell_group_builder>();
+
+
+    //auto occlusions = Resources::from("cell_group").key("hexagonal").key(occlusions_name).key("occlusions").get_resource<Cell_group_builder>();
 
     // get paths from cellworld_data github
-    auto pb = Resources::from("paths").key("hexagonal").key(occlusions_name).key("astar").get_resource<Path_builder>();
+    auto occlusions = Resources::from("cell_group").key("hexagonal").key(occlusions_name).key("occlusions").key("robot").get_resource<Cell_group_builder>();
+    cout << occlusions << endl;
+    auto pb = Resources::from("paths").key("hexagonal").key(occlusions_name).key("astar").key("robot").get_resource<Path_builder>();
+
+
     World world(wc, wi, occlusions);
     Cell_group cells = world.create_cell_group();
     Graph graph = world.create_graph();
+
     Paths paths = world.create_paths(pb);
 
+
+
     auto robot_transformation = wi.cell_transformation;
-    robot_transformation.size *= 1.25; // 1.4
+    robot_transformation.size *= 1.2; // 1.4
 
     Location_visibility navigability(cells,wc.cell_shape,robot_transformation);
 
@@ -147,11 +157,14 @@ int main(int argc, char *argv[])
         auto predator_cell = map[predator.coordinates];
 
         next_step = destination;
+
+
         while (!navigability.is_visible(predator.location,next_step)) // if the destination is not navigable
         {
             // it aims for one step back
             auto &next_step_cell = map.cells[map.cells.find(next_step)];
             auto move = paths.get_move(next_step_cell, predator_cell);
+            //cout << "MOVE " << move << endl;
             if (move == Move{0,0}) break;
             next_step = map[next_step_cell.coordinates + move].location;
         }
@@ -164,9 +177,9 @@ int main(int argc, char *argv[])
         auto robot_command = controller.process(pi);
 
         if (robot_command.left || robot_command.right) {
-            cout << "braze yourself!" << endl;
-            cout << robot_command.left << endl;
-            cout << robot_command.right << endl;
+//            cout << "braze yourself!" << endl;
+//            cout << robot_command.left << endl;
+//            cout << robot_command.right << endl;
         }
         robot.set_left((char)robot_command.left);
         robot.set_right((char)robot_command.right);

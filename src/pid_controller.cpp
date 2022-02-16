@@ -13,8 +13,8 @@ namespace robot{
     Pid_outputs Pid_controller::process(const Pid_inputs &inputs) {
         in = inputs;
         auto dist = inputs.location.dist(inputs.destination);
-        // 0.01
-        if ( dist < .15) {
+        // 0.01, 0.15
+        if ( dist < .01) {
             out.left = 0;
             out.right = 0;
             return out;
