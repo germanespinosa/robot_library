@@ -64,11 +64,6 @@ namespace robot {
         info.location = location;
         info.rotation = to_degrees(theta);
         auto cell_id = robot_cells.find(info.location);
-        if (cell_id == Not_found){
-            info.coordinates = Cell::ghost_cell().coordinates;
-        }else{
-            info.coordinates = robot_cells[cell_id].coordinates;
-        }
         info.time_stamp = robot_time_stamp.to_seconds();
         info.frame = ++frame_number;
         return info;

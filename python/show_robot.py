@@ -1,26 +1,46 @@
-from cellworld import World, Timer, Display, Space, Location
-from tcp_messages import Message, MessageClient
-from cellworld_tracking import TrackingClient
+from cellworld import World, Display, Location, Agent_markers, Capture, Capture_parameters, Step, Timer
 from controller import ControllerClient
 
-# connect to controller
-controller = ControllerClient()
-controller.connect("127.0.0.1", 4590)
-controller.subscribe()
 
-tracker = TrackingClient()
-tracker.connect("127.0.0.1")
-tracker.subscribe()
+time_out = 1.0
+
+class AgentData:
+    def __init__(self, agent_name: str):
+        self.is_valid = None
+        self.step = Step()
+        self.step.agent_name = agent_name
+
+
+predator = AgentData("predator")
+prey = AgentData("prey")
+
+
+def on_step(step: Step):
+    if step.agent_name == "predator":
+        predator.is_valid = Timer(time_out)
+        predator.step = step
+    else:
+        prey.is_valid = Timer(time_out)
+        prey.step = step
+
+# connect to controller
+
+
+controller = ControllerClient()
+if not controller.connect("127.0.0.1", 4590):
+    print("failed to connect to the controller")
+    exit(1)
+
+controller.subscribe()
+controller.on_step = on_step
 
 occlusions = "10_05"
 world = World.get_from_parameters_names("hexagonal", "canonical", occlusions)
 
-while not tracker.contains_agent_state("predator"):
-    pass
-
 display = Display(world, fig_size=(9, 8), animated=True)
 
-robot = tracker.current_states["predator"].copy()
+capture = Capture(Capture_parameters(2.0, 90.0),world)
+
 
 def on_click(event):
     location = Location(event.xdata, event.ydata)  # event.x, event.y
@@ -33,10 +53,10 @@ def on_click(event):
     controller.set_destination (destination_cell.location)
 
 
-
 cid = display.fig.canvas.mpl_connect('button_press_event', on_click)
 
 running = True
+
 
 def on_keypress(event):
     global running
@@ -50,11 +70,22 @@ def on_keypress(event):
 
 cid_keypress = display.fig.canvas.mpl_connect('key_press_event', on_keypress)
 
+display.set_agent_marker("predator", Agent_markers.arrow())
+
+display.set_agent_marker("prey", Agent_markers.arrow())
+
 while running:
-    robot = tracker.current_states["predator"].copy()
-    display.agent(step=tracker.current_states["predator"], color="red")
-    rotation = robot.rotation
+    if prey.is_valid:
+        display.agent(step=prey.step, color="blue")
+    else:
+        display.agent(step=prey.step, color="gray")
+
+    if predator.is_valid:
+        display.agent(step=predator.step, color="blue")
+    else:
+        display.agent(step=predator.step, color="gray")
     display.update()
 
+
+controller.unsubscribe()
 controller.stop()
-tracker.unregister_consumer()

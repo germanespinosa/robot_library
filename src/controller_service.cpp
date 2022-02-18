@@ -19,7 +19,7 @@ namespace controller {
     }
 
     bool Controller_service::prey_acquired() {
-        return false;
+        return true;
     }
 
     bool Controller_service::stop_predator() {

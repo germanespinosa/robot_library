@@ -21,6 +21,17 @@ atomic<bool> puff = false;
 atomic<bool> active = true;
 atomic<bool> pause = false;
 
+struct Agent_data{
+    Agent_data (const string &agent_name){
+        step.agent_name = agent_name;
+    }
+    Step step;
+    Timer timer;
+    bool is_valid() {
+        return !timer.time_out();
+    }
+};
+
 
 int main(int argc, char *argv[])
 {
@@ -46,12 +57,15 @@ int main(int argc, char *argv[])
     auto tracker_ip = p.get(tracker_key, "127.0.0.1");
     Coordinates destination_coord;
 
+
+    auto peeking_parameters = Resources::from("peeking").key("default").get_resource<Peeking_parameters>();
     auto wc = Resources::from("world_configuration").key("hexagonal").get_resource<World_configuration>();
     auto wi = Resources::from("world_implementation").key("hexagonal").key("canonical").get_resource<World_implementation>();
     auto occlusions = Resources::from("cell_group").key("hexagonal").key(occlusions_name).key("occlusions").get_resource<Cell_group_builder>();
     auto pb = Resources::from("paths").key("hexagonal").key(occlusions_name).key("astar").get_resource<Path_builder>();
 
     World world(wc, wi, occlusions);
+    static Peeking peeking(peeking_parameters, world);
     Cell_group cells = world.create_cell_group();
     Graph graph = world.create_graph();
     Paths paths = world.create_paths(pb);
@@ -61,6 +75,7 @@ int main(int argc, char *argv[])
 
     Location_visibility navigability(cells,wc.cell_shape,robot_transformation);
     Location_visibility visibility(cells,wc.cell_shape,robot_transformation);
+
 
     Map map (cells);
 
@@ -76,6 +91,11 @@ int main(int argc, char *argv[])
     cout << "starting robot connection ..." << flush;
     if (robot.connect(robot_ip)) {
         cout << " success" << endl;
+        // initializes the robot
+        robot.set_left(0);
+        robot.set_right(0);
+        robot.update();
+
     } else {
         cout << " failed." << endl;
         exit(1);
@@ -88,17 +108,24 @@ int main(int argc, char *argv[])
         void on_step(const cell_world::Step &step) override {
             if (step.agent_name == "predator") {
                 server.send_step(step);
+                predator.step = step;
+                predator.timer = Timer(.5);
             } else if (step.agent_name == "prey") {
                 if (contains_agent_state("predator")) {
                     auto predator = get_current_state("predator");
                     if (visibility.is_visible(predator.location, step.location) &&
                         angle_difference(predator.location.atan(step.location), predator.rotation) < view_angle) {
-                        server.send_step(step);
+                        if (peeking.is_seen(predator.location, step.location)) {
+                            server.send_step(step);
+                        }
+                    } else {
+                        peeking.not_visible();
                     }
                 }
             }
             Tracking_client::on_step(step);
         }
+        Agent_data predator{"predator" };
         Location_visibility &visibility;
         Controller_server &server;
         float view_angle = 30;
@@ -125,21 +152,45 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    auto &predator = tracker.get_current_state("predator");
-    destination = predator.location;
+    destination = tracker.predator.step.location;
 
     Pid_inputs pi;
     Location next_step;
     predator_state = Playing;
     while (predator_state == Playing){
-        // receives the predator location in cv implementation and converts to mice
-        auto predator_cell = map[predator.coordinates];
 
-        if (server.get_destination(destination)){
+        // if no new data -> stop robot and wait
+        if (!tracker.predator.is_valid()){
+            robot.set_left(0);
+            robot.set_right(0);
+            robot.update();
+            continue;
+        }
+
+        // determines where to go next
+
+        auto predator_cell = cells[cells.find(tracker.predator.step.location)];
+
+        // check if there is a new destination
+        if (Controller_server::get_destination(destination)){
             cout << "new destination received" << endl;
         }
+
+        auto destination_cell = cells[cells.find(destination)];
+
+        // check if the destination is occluded, if so the robot and wait for a new destination
+        if (destination_cell.occluded) {
+            cout << " destination is occluded " << endl;
+            robot.set_left(0);
+            robot.set_right(0);
+            robot.update();
+            continue;
+        }
+
+        // assumes it can drive to destination
         next_step = destination;
-        while (!navigability.is_visible(predator.location,next_step)) // if the destination is not navigable
+
+        while (!navigability.is_visible(tracker.predator.step.location,next_step)) // if the destination is not navigable
         {
             // it aims for one step back
             auto &next_step_cell = map.cells[map.cells.find(next_step)];
@@ -147,12 +198,15 @@ int main(int argc, char *argv[])
             if (move == Move{0,0}) break;
             next_step = map[next_step_cell.coordinates + move].location;
         }
-        pi.location = predator.location;
-        pi.rotation = predator.rotation;
+
+        //PID controller
+        pi.location = tracker.predator.step.location;
+        pi.rotation = tracker.predator.step.rotation;
         pi.destination = next_step;
         auto robot_command = controller.process(pi);
         robot.set_left((char)robot_command.left);
         robot.set_right((char)robot_command.right);
+
         if (puff) {
             robot.set_puf();
             puff = false;
