@@ -16,6 +16,7 @@ install_dependency(https://github.com/germanespinosa/params-cpp Params-cpp)
 install_dependency(https://github.com/germanespinosa/easy-tcp Easy-tcp)
 install_dependency(https://github.com/germanespinosa/tcp-messages Tcp_messages)
 install_dependency(https://github.com/germanespinosa/agent_tracking Agent_tracking)
+install_dependency(https://github.com/germanespinosa/experiment_service Experiment_service)
 
 ###
 ### MAIN LIBRARY SETUP
@@ -52,7 +53,8 @@ target_link_libraries( robot_lib
         LINK_PUBLIC
         agent_tracking
         params-cpp
-        gamepad_lib)
+        gamepad_lib
+        experiment_service)
 
 ###
 ### UTILITIES SETUP
