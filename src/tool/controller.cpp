@@ -5,6 +5,7 @@
 #include <robot.h>
 #include <pid_controller.h>
 #include <agent_tracking/tracking_client.h>
+#include <experiment.h>
 #include <controller.h>
 
 using namespace agent_tracking;
@@ -15,6 +16,7 @@ using namespace robot;
 using namespace cell_world;
 using namespace params_cpp;
 using namespace tcp_messages;
+using namespace experiment;
 
 Location destination;
 atomic<bool> puff = false;
@@ -42,6 +44,7 @@ int main(int argc, char *argv[])
     Key ip_key{"-r","--robot_ip"};
     Key tracker_key{"-t","--tracker_ip"};
     Key view_angle_key{"-v","--view_angle"};
+    Key experiment_service_key{"-e","--experiment_service_ip"};
 
     Controller_server server;
     server.start(Controller_service::get_port());
@@ -51,21 +54,23 @@ int main(int argc, char *argv[])
         cout << "Wrong parameters "<< endl;
         exit(1);
     }
-    auto occlusions_name = p.get(occlusions_key);
+    auto &occlusions_name = p.get(occlusions_key);
     auto robot_ip = p.get(ip_key, "127.0.0.1");
     auto view_angle = stof(p.get(view_angle_key, "30"));
     auto tracker_ip = p.get(tracker_key, "127.0.0.1");
+    auto experiment_service_ip = p.get(experiment_service_key, "127.0.0.1");
     Coordinates destination_coord;
-
 
     auto peeking_parameters = Resources::from("peeking").key("default").get_resource<Peeking_parameters>();
     auto wc = Resources::from("world_configuration").key("hexagonal").get_resource<World_configuration>();
     auto wi = Resources::from("world_implementation").key("hexagonal").key("canonical").get_resource<World_implementation>();
     auto occlusions = Resources::from("cell_group").key("hexagonal").key(occlusions_name).key("occlusions").get_resource<Cell_group_builder>();
     auto pb = Resources::from("paths").key("hexagonal").key(occlusions_name).key("astar").get_resource<Path_builder>();
+    auto capture_parameters = Resources::from("capture_parameters").key("default").get_resource<Capture_parameters>();
 
     World world(wc, wi, occlusions);
-    static Peeking peeking(peeking_parameters, world);
+    Capture capture(capture_parameters, world);
+    Peeking peeking(peeking_parameters, world);
     Cell_group cells = world.create_cell_group();
     Graph graph = world.create_graph();
     Paths paths = world.create_paths(pb);
@@ -101,10 +106,27 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    Experiment_client experiment_client;
+
+    cout << "starting experiment service connection ..." << flush;
+    if (experiment_client.connect(experiment_service_ip)) {
+        cout << " success " << endl;
+    } else {
+        cout << " failed." << endl;
+        exit(1);
+    }
+
+
     // connect to tracker (run agent_tracker)
     // customize the tracker
     struct Tracker : Tracking_client {
-        Tracker(Controller_server &server, Location_visibility &visibility, float view_angle) : server(server), visibility(visibility), view_angle(view_angle) {}
+        Tracker(Controller_server &server, Location_visibility &visibility, float view_angle, Capture &capture, Experiment_client &experiment_client, Peeking &peeking) :
+            server(server),
+            visibility(visibility),
+            view_angle(view_angle),
+            capture(capture),
+            experiment_client(experiment_client),
+            peeking(peeking){}
         void on_step(const cell_world::Step &step) override {
             if (step.agent_name == "predator") {
                 server.send_step(step);
@@ -113,6 +135,9 @@ int main(int argc, char *argv[])
             } else if (step.agent_name == "prey") {
                 if (contains_agent_state("predator")) {
                     auto predator = get_current_state("predator");
+                    auto is_captured = capture.is_captured( predator.location, to_radians(predator.rotation), step.location);
+                    if (is_captured)
+                        experiment_client.capture(step.frame);
                     if (visibility.is_visible(predator.location, step.location) &&
                         angle_difference(predator.location.atan(step.location), predator.rotation) < view_angle) {
                         if (peeking.is_seen(predator.location, step.location)) {
@@ -129,7 +154,10 @@ int main(int argc, char *argv[])
         Location_visibility &visibility;
         Controller_server &server;
         float view_angle = 30;
-    } tracker(server, visibility, view_angle);
+        Capture &capture;
+        Experiment_client &experiment_client;
+        Peeking &peeking;
+    } tracker(server, visibility, view_angle, capture, experiment_client, peeking);
 
     cout << "starting tracker connection ..." << flush;
     // tracker ip
@@ -222,6 +250,7 @@ int main(int argc, char *argv[])
     //If the controller is inactive, stop the motors
     robot.set_left(0);
     robot.set_right(0);
+    robot.update();
     cout << "finished!" << endl;
     return 0;
 }
