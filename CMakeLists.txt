@@ -29,7 +29,8 @@ set(robot_lib_files
         src/tracking_simulator.cpp
         src/gamepad_wrapper.cpp
         src/controller_service.cpp
-        src/controller_client.cpp)
+        src/controller_client.cpp
+        src/agent.cpp)
 
 add_library(robot_lib ${robot_lib_files})
 
@@ -76,16 +77,6 @@ target_link_libraries( gamepad PUBLIC robot_lib)
 
 add_executable(robot_paths src/tool/robot_paths.cpp)
 target_link_libraries(robot_paths PUBLIC robot_lib)
-
-###
-### TESTS
-###
-install_dependency(https://github.com/germanespinosa/catch CatchTests)
-
-test_library(robot_lib catchtests/basic.cpp)
-
-test_library(robot_lib catchtests/ip_controller.cpp)
-
 
 ###
 ### LIBRARY INSTALLATION

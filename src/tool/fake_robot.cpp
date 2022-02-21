@@ -5,6 +5,9 @@
 #include <params_cpp.h>
 #include <agent_tracking/tracking_client.h>
 #include <tracking_simulator.h>
+#include <experiment.h>
+#include <controller.h>
+#include <map>
 
 using namespace std;
 using namespace json_cpp;
@@ -12,7 +15,8 @@ using namespace cell_world;
 using namespace easy_tcp;
 using namespace params_cpp;
 using namespace robot;
-
+using namespace experiment;
+using namespace controller;
 
 int main(int argc, char *argv[])
 {
@@ -22,23 +26,52 @@ int main(int argc, char *argv[])
     Key frame_drop_key{"-fd","--frame_drop"};
     Key noise_key{"-n","--noise"};
     Key bad_reads_key{"-br","--bad_reads"};
-    Key occlusions_key{"-o","--occlusions"};
 
     Parser p(argc, argv);
-    auto occlusions_name = p.get(occlusions_key);
     auto wc = Resources::from("world_configuration").key("hexagonal").get_resource<World_configuration>();
     auto wi = Resources::from("world_implementation").key("hexagonal").key("canonical").get_resource<World_implementation>();
-    auto occlusions = Resources::from("cell_group").key("hexagonal").key(occlusions_name).key("occlusions").get_resource<Cell_group_builder>();
-    World world(wc, wi, occlusions);
+    World world(wc, wi);
     auto default_coordinates = world.create_cell_group().free_cells().random_cell().coordinates.to_json();
     Cell_group cells = world.create_cell_group();
     Map map(cells);
     auto rotation = stof(p.get(rotation_key,"0"));
-    auto interval = stoi(p.get(interval_key,"100"));
+    auto interval = stoi(p.get(interval_key,"30"));
     auto spawn_coordinates_str = p.get(spawn_coordinates_key, default_coordinates);
     auto frame_drop = stof(p.get(frame_drop_key,".1"));
     auto noise = stof(p.get(noise_key,".001"));
     auto bad_reads = stof(p.get(bad_reads_key,".01"));
+
+    Experiment_service experiment_service;
+    if (p.contains(Key("-e"))) {
+        experiment_service.start(Experiment_service::get_port());
+        cout << "experiment service started" << endl;
+    }
+    std::map<string, string> experiment_occlusions;
+    struct Robot_experiment_client : Experiment_client {
+        Robot_experiment_client(std::map<string, string> &experiment_occlusions, World &world, int interval) :
+                experiment_occlusions(experiment_occlusions),
+                world(world),
+                interval(interval){}
+        void on_experiment_started(const Start_experiment_response &experiment) {
+            experiment_occlusions[experiment.experiment_name] = experiment.world.occlusions;
+        }
+        void on_episode_started(const std::string &experiment_name) {
+            Robot_simulator::end_simulation();
+            auto occlusions = Resources::from("cell_group").
+                    key("hexagonal").
+                    key(experiment_occlusions[experiment_name]).
+                    key("occlusions").get_resource<Cell_group_builder>();
+            world.set_occlusions(occlusions);
+            auto state = Robot_simulator::get_robot_state();
+            Robot_simulator::start_simulation(world, state.location, state.theta, interval);
+        };
+        std::map<string, string> &experiment_occlusions;
+        World &world;
+        int interval;
+    } experiment_client(experiment_occlusions, world, interval);
+
+    experiment_client.connect("127.0.0.1");
+    experiment_client.subscribe();
 
     Tracking_simulator::set_frame_drop(frame_drop);
     Tracking_simulator::set_noise(noise);
@@ -59,9 +92,14 @@ int main(int argc, char *argv[])
         std::cout << "Server setup failed " << std::endl;
         return EXIT_FAILURE;
     }
+    Controller_server controller_server("../config/pid.json", "127.0.0.1", "127.0.0.1", "127.0.0.1");
+    if (!controller_server.start(Controller_service::get_port())) {
+        cout << "failed to start controller" << endl;
+        exit(1);
+    }
     agent_tracking::Tracking_client tracker;
     tracker.connect();
-    tracker.register_consumer();
+    tracker.subscribe();
     while (Robot_simulator::is_running())
         if (tracker.contains_agent_state("predator")){
             cout << "track: " << tracker.get_current_state("predator") << endl;

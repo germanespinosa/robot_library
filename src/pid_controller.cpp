@@ -1,4 +1,4 @@
-#include <pid_controller.h>
+#include <controller/pid_controller.h>
 // constants for motor threshold speeds
 #define MAX_FWD 105      // 90
 #define MIN_FWD 70      // 70
@@ -8,7 +8,7 @@
 
 using namespace cell_world;
 
-namespace robot{
+namespace controller{
 
     Pid_outputs Pid_controller::process(const Pid_inputs &inputs) {
         in = inputs;
