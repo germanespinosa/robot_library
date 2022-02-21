@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
     auto noise = stof(p.get(noise_key,".001"));
     auto bad_reads = stof(p.get(bad_reads_key,".01"));
 
-    Experiment_service experiment_service;
+    Experiment_server experiment_service;
     if (p.contains(Key("-e"))) {
         experiment_service.start(Experiment_service::get_port());
         cout << "experiment service started" << endl;
