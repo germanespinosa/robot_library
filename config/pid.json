@@ -2,5 +2,6 @@
   "P_value" : 40.0,
   "I_value" : 0.01,
   "D_value" : 3.0,
-  "speed"   : 50
+  "pursue_speed"   : 100,
+  "explore_speed"  : 50
 }
