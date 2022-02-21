@@ -4,6 +4,11 @@
 
 namespace controller {
 
+    enum Behavior{
+        Pursue,
+        Explore
+    };
+
     struct Pid_outputs : json_cpp::Json_object{
         Json_object_members(
                 Add_member(left);
@@ -30,12 +35,14 @@ namespace controller {
                 Add_member(P_value);
                 Add_member(I_value);
                 Add_member(D_value);
-                Add_member(speed);
+                Add_member(pursue_speed);
+                Add_member(explore_speed);
                 );
         double P_value;
         double I_value;
         double D_value;
-        double speed;
+        double pursue_speed;
+        double explore_speed;
     };
 
     struct Pid_controller : json_cpp::Json_object {
@@ -49,7 +56,7 @@ namespace controller {
                 Add_member(out);
                 Add_member(in);
                 );
-        Pid_outputs process(const Pid_inputs &);
+        Pid_outputs process(const Pid_inputs &, Behavior);
         static double normalize_error(double);
         Pid_parameters parameters;
         double error{};

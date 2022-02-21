@@ -79,6 +79,7 @@ namespace controller {
     void Controller_server::controller_process() {
         state = Controller_state::Playing;
         Pid_inputs pi;
+        Behavior behavior = Explore;
         while(state != Controller_state::Stopped){
             // if there is no information from the tracker
             if (!tracker.agent.is_valid() ||
@@ -94,7 +95,7 @@ namespace controller {
             pi.location = tracker.agent.step.location;
             pi.rotation = tracker.agent.step.rotation;
             pi.destination = get_next_stop();
-            auto robot_command = pid_controller.process(pi);
+            auto robot_command = pid_controller.process(pi, behavior);
             agent.set_left((char)robot_command.left);
             agent.set_right((char)robot_command.right);
             agent.update();

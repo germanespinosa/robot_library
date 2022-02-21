@@ -10,7 +10,13 @@ using namespace cell_world;
 
 namespace controller{
 
-    Pid_outputs Pid_controller::process(const Pid_inputs &inputs) {
+    Pid_outputs Pid_controller::process(const Pid_inputs &inputs, Behavior behavior) {
+        double speed;
+        if (behavior==Explore){
+            speed = parameters.explore_speed;
+        } else {
+            speed = parameters.pursue_speed;
+        }
         in = inputs;
         auto dist = inputs.location.dist(inputs.destination);
         // 0.01
@@ -28,7 +34,7 @@ namespace controller{
         error_integral += error;
 
         double adjustment = error * parameters.P_value - error_derivative * parameters.D_value + error_integral * parameters.I_value;
-        double left =  normalized_error * parameters.speed * ( dist + 1 ) - adjustment;
+        double left =  normalized_error * speed * ( dist + 1 ) - adjustment;
         int fwd_range = MAX_FWD - MIN_FWD;
         int bck_range = MIN_BCK - MAX_BCK;
         // catches outliers
@@ -50,7 +56,7 @@ namespace controller{
 
         out.left = (char) left;
 
-        double right = normalized_error * parameters.speed * ( dist + 1 ) + adjustment;
+        double right = normalized_error * speed * ( dist + 1 ) + adjustment;
 //        if (right < -127) right = -127;
 //        if (right > 127) right = 127;
         if (right < 0) {
