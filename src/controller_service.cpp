@@ -28,6 +28,10 @@ namespace controller {
         return atoi(port_str.c_str());
     }
 
+    bool Controller_service::set_behavior(int behavior) {
+        return ((Controller_server *) _server)->set_behavior(behavior);
+}
+
     void Controller_server::send_step(const Step &step) {
         Message update (step.agent_name + "_step", step);
         broadcast_subscribed(update);
@@ -79,7 +83,6 @@ namespace controller {
     void Controller_server::controller_process() {
         state = Controller_state::Playing;
         Pid_inputs pi;
-        Behavior behavior = Explore;
         while(state != Controller_state::Stopped){
             // if there is no information from the tracker
             if (!tracker.agent.is_valid() ||
@@ -167,6 +170,11 @@ namespace controller {
     void Controller_server::join() {
         process.join();
         Server::join();
+    }
+
+    bool Controller_server::set_behavior(int behavior) {
+        this->behavior = static_cast<Behavior> (behavior);
+        return true;
     }
 
     void Controller_server::Controller_tracker::on_step(const Step &step) {

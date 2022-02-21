@@ -1,5 +1,6 @@
 #include <tcp_messages.h>
 #include <cell_world.h>
+#include <controller/pid_controller.h>
 
 namespace controller{
     struct Controller_client : tcp_messages::Message_client {
@@ -14,6 +15,7 @@ namespace controller{
         bool stop();
         bool set_destination(const cell_world::Location &);
         bool prey_acquired();
+        bool set_behavior(Behavior);
         cell_world::World_info get_world_info();
     };
 }

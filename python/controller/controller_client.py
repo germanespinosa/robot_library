@@ -3,6 +3,9 @@ from cellworld import *
 
 
 class ControllerClient(MessageClient):
+    class Behavior:
+        Explore = 0
+        Pursue = 1
 
     def __init__(self):
         MessageClient.__init__(self)
@@ -36,3 +39,6 @@ class ControllerClient(MessageClient):
 
     def get_world_info(self) -> World_info:
         return self.send_request(Message("get_world_info")).get_body(World_info)
+
+    def set_behavior(self, behavior: int) -> bool:
+        return self.send_request(Message("set_behavior", behavior)).get_body(bool)

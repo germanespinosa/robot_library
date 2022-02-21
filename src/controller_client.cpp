@@ -28,4 +28,8 @@ namespace controller {
     World_info Controller_client::get_world_info() {
         return send_request(Message("get_world_info")).get_body<World_info>();
     }
+
+    bool Controller_client::set_behavior(Behavior behavior) {
+        return send_request(Message("set_behavior", behavior)).get_body<bool>();
+    }
 }

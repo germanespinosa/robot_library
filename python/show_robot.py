@@ -60,9 +60,11 @@ def on_step(step: Step):
     if step.agent_name == "predator":
         predator.is_valid = Timer(time_out)
         predator.step = step
+        controller.set_behavior(ControllerClient.Behavior.Explore)
     else:
         prey.is_valid = Timer(time_out)
         prey.step = step
+        controller.set_behavior(ControllerClient.Behavior.Pursue)
 
 # connect to controller
 

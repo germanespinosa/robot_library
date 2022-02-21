@@ -21,6 +21,7 @@ namespace controller {
             Add_route_with_response("stop", stop_controller);
             Add_route_with_response("pause", pause_controller);
             Add_route_with_response("resume", resume_controller);
+            Add_route_with_response("set_behavior", set_behavior, int);
             Allow_subscription();
         );
 
@@ -28,7 +29,9 @@ namespace controller {
         bool stop_controller();
         bool pause_controller();
         bool resume_controller();
+        bool set_behavior(int);
         static int get_port();
+
     };
 
 
@@ -52,6 +55,7 @@ namespace controller {
         bool pause();
         bool resume();
         void set_world(const cell_world::World_info&);
+        bool set_behavior(int behavior);
         void join();
         cell_world::Location destination;
         cell_world::Timer destination_timer;
@@ -66,6 +70,7 @@ namespace controller {
             Controller_server &controller_server;
         } experiment_client;
 
+        Behavior behavior = Explore;
         cell_world::Peeking peeking;
         cell_world::Location_visibility visibility;
         cell_world::Location_visibility navigability;
