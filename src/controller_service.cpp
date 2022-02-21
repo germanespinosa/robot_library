@@ -174,6 +174,7 @@ namespace controller {
 
     bool Controller_server::set_behavior(int behavior) {
         this->behavior = static_cast<Behavior> (behavior);
+        broadcast_subscribed(Message("behavior_set", behavior));
         return true;
     }
 
