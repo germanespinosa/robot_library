@@ -54,7 +54,6 @@ namespace controller {
             world_implementation(Resources::from("world_implementation").key("hexagonal").key("canonical").get_resource<World_implementation>()),
             world(world_configuration,world_implementation),
             cells(world.create_cell_group()),
-            graph(world.create_graph()),
             map(cells),
             paths(world.create_paths(Resources::from("paths").key("hexagonal").key("00_00").key("astar").get_resource<Path_builder>())),
             visibility(cells, world.cell_shape, world.cell_transformation),
@@ -161,13 +160,12 @@ namespace controller {
 
     void Controller_server::set_world(const World_info &world_info) {
         world_configuration = Resources::from("world_configuration").key(world_info.world_configuration).get_resource<World_configuration>();
-        world_implementation = Resources::from("world_implementation").key(world_info.world_implementation).get_resource<World_implementation>();
-        occlusions = Resources::from("cell_group").key(world_info.world_configuration).key(world_info.occlusions).get_resource<Cell_group_builder>();
+        world_implementation = Resources::from("world_implementation").key(world_info.world_configuration).key(world_info.world_implementation).get_resource<World_implementation>();
+        occlusions = Resources::from("cell_group").key(world_info.world_configuration).key(world_info.occlusions).key("occlusions").get_resource<Cell_group_builder>();
         world = World(world_configuration,world_implementation, occlusions);
         cells = world.create_cell_group();
-        graph = world.create_graph();
         map = Map(cells);
-        paths = Paths(world.create_paths(Resources::from("hexagonal").key("canonical").key("00_00").key("astar").get_resource<Path_builder>()));
+        paths = Paths(world.create_paths(Resources::from("paths").key(world_info.world_configuration).key(world_info.occlusions).key("astar").get_resource<Path_builder>()));
         visibility = Location_visibility(cells, world.cell_shape, world.cell_transformation);
         navigability = Location_visibility(cells, world.cell_shape,Transformation(world.cell_transformation.size, world.cell_transformation.rotation));
         capture = Capture(Resources::from("capture_parameters").key("default").get_resource<Capture_parameters>(), world);
@@ -220,11 +218,9 @@ namespace controller {
     }
 
     void Controller_server::Controller_experiment_client::on_episode_started(const string &experiment_name) {
-        /*
         experiment::Start_experiment_response experiment;
         experiment.load(get_experiment_file(experiment_name));
         controller_server.set_world(experiment.world);
-         */
         Experiment_client::on_episode_started(experiment_name);
     }
 

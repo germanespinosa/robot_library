@@ -80,7 +80,6 @@ namespace controller {
         cell_world::Cell_group_builder occlusions;
         cell_world::World world;
         cell_world::Cell_group cells;
-        cell_world::Graph graph;
         cell_world::Paths paths;
         cell_world::Map map;
         cell_world::Capture capture;
