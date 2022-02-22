@@ -19,8 +19,8 @@ namespace controller{
         }
         in = inputs;
         auto dist = inputs.location.dist(inputs.destination);
-        // 0.01
-        if ( dist < .05) {
+        // 0.05
+        if ( dist < .01) {
             out.left = 0;
             out.right = 0;
             return out;
