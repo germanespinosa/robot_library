@@ -8,6 +8,7 @@
 #include <experiment.h>
 #include <controller.h>
 #include <map>
+#include <robot_agent.h>
 
 using namespace std;
 using namespace json_cpp;
@@ -68,8 +69,13 @@ int main(int argc, char *argv[])
         std::cout << "Server setup failed " << std::endl;
         return EXIT_FAILURE;
     }
+    Agent_operational_limits limits;
+    limits.load("../config/robot_simulator_operational_limits.json");
+    Robot_agent robot(limits);
+    robot.connect("127.0.0.1");
+
     Controller_service::set_logs_folder("controller_logs/");
-    Controller_server controller_server("../config/pid.json", "127.0.0.1", "127.0.0.1", "127.0.0.1");
+    Controller_server controller_server("../config/pid.json", robot, "127.0.0.1", "127.0.0.1");
     if (!controller_server.start(Controller_service::get_port())) {
         cout << "failed to start controller" << endl;
         exit(1);

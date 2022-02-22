@@ -14,8 +14,8 @@ namespace controller {
                 Add_member(left);
                 Add_member(right);
         )
-        int left;
-        int right;
+        double left;
+        double right;
     };
 
     struct Pid_inputs : json_cpp::Json_object{

@@ -1,12 +1,14 @@
 #include <params_cpp.h>
 #include <iostream>
 #include <controller.h>
+#include <robot_agent.h>
+
 
 using namespace std;
 using namespace controller;
-using namespace robot;
 using namespace cell_world;
 using namespace params_cpp;
+using namespace robot;
 
 int main(int argc, char *argv[])
 {
@@ -22,7 +24,13 @@ int main(int argc, char *argv[])
     auto tracker_ip = p.get(tracker_key, "127.0.0.1");
     auto experiment_service_ip = p.get(experiment_service_key, "127.0.0.1");
 
-    Controller_server server("../config/pid.json",robot_ip, tracker_ip, experiment_service_ip);
+    Agent_operational_limits limits;
+    limits.load("../config/robot_operational_limits.json");
+    Robot_agent robot(limits);
+    robot.connect(robot_ip);
+
+
+    Controller_server server("../config/pid.json", robot, tracker_ip, experiment_service_ip);
     if (!server.start(Controller_service::get_port())) {
         cout << "failed to start controller" << endl;
         exit(1);

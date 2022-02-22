@@ -46,9 +46,10 @@ namespace controller {
     }
 
     Controller_server::Controller_server(const string &pid_config_file_path,
-                                         const string &agent_ip,
+                                         Agent &agent,
                                          const string &tracker_ip,
                                          const string &experiment_service_ip):
+            agent(agent),
             pid_controller (Json_from_file<Pid_parameters>(pid_config_file_path)),
             world_configuration(Resources::from("world_configuration").key("hexagonal").get_resource<World_configuration>()),
             world_implementation(Resources::from("world_implementation").key("hexagonal").key("canonical").get_resource<World_implementation>()),
@@ -70,11 +71,6 @@ namespace controller {
         }
         experiment_client.subscribe();
         cout << "connected to experiment server"<< endl;
-        if (!agent.connect(agent_ip)) {
-            cout << "failed to connect to agent" << endl;
-            exit(0);
-        }
-        cout << "connected to agent"<< endl;
         if (!tracker.connect(tracker_ip)) {
             cout << "failed to connect to tracking service" << endl;
             exit(0);
@@ -105,8 +101,8 @@ namespace controller {
             pi.rotation = tracker.agent.step.rotation;
             pi.destination = get_next_stop();
             auto robot_command = pid_controller.process(pi, behavior);
-            agent.set_left((char)robot_command.left);
-            agent.set_right((char)robot_command.right);
+            agent.set_left(robot_command.left);
+            agent.set_right(robot_command.right);
             agent.update();
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
@@ -167,7 +163,7 @@ namespace controller {
         map = Map(cells);
         paths = Paths(world.create_paths(Resources::from("paths").key(world_info.world_configuration).key(world_info.occlusions).key("astar").get_resource<Path_builder>()));
         visibility = Location_visibility(cells, world.cell_shape, world.cell_transformation);
-        navigability = Location_visibility(cells, world.cell_shape,Transformation(world.cell_transformation.size, world.cell_transformation.rotation));
+        navigability = Location_visibility(cells, world.cell_shape,Transformation(world.cell_transformation.size * 1.25, world.cell_transformation.rotation));
         capture = Capture(Resources::from("capture_parameters").key("default").get_resource<Capture_parameters>(), world);
         peeking = Peeking(Resources::from("peeking_parameters").key("default").get_resource<Peeking_parameters>(),world);
     }

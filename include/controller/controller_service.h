@@ -1,9 +1,8 @@
 #pragma once
 #include <tcp_messages.h>
-#include <controller/agent.h>
 #include <cell_world.h>
-#include <robot.h>
 #include <controller/pid_controller.h>
+#include <controller/agent.h>
 #include <agent_tracking/tracking_client.h>
 #include <experiment/experiment_client.h>
 
@@ -49,7 +48,7 @@ namespace controller {
     };
 
     struct Controller_server : tcp_messages::Message_server<Controller_service> {
-        Controller_server(const std::string &pid_config_file_path, const std::string &agent_ip, const std::string &tracker_ip, const std::string &experiment_service_ip);
+        Controller_server(const std::string &pid_config_file_path, Agent &, const std::string &tracker_ip, const std::string &experiment_service_ip);
         void send_step(const cell_world::Step &);
         bool set_destination(const cell_world::Location &);
         bool pause();
@@ -61,7 +60,7 @@ namespace controller {
         cell_world::Timer destination_timer;
         bool new_destination_data;
         std::atomic<Controller_state> state;
-        Agent agent;
+        Agent &agent;
 
         struct Controller_experiment_client : experiment::Experiment_client {
             explicit Controller_experiment_client(Controller_server &);

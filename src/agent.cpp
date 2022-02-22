@@ -5,85 +5,11 @@ using namespace easy_tcp;
 using namespace std;
 
 namespace controller {
-    Agent::Agent(){
-        message[0] = 0;
-        message[1] = 0;
-        message[2] = 0;
-        set_leds(true);
-    }
-
-    void Agent::set_left(char left) {
-        message[0] = left;
-        need_update = true;
-    }
-
-    void Agent::set_right(char right) {
-        message[1] = right;
-        need_update = true;
-    }
-
-    void Agent::set_puf() {
-        message[2] |= 1UL << 3;
-        need_update = true;
-        update();
-    }
-
-    void Agent::set_led(int led_number, bool val) {
-        if (val)
-            message[2] |= 1UL << led_number;
-        else
-            message[2] &=~(1UL << led_number);
-    }
-
-    bool Agent::update() {
-        if (!need_update) return true;
-        bool res = connection.send_data(message,3);
-        message[2] &=~(1UL << 3);
-        message[2] &=~(1UL << 4);
-        message[2] &=~(1UL << 5);
-        return res;
-    }
-
-    Agent::~Agent() {
-        message[0] = 0;
-        message[1] = 0;
-        message[2] = 0;
-        need_update = true;
-        update();
-    }
-
-    int Agent::port() {
-        string port_str (std::getenv("ROBOT_PORT")?std::getenv("ROBOT_PORT"):"4500");   // 4500
-        return atoi(port_str.c_str());
-    }
-
-    void Agent::set_leds(bool val) {
-        for (int i=0; i<3;i++) set_led(i,val);
-    }
-
-    void Agent::increase_brightness() {
-        set_led(4,true);
-    }
-
-    void Agent::decrease_brightness() {
-        set_led(5,true);
-    }
-
-    bool Agent::connect(const string &ip, int port) {
-        try {
-            connection = connection.connect_remote(ip, port);
-            return true;
-        } catch(...) {
-            return false;
+    double Agent_operational_limits::convert(double v) {
+        if (v==0) return stop;
+        if (v > 0) { // forward values
+            return abs(max_forward - min_forward) * v + min_forward;
         }
-    }
-
-    bool Agent::connect(const string &ip) {
-        return connect(ip, port());
-    }
-
-    bool Agent::connect() {
-        //return connect("192.168.137.155");
-        return connect("127.0.0.1");
+        return abs(max_backward - min_backward) * v + min_backward;
     }
 }

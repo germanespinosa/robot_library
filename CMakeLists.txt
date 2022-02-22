@@ -30,7 +30,8 @@ set(robot_lib_files
         src/gamepad_wrapper.cpp
         src/controller_service.cpp
         src/controller_client.cpp
-        src/agent.cpp)
+        src/agent.cpp
+        src/robot_agent.cpp)
 
 add_library(robot_lib ${robot_lib_files})
 
