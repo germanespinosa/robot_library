@@ -38,6 +38,7 @@ namespace robot {
         static void set_robot_speed(double);
         static void set_robot_rotation_speed(double);
         static void start_simulation(cell_world::World world, cell_world::Location, double, unsigned int);
+        static void set_occlusions(cell_world::Cell_group_builder occlusions);
         static void end_simulation();
         static bool is_running();
         static Robot_state get_robot_state();

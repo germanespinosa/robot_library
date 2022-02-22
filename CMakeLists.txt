@@ -78,6 +78,14 @@ target_link_libraries( gamepad PUBLIC robot_lib)
 add_executable(robot_paths src/tool/robot_paths.cpp)
 target_link_libraries(robot_paths PUBLIC robot_lib)
 
+####
+#### TESTS
+####
+
+install_dependency(https://github.com/germanespinosa/catch CatchTests)
+
+test_library(robot_lib catchtests/basic.cpp)
+
 ###
 ### LIBRARY INSTALLATION
 ###

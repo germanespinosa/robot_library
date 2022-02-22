@@ -121,12 +121,12 @@ namespace robot {
     void Robot_simulator::start_simulation(cell_world::World world, Location location, double rotation, unsigned int interval) {
         robot_world = world;
         habitat_polygon = Polygon(robot_world.space.center, robot_world.space.shape, robot_world.space.transformation);
+        robot_cells = robot_world.create_cell_group();
         cell_polygons.clear();
         auto occluded_cells = robot_world.create_cell_group().occluded_cells();
         for (auto &cell:occluded_cells) {
             cell_polygons.push_back(Polygon(cell.get().location,robot_world.cell_shape, robot_world.cell_transformation));
         }
-        robot_cells = robot_world.create_cell_group();
         robot_state.location = location;
         robot_state.theta = rotation;
         robot_state.left = 0;
@@ -159,6 +159,15 @@ namespace robot {
 
     bool Robot_simulator::is_running() {
         return !robot_finished;
+    }
+
+    void Robot_simulator::set_occlusions(cell_world::Cell_group_builder occlusions) {
+        robot_world.set_occlusions(occlusions);
+        cell_polygons.clear();
+        auto occluded_cells = robot_world.create_cell_group().occluded_cells();
+        for (auto &cell:occluded_cells) {
+            cell_polygons.push_back(Polygon(cell.get().location,robot_world.cell_shape, robot_world.cell_transformation));
+        }
     }
 
 }

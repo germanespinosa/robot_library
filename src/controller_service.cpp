@@ -1,4 +1,5 @@
 #include <controller/controller_service.h>
+#include <filesystem>
 
 using namespace cell_world;
 using namespace tcp_messages;
@@ -6,6 +7,8 @@ using namespace std;
 using namespace json_cpp;
 
 namespace controller {
+
+   string logs_path = "";
 
     bool Controller_service::set_destination(const cell_world::Location &location) {
         return ((Controller_server *) _server)->set_destination(location);
@@ -31,6 +34,11 @@ namespace controller {
     bool Controller_service::set_behavior(int behavior) {
         return ((Controller_server *) _server)->set_behavior(behavior);
 }
+
+    void Controller_service::set_logs_folder(const string &path) {
+        logs_path = path;
+        filesystem::create_directory(filesystem::path(logs_path));
+    }
 
     void Controller_server::send_step(const Step &step) {
         Message update (step.agent_name + "_step", step);
@@ -76,7 +84,6 @@ namespace controller {
         cout << "connected to tracking service" << endl;
         state = Controller_state::Stopped;
         process = thread(&Controller_server::controller_process, this);
-        while (state != Controller_state::Stopped);
         cout << "agent controller started" << endl;
     }
 
@@ -201,7 +208,6 @@ namespace controller {
         }
         Tracking_client::on_step(step);
     }
-    string logs_path = "logs/";
 
     string get_experiment_file(const string &experiment_name){
         return logs_path + experiment_name + ".json";
@@ -214,9 +220,11 @@ namespace controller {
     }
 
     void Controller_server::Controller_experiment_client::on_episode_started(const string &experiment_name) {
+        /*
         experiment::Start_experiment_response experiment;
         experiment.load(get_experiment_file(experiment_name));
         controller_server.set_world(experiment.world);
+         */
         Experiment_client::on_episode_started(experiment_name);
     }
 
