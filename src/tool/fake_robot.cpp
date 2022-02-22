@@ -40,39 +40,15 @@ int main(int argc, char *argv[])
     auto frame_drop = stof(p.get(frame_drop_key,".1"));
     auto noise = stof(p.get(noise_key,".001"));
     auto bad_reads = stof(p.get(bad_reads_key,".01"));
+    auto verbose = p.contains(Key("-v"));
 
+    Experiment_service::set_logs_folder("experiment_logs/");
     Experiment_server experiment_service;
     if (p.contains(Key("-e"))) {
         experiment_service.start(Experiment_service::get_port());
         cout << "experiment service started" << endl;
     }
     std::map<string, string> experiment_occlusions;
-    struct Robot_experiment_client : Experiment_client {
-        Robot_experiment_client(std::map<string, string> &experiment_occlusions, World &world, int interval) :
-                experiment_occlusions(experiment_occlusions),
-                world(world),
-                interval(interval){}
-        void on_experiment_started(const Start_experiment_response &experiment) {
-            experiment_occlusions[experiment.experiment_name] = experiment.world.occlusions;
-        }
-        void on_episode_started(const std::string &experiment_name) {
-            Robot_simulator::end_simulation();
-            auto occlusions = Resources::from("cell_group").
-                    key("hexagonal").
-                    key(experiment_occlusions[experiment_name]).
-                    key("occlusions").get_resource<Cell_group_builder>();
-            world.set_occlusions(occlusions);
-            auto state = Robot_simulator::get_robot_state();
-            Robot_simulator::start_simulation(world, state.location, state.theta, interval);
-        };
-        std::map<string, string> &experiment_occlusions;
-        World &world;
-        int interval;
-    } experiment_client(experiment_occlusions, world, interval);
-
-    experiment_client.connect("127.0.0.1");
-    experiment_client.subscribe();
-
     Tracking_simulator::set_frame_drop(frame_drop);
     Tracking_simulator::set_noise(noise);
     Tracking_simulator::set_bad_reads(bad_reads);
@@ -92,17 +68,38 @@ int main(int argc, char *argv[])
         std::cout << "Server setup failed " << std::endl;
         return EXIT_FAILURE;
     }
+    Controller_service::set_logs_folder("controller_logs/");
     Controller_server controller_server("../config/pid.json", "127.0.0.1", "127.0.0.1", "127.0.0.1");
     if (!controller_server.start(Controller_service::get_port())) {
         cout << "failed to start controller" << endl;
         exit(1);
     }
+
+    struct Robot_experiment_client : Experiment_client {
+        Robot_experiment_client(std::map<string, string> &experiment_occlusions) :
+                experiment_occlusions(experiment_occlusions){}
+        void on_experiment_started(const Start_experiment_response &experiment) {
+            experiment_occlusions[experiment.experiment_name] = experiment.world.occlusions;
+        }
+        void on_episode_started(const std::string &experiment_name) {
+            auto occlusions = Resources::from("cell_group").
+                    key("hexagonal").
+                    key(experiment_occlusions[experiment_name]).
+                    key("occlusions").get_resource<Cell_group_builder>();
+            Robot_simulator::set_occlusions(occlusions);
+        };
+        std::map<string, string> &experiment_occlusions;
+    } experiment_client(experiment_occlusions);
+
+    experiment_client.connect("127.0.0.1");
+    experiment_client.subscribe();
+
     agent_tracking::Tracking_client tracker;
     tracker.connect();
     tracker.subscribe();
     while (Robot_simulator::is_running())
         if (tracker.contains_agent_state("predator")){
-            cout << "track: " << tracker.get_current_state("predator") << endl;
+            if (verbose) cout << "track: " << tracker.get_current_state("predator") << endl;
             Timer::wait(.5);
         }
     server.stop();

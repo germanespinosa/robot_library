@@ -31,7 +31,7 @@ namespace controller {
         bool resume_controller();
         bool set_behavior(int);
         static int get_port();
-
+        static void set_logs_folder(const std::string &);
     };
 
 
