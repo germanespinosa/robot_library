@@ -1,8 +1,19 @@
+"""
+Automated robot controller
+To start autonomous driving must right click to start experiment
+
+TO DO:
+1. change random location to "belief state" new location
+2. test predator pursuit
+3. modify stop distance to cell size
+"""
+
 import sys
-from cellworld import World, Display, Location, Agent_markers, Capture, Capture_parameters, Step, Timer
+from cellworld import World, Display, Location, Agent_markers, Capture, Capture_parameters, Step, Timer, Cell_group_builder
 from controller import ControllerClient
 from cellworld_experiment_service import ExperimentClient
 from random import choice
+from time import sleep
 
 
 class AgentData:
@@ -13,9 +24,19 @@ class AgentData:
 
 
 def on_experiment_started(experiment):
-    global experiments
+    """
+    Starts experiment when right click
+    """
     print("Experiment started:", experiment)
     experiments[experiment.experiment_name] = experiment.copy()
+
+
+def on_episode_started(experiment_name):
+    global display
+    print("New Episode!!!", experiment_name)
+    occlusions = Cell_group_builder.get_from_name("hexagonal", experiments[experiment_name].world.occlusions, "occlusions")
+    display.set_occlusions(occlusions)
+    print(occlusions)
 
 
 def load_world(occlusions):
@@ -26,7 +47,7 @@ def load_world(occlusions):
 
 
 def on_episode_started(experiment_name):
-    print (experiment_name)
+    print(experiment_name)
     #load_world(experiments[experiment_name].world.occlusions)
 
 
@@ -45,39 +66,21 @@ def random_location():
 
 
 def on_step(step: Step):
-
-    global current_preditor_destination
-
-
-
+    global behavior
     if step.agent_name == "predator":
         predator.is_valid = Timer(time_out)
         predator.step = step
-        #print("Predator Location", predator.step, "Destination", current_preditor_destination)
-
-        # check distance between current and desired location
-        if current_preditor_destination.dist(predator.step.location) < 0.6: # make this cell length
-            current_preditor_destination = random_location()
-            controller.set_destination(current_preditor_destination)
-            print("NEW DESTINATION", current_preditor_destination)
-        # if predator still moving to desired location sends the desired location again
-        else:
-            controller.set_destination(current_preditor_destination)    # every time step is called send destination until distance is small enough
-        print(step.agent_name)
-
-        controller.set_behavior(ControllerClient.Behavior.Explore)
+        if behavior != ControllerClient.Behavior.Explore:
+            controller.set_behavior(ControllerClient.Behavior.Explore)
+            behavior = ControllerClient.Behavior.Explore
     else:
-        print(step.agent_name)
         prey.is_valid = Timer(time_out)
         prey.step = step
-        current_preditor_destination = prey.step.destination
-        print("ATTACK", current_preditor_destination)
-        controller.set_destination(current_preditor_destination)      # if prey is visible set new destination to prey location
         controller.set_behavior(ControllerClient.Behavior.Pursue)
 
 
 def on_click(event):
-    global current_preditor_destination
+    global current_predator_destination
     if event.button == 1:
         location = Location(event.xdata, event.ydata)  # event.x, event.y
         cell_id = world.cells.find(location)
@@ -86,12 +89,12 @@ def on_click(event):
         if destination_cell.occluded:
             print("can't navigate to an occluded cell")
             return
-        current_preditor_destination = destination_cell.location
+        current_predator_destination = destination_cell.location
         controller.set_destination(destination_cell.location)
     else:
         print("starting experiment")
         occlusions = "10_05"
-        exp = experiment_service.start_experiment(
+        exp = experiment_service.start_experiment(  # call start experiment
             prefix="PREFIX",
             suffix="SUFFIX",
             occlusions=occlusions,
@@ -100,8 +103,11 @@ def on_click(event):
             subject_name="SUBJECT",
             duration=10)
         print("EX", exp.experiment_name)
-        r = experiment_service.start_episode(exp.experiment_name)
+        r = experiment_service.start_episode(exp.experiment_name)   # call strat episode
         print(r)
+        # set initial destination
+        controller.set_destination(current_predator_destination)
+        display.circle(current_predator_destination, 0.01, "red")
 
 
 def on_keypress(event):
@@ -114,41 +120,40 @@ def on_keypress(event):
         running = False
 
 
+time_out = 1.0  # step timeout value
+display = None
+world = None
+
+# set globals - initial destination, behavior
+load_world("10_05")
+current_predator_destination = random_location()
+behavior = -1
+
+#  create predator and prey objects
 predator = AgentData("predator")
 prey = AgentData("prey")
 
-time_out = 1.0
-display = None
-world = None
-load_world("00_00")
-
-# set initial destination
-current_predator_destination = random_location()
-
+# connect to experiment server
 experiment_service = ExperimentClient()
-experiment_service.connect("127.0.0.1")
-experiment_service.set_request_time_out(5000)
-experiments = {}
 experiment_service.on_experiment_started = on_experiment_started
 experiment_service.on_episode_started = on_episode_started
+experiment_service.connect("127.0.0.1")
+experiment_service.set_request_time_out(5000)
 experiment_service.subscribe()
+experiments = {}
 if "-e" in sys.argv:
     e = experiment_service.start_experiment(prefix="PREFIX",
                                             suffix="SUFFIX",
                                             subject_name="SUBJECT",
                                             world_configuration="hexagonal",
                                             world_implementation="vr",
-                                            occlusions="10_05",
+                                            occlusions="10_05",         # world config
                                             duration=10)
     print(e)
 
 
-# predator = AgentData("predator")
-# prey = AgentData("prey")
-# current_preditor_destination = predator.step.location
-# print("PPPPPPPPPPPPPPPPPPPPPP", current_preditor_destination)
-
-
+# resend destination timer
+controller_timer = Timer(3.0)
 
 # connect to controller
 controller = ControllerClient()
@@ -159,25 +164,39 @@ controller.set_request_time_out(10000)
 controller.subscribe()
 controller.on_step = on_step
 
-
-capture = Capture(Capture_parameters(2.0, 90.0), world)
-
+# initialize keyboard/click interrupts
 cid1 = display.fig.canvas.mpl_connect('button_press_event', on_click)
-running = True
 cid_keypress = display.fig.canvas.mpl_connect('key_press_event', on_keypress)
 
-# controller.set_destination(current_predator_destination)
-# predator.step
-
+# add predator and prey to world
 display.set_agent_marker("predator", Agent_markers.arrow())
 display.set_agent_marker("prey", Agent_markers.arrow())
 
-# # check prey
-# prey.is_valid = 9
-# prey.step.location = Location(x=0.5, y=0.5)
 
+running = True
 while running:
 
+    # check predator distance from destination
+    if current_predator_destination.dist(predator.step.location) < 0.05: # make this cell length
+        current_predator_destination = random_location()
+        controller.set_destination(current_predator_destination)
+        controller_timer.reset()                                  # reset timer
+        display.circle(current_predator_destination, 0.01, "red")
+        print("NEW DESTINATION", current_predator_destination)
+
+    # check for timeout
+    if not controller_timer:
+        controller.set_destination(current_predator_destination) # resend destination
+        controller_timer.reset()
+
+    # check if prey was seen
+    # if prey.is_valid:
+    #     current_predator_destination = prey.step.destination
+    #     print("ATTACK", current_predator_destination)
+    #     controller.set_destination(current_predator_destination)      # if prey is visible set new destination to prey location
+
+
+    # plotting the current location of the predator and prey
     if prey.is_valid:
         display.agent(step=prey.step, color="blue", size=10)
 
@@ -191,6 +210,7 @@ while running:
         display.agent(step=predator.step, color="gray", size=10)
 
     display.update()
+    sleep(0.1)
 
 
 controller.unsubscribe()
