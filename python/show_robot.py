@@ -112,6 +112,7 @@ def on_click(event):
             subject_name="SUBJECT",
             duration=10)
         experiment_service.start_episode(exp.experiment_name)
+        print(occlusions)
 
 
 cid1 = display.fig.canvas.mpl_connect('button_press_event', on_click)
