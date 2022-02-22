@@ -7,6 +7,7 @@ from cellworld_experiment_service import ExperimentClient
 
 time_out = 1.0
 
+
 class AgentData:
     def __init__(self, agent_name: str):
         self.is_valid = None
@@ -16,6 +17,7 @@ class AgentData:
 
 display = None
 world = None
+occlusions = Cell_group_builder()
 
 
 def on_experiment_started(experiment):
@@ -23,11 +25,15 @@ def on_experiment_started(experiment):
     experiments[experiment.experiment_name] = experiment.copy()
 
 
+world_changed = False
+
+
 def on_episode_started(experiment_name):
-    global display
+    global occlusions
+    global world_changed
     print("New Episode!!!", experiment_name)
     occlusions = Cell_group_builder.get_from_name("hexagonal", experiments[experiment_name].world.occlusions, "occlusions")
-    display.set_occlusions(occlusions)
+    world_changed = True
 
 
 experiment_service = ExperimentClient()
@@ -93,7 +99,6 @@ def on_click(event):
         location = Location(event.xdata, event.ydata)  # event.x, event.y
         cell_id = world.cells.find(location)
         destination_cell = world.cells[cell_id]
-        print("CELL", destination_cell)
         if destination_cell.occluded:
             print("can't navigate to an occluded cell")
             return
@@ -101,17 +106,7 @@ def on_click(event):
         controller.set_destination(destination_cell.location)
         print(t.to_seconds() * 1000)
     else:
-        print("starting experiment")
-        occlusions = "10_05"
-        exp = experiment_service.start_experiment(
-            prefix="PREFIX",
-            suffix="SUFFIX",
-            occlusions=occlusions,
-            world_implementation="canonical",
-            world_configuration="hexagonal",
-            subject_name="SUBJECT",
-            duration=10)
-        experiment_service.start_episode(exp.experiment_name)
+        display.set_occlusions(occlusions)
 
 
 cid1 = display.fig.canvas.mpl_connect('button_press_event', on_click)
@@ -135,8 +130,12 @@ display.set_agent_marker("predator", Agent_markers.arrow())
 display.set_agent_marker("prey", Agent_markers.arrow())
 
 while running:
+    if world_changed:
+        display.set_occlusions(occlusions)
+        world_changed = False
+
     if prey.is_valid:
-        display.agent(step=prey.step, color="blue", size=10)
+        display.agent(step=prey.step, color="green", size=10)
     else:
         display.agent(step=prey.step, color="gray", size=10)
 
