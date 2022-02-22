@@ -17,6 +17,7 @@ install_dependency(https://github.com/germanespinosa/easy-tcp Easy-tcp)
 install_dependency(https://github.com/germanespinosa/tcp-messages Tcp_messages)
 install_dependency(https://github.com/germanespinosa/agent_tracking Agent_tracking)
 install_dependency(https://github.com/germanespinosa/experiment_service Experiment_service)
+install_dependency(https://github.com/germanespinosa/cellworld_controller Controller)
 
 ###
 ### MAIN LIBRARY SETUP
@@ -25,12 +26,8 @@ install_dependency(https://github.com/germanespinosa/experiment_service Experime
 set(robot_lib_files
         src/robot.cpp
         src/robot_simulator.cpp
-        src/pid_controller.cpp
         src/tracking_simulator.cpp
         src/gamepad_wrapper.cpp
-        src/controller_service.cpp
-        src/controller_client.cpp
-        src/agent.cpp
         src/robot_agent.cpp)
 
 add_library(robot_lib ${robot_lib_files})
@@ -56,7 +53,8 @@ target_link_libraries( robot_lib
         agent_tracking
         params-cpp
         gamepad_lib
-        experiment_service)
+        experiment_service
+        controller)
 
 ###
 ### UTILITIES SETUP
@@ -70,8 +68,8 @@ target_link_libraries( robot PUBLIC robot_lib)
 add_executable(stop_fake_robot src/tool/stop_fake_robot.cpp)
 target_link_libraries( stop_fake_robot PUBLIC robot_lib)
 
-add_executable(controller src/tool/controller.cpp)
-target_link_libraries( controller PUBLIC robot_lib)
+add_executable(robot_controller src/tool/controller.cpp)
+target_link_libraries( robot_controller PUBLIC robot_lib)
 
 add_executable(gamepad src/tool/gamepad.cpp)
 target_link_libraries( gamepad PUBLIC robot_lib)
