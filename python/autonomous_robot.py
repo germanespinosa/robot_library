@@ -6,6 +6,7 @@ TO DO:
 1. change random location to "belief state" new location
 2. test predator pursuit
 3. modify stop distance to cell size
+4. find random location from robot world
 """
 
 import sys
@@ -91,6 +92,7 @@ def on_click(event):
             return
         current_predator_destination = destination_cell.location
         controller.set_destination(destination_cell.location)
+        display.circle(current_predator_destination, 0.01, "red")
     else:
         print("starting experiment")
         occlusions = "10_05"
@@ -105,9 +107,7 @@ def on_click(event):
         print("EX", exp.experiment_name)
         r = experiment_service.start_episode(exp.experiment_name)   # call strat episode
         print(r)
-        # set initial destination
-        controller.set_destination(current_predator_destination)
-        display.circle(current_predator_destination, 0.01, "red")
+
 
 
 def on_keypress(event):
@@ -118,6 +118,13 @@ def on_keypress(event):
         controller.resume()
     if event.key == "q":
         running = False
+    if event.key == "m":
+        global controller_timer
+        # set initial destination and timer
+        controller_timer = Timer(3.0)
+        controller.set_destination(current_predator_destination)
+        display.circle(current_predator_destination, 0.01, "red")
+
 
 
 time_out = 1.0  # step timeout value
@@ -152,8 +159,8 @@ if "-e" in sys.argv:
     print(e)
 
 
-# resend destination timer
-controller_timer = Timer(3.0)
+# initialize controller timer variable
+controller_timer = 1
 
 # connect to controller
 controller = ControllerClient()
@@ -163,6 +170,8 @@ if not controller.connect("127.0.0.1", 4590):
 controller.set_request_time_out(10000)
 controller.subscribe()
 controller.on_step = on_step
+
+
 
 # initialize keyboard/click interrupts
 cid1 = display.fig.canvas.mpl_connect('button_press_event', on_click)
