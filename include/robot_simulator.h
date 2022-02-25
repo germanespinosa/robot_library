@@ -2,6 +2,7 @@
 #include <easy_tcp.h>
 #include <cell_world.h>
 #include <agent_tracking/tracking_service.h>
+#include <tracking_simulator.h>
 
 namespace robot {
 
@@ -37,7 +38,7 @@ namespace robot {
         void on_disconnect() override;
         static void set_robot_speed(double);
         static void set_robot_rotation_speed(double);
-        static void start_simulation(cell_world::World world, cell_world::Location, double, unsigned int);
+        static void start_simulation(cell_world::World world, cell_world::Location, double, unsigned int, Tracking_simulator &);
         static void set_occlusions(cell_world::Cell_group_builder occlusions);
         static void end_simulation();
         static bool is_running();

@@ -4,12 +4,10 @@
 #include <agent_tracking/tracking_service.h>
 
 namespace robot {
-    struct Tracking_simulator{
-        static bool start();
-        static bool send_update(const cell_world::Step &);
-        static bool stop();
-        static void set_noise(double );
-        static void set_bad_reads(double );
-        static void set_frame_drop(double );
+    struct Tracking_simulator : agent_tracking::Tracking_server {
+        bool send_update(const cell_world::Step &);
+        double frame_drop = .05; //send 95% of the updates (simulates missing frames)
+        double noise = .001; //reads are up to .1% off
+        double bad_reads = .01; // 1% of reads are bad
     };
 }

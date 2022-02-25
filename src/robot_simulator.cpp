@@ -6,6 +6,7 @@
 #include <atomic>
 #include <chrono>
 #include <tracking_simulator.h>
+#include <controller.h>
 
 using namespace json_cpp;
 using namespace std;
@@ -25,6 +26,7 @@ namespace robot {
     Polygon_list cell_polygons;
     int frame_number = 0;
     mutex rm;
+    Tracking_simulator *tracking_simulator = nullptr;
 
     unsigned int robot_interval = 50;
     atomic<bool> robot_running = false;
@@ -63,7 +65,6 @@ namespace robot {
         info.agent_name = "predator";
         info.location = location;
         info.rotation = to_degrees(theta);
-        auto cell_id = robot_cells.find(info.location);
         info.time_stamp = robot_time_stamp.to_seconds();
         info.frame = ++frame_number;
         return info;
@@ -109,7 +110,7 @@ namespace robot {
         while (robot_running){
             robot_state.update();
             auto step = robot_state.to_step();
-            Tracking_simulator::send_update(step);
+            tracking_simulator->send_update(step);
             std::this_thread::sleep_for(std::chrono::milliseconds(robot_interval));
         }
         log.close();
@@ -118,7 +119,8 @@ namespace robot {
 
     thread simulation_thread;
 
-    void Robot_simulator::start_simulation(cell_world::World world, Location location, double rotation, unsigned int interval) {
+    void Robot_simulator::start_simulation(cell_world::World world, Location location, double rotation, unsigned int interval, Tracking_simulator &new_tracking_simulator) {
+        tracking_simulator = &new_tracking_simulator;
         robot_world = world;
         habitat_polygon = Polygon(robot_world.space.center, robot_world.space.shape, robot_world.space.transformation);
         robot_cells = robot_world.create_cell_group();
@@ -137,9 +139,6 @@ namespace robot {
         robot_state.led2 = false;
         robot_interval = interval;
         robot_running = true;
-        if (!Tracking_simulator::start()) {
-            throw runtime_error("failed to start tracking simulator");
-        }
         simulation_thread=thread(&simulation);
     }
 
