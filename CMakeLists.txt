@@ -30,6 +30,8 @@ set(robot_lib_files
         src/gamepad_wrapper.cpp
         src/robot_agent.cpp)
 
+dependency_include(include)
+
 add_library(robot_lib ${robot_lib_files})
 
 set_target_properties(robot_lib
