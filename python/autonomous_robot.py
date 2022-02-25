@@ -1,11 +1,13 @@
 """
 Automated robot controller
-To start autonomous driving must right click to start experiment
+Program Inputs:
+1. To start autonomous motion type m
+2. To start experiment and avoind occlusions right click
+3. To follow robot path modify path variable controller_service.cpp
 
 TO DO:
 1. change random location to "belief state" new location
 2. test predator pursuit
-3. modify stop distance to cell size
 """
 
 import sys
@@ -42,7 +44,7 @@ def on_episode_started(experiment_name):
 def load_world(occlusions):
     global display
     global world
-    world = World.get_from_parameters_names("hexagonal", "canonical", occlusions)
+    world = World.get_from_parameters_names("hexagonal", "canonical", occlusions) ################# fix this
     display = Display(world, fig_size=(9.0*.75, 8.0*.75), animated=True)
 
 
@@ -91,6 +93,7 @@ def on_click(event):
             return
         current_predator_destination = destination_cell.location
         controller.set_destination(destination_cell.location)
+        display.circle(current_predator_destination, 0.01, "red")
     else:
         print("starting experiment")
         occlusions = "10_05"
@@ -105,9 +108,7 @@ def on_click(event):
         print("EX", exp.experiment_name)
         r = experiment_service.start_episode(exp.experiment_name)   # call strat episode
         print(r)
-        # set initial destination
-        controller.set_destination(current_predator_destination)
-        display.circle(current_predator_destination, 0.01, "red")
+
 
 
 def on_keypress(event):
@@ -118,6 +119,13 @@ def on_keypress(event):
         controller.resume()
     if event.key == "q":
         running = False
+    if event.key == "m":
+        global controller_timer
+        # set initial destination and timer
+        controller_timer = Timer(3.0)
+        controller.set_destination(current_predator_destination)
+        display.circle(current_predator_destination, 0.01, "red")
+
 
 
 time_out = 1.0  # step timeout value
@@ -126,6 +134,7 @@ world = None
 
 # set globals - initial destination, behavior
 load_world("10_05")
+cell_size = world.implementation.cell_transformation.size
 current_predator_destination = random_location()
 behavior = -1
 
@@ -152,8 +161,8 @@ if "-e" in sys.argv:
     print(e)
 
 
-# resend destination timer
-controller_timer = Timer(3.0)
+# initialize controller timer variable
+controller_timer = 1
 
 # connect to controller
 controller = ControllerClient()
@@ -163,6 +172,8 @@ if not controller.connect("127.0.0.1", 4590):
 controller.set_request_time_out(10000)
 controller.subscribe()
 controller.on_step = on_step
+
+
 
 # initialize keyboard/click interrupts
 cid1 = display.fig.canvas.mpl_connect('button_press_event', on_click)
@@ -177,7 +188,7 @@ running = True
 while running:
 
     # check predator distance from destination
-    if current_predator_destination.dist(predator.step.location) < 0.05: # make this cell length
+    if current_predator_destination.dist(predator.step.location) < cell_size and controller_timer != 1: # make this cell length
         current_predator_destination = random_location()
         controller.set_destination(current_predator_destination)
         controller_timer.reset()                                  # reset timer
