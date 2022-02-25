@@ -50,17 +50,15 @@ int main(int argc, char *argv[])
 
 
     World world(wc, wi);
-
     Capture capture(capture_parameters, world);
     Peeking peeking(peeking_parameters, world);
     Cell_group cells = world.create_cell_group();
+    Map map(cells);
     Location_visibility visibility(cells, wc.cell_shape, wi.cell_transformation);
 
-    auto default_coordinates = world.create_cell_group().free_cells().random_cell().coordinates.to_json();
-    Map map(cells);
     auto rotation = stof(p.get(rotation_key,"0"));
     auto interval = stoi(p.get(interval_key,"30"));
-    auto spawn_coordinates_str = p.get(spawn_coordinates_key, default_coordinates);
+    auto &spawn_coordinates_str = p.get(spawn_coordinates_key, "{\"x\":0,\"y\":0}");
     auto verbose = p.contains(Key("-v"));
 
     Experiment_service::set_logs_folder("experiment_logs/");
@@ -72,7 +70,7 @@ int main(int argc, char *argv[])
     std::map<string, string> experiment_occlusions;
     Tracking_simulator tracking_server;
 
-    auto &tracking_client = tracking_server.create_local_client<Controller_server::Controller_tracker>(visibility, 90, capture, std::ref(controller_experiment_client), peeking, "predator", "prey");
+    auto &tracking_client = tracking_server.create_local_client<Controller_server::Controller_tracking_client>(visibility, 90, capture, std::ref(controller_experiment_client), peeking, "predator", "prey");
 
     auto &experiment_client= experiment_server.create_local_client<Robot_experiment_client>(experiment_occlusions);
     experiment_client.subscribe();
@@ -97,7 +95,6 @@ int main(int argc, char *argv[])
     limits.load("../config/robot_simulator_operational_limits.json");
     Robot_agent robot(limits);
     robot.connect("127.0.0.1");
-
 
     Controller_service::set_logs_folder("controller_logs/");
     Controller_server controller_server("../config/pid.json", robot, tracking_client, controller_experiment_client);
