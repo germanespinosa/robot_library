@@ -1,15 +1,15 @@
 #include <iostream>
 #include <easy_tcp.h>
-#include <robot_simulator.h>
-#include <robot.h>
+#include <robot_lib/robot_simulator.h>
+#include <robot_lib/robot.h>
 #include <params_cpp.h>
 #include <agent_tracking/tracking_client.h>
-#include <tracking_simulator.h>
+#include <robot_lib/tracking_simulator.h>
 #include <cell_world.h>
 #include <experiment.h>
 #include <controller.h>
 #include <map>
-#include <robot_agent.h>
+#include <robot_lib/robot_agent.h>
 
 using namespace std;
 using namespace json_cpp;

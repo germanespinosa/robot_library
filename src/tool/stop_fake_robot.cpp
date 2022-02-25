@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cell_world.h>
-#include <robot_simulator.h>
-#include <robot.h>
+#include <robot_lib/robot_simulator.h>
+#include <robot_lib/robot.h>
 #include <easy_tcp.h>
 
 using namespace std;
