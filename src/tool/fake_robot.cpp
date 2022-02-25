@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 
     auto rotation = stof(p.get(rotation_key,"0"));
     auto interval = stoi(p.get(interval_key,"30"));
-    auto &spawn_coordinates_str = p.get(spawn_coordinates_key, "{\"x\":0,\"y\":0}");
+    auto spawn_coordinates_str = p.get(spawn_coordinates_key, "{\"x\":0,\"y\":0}");
     auto verbose = p.contains(Key("-v"));
 
     Experiment_service::set_logs_folder("experiment_logs/");
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     std::map<string, string> experiment_occlusions;
     Tracking_simulator tracking_server;
 
-    auto &tracking_client = tracking_server.create_local_client<Controller_server::Controller_tracking_client>(visibility, 90, capture, std::ref(controller_experiment_client), peeking, "predator", "prey");
+    auto &tracking_client = tracking_server.create_local_client<Controller_server::Controller_tracking_client>(visibility, 90, capture, peeking, "predator", "prey");
 
     auto &experiment_client= experiment_server.create_local_client<Robot_experiment_client>(experiment_occlusions);
     experiment_client.subscribe();
