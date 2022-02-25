@@ -11,14 +11,16 @@ namespace robot{
 
     void Robot_agent::set_left(double left_value) {
         char left = limits.convert(left_value);
+        if (message[0] != left)
+            need_update = true;
         message[0] = left;
-        need_update = true;
     }
 
     void Robot_agent::set_right(double right_value) {
         char right = limits.convert(right_value);
+        if (message[1] != right)
+            need_update = true;
         message[1] = right;
-        need_update = true;
     }
 
     void Robot_agent::capture() {
@@ -36,6 +38,7 @@ namespace robot{
 
     bool Robot_agent::update() {
         if (!need_update) return true;
+        cout << "robot " << int(message[0]) << "-" << int(message[0]) << endl;
         bool res = connection.send_data(message,3);
         message[2] &=~(1UL << 3);
         message[2] &=~(1UL << 4);
