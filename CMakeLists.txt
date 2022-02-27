@@ -79,6 +79,9 @@ target_link_libraries( gamepad PUBLIC robot_lib)
 add_executable(robot_paths src/tool/robot_paths.cpp)
 target_link_libraries(robot_paths PUBLIC robot_lib)
 
+add_executable(robot_worlds src/tool/robot_worlds.cpp)
+target_link_libraries(robot_worlds PUBLIC robot_lib)
+
 ####
 #### TESTS
 ####

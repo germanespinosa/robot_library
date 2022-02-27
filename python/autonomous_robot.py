@@ -11,7 +11,7 @@ TO DO:
 """
 
 import sys
-from cellworld import World, Display, Location, Agent_markers, Capture, Capture_parameters, Step, Timer, Cell_group_builder
+from cellworld import World, Display, Location, Agent_markers, Capture, Capture_parameters, Step, Timer, Cell_group_builder, Polygon, Polygon_list, Location_visibility
 from controller import ControllerClient
 from cellworld_experiment_service import ExperimentClient
 from random import choice
@@ -44,8 +44,12 @@ def on_episode_started(experiment_name):
 def load_world(occlusions):
     global display
     global world
+    global visibility
     world = World.get_from_parameters_names("hexagonal", "canonical", occlusions) ################# fix this
     display = Display(world, fig_size=(9.0*.75, 8.0*.75), animated=True)
+    occlusion_locations = world.cells.occluded_cells().get("location") # all oclludded LOCATIONS in world
+    occlusions_polygons = Polygon_list.get_polygons(occlusion_locations, world.configuration.cell_shape.sides, world.implementation.cell_transformation.size / 2, world.implementation.space.transformation.rotation + world.implementation.cell_transformation.rotation) # ploygon object
+    visibility = Location_visibility(occlusions_polygons) # create visiblilty object
 
 
 def on_episode_started(experiment_name):
@@ -57,14 +61,18 @@ def random_location():
     """
     Returns random open location in world
     """
-    location = choice(world.cells.get("location"))
-    cell_id = world.cells.find(location)
-    destination_cell = world.cells[cell_id]
-    while destination_cell.occluded:
-        location = choice(world.cells.get("location"))
-        cell_id = world.cells.find(location)
-        destination_cell = world.cells[cell_id]
+    location = choice(world.cells.free_cells().get("location"))
     return location
+
+def hidden_location():
+    """
+    Returns random hidden location in world
+    """
+    current_location = predator.step.location
+    #current_location = world.cells[150].location
+    invis_id_list = visibility.invisible_locations(current_location, world)
+    location_id = choice(invis_id_list)
+    return world.cells.get("location")[location_id]
 
 
 def on_step(step: Step):
@@ -110,7 +118,6 @@ def on_click(event):
         print(r)
 
 
-
 def on_keypress(event):
     global running
     if event.key == "p":
@@ -122,6 +129,7 @@ def on_keypress(event):
     if event.key == "m":
         global controller_timer
         # set initial destination and timer
+        print("m")
         controller_timer = Timer(3.0)
         controller.set_destination(current_predator_destination)
         display.circle(current_predator_destination, 0.01, "red")
@@ -136,6 +144,7 @@ world = None
 load_world("10_05")
 cell_size = world.implementation.cell_transformation.size
 current_predator_destination = random_location()
+print("oihfeoisdfhsdiofhdoisfh",current_predator_destination)
 behavior = -1
 
 #  create predator and prey objects
