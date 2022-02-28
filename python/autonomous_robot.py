@@ -121,10 +121,12 @@ def on_click(event):
 def on_keypress(event):
     global running
     if event.key == "p":
+        print("pause")
         controller.pause()
     if event.key == "r":
         controller.resume()
     if event.key == "q":
+        controller.pause()
         running = False
     if event.key == "m":
         global controller_timer
