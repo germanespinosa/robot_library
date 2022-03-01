@@ -23,13 +23,13 @@ class ControllerClient(MessageClient):
             self.on_world_update(world_info)
 
     def pause(self) -> bool:
-        return self.send_request(Message("pause_predator")).get_body(bool)
+        return self.send_request(Message("pause")).get_body(bool)
 
     def resume(self) -> bool:
-        return self.send_request(Message("resume_predator")).get_body(bool)
+        return self.send_request(Message("resume")).get_body(bool)
 
     def stop(self) -> bool:
-        return self.send_request(Message("stop_predator")).get_body(bool)
+        return self.send_request(Message("stop")).get_body(bool)
 
     def set_destination(self, new_destination: Location) -> bool:
         return self.send_request(Message("set_destination", new_destination)).get_body(bool)
