@@ -64,15 +64,15 @@ def random_location():
     location = choice(world.cells.free_cells().get("location"))
     return location
 
+
 def hidden_location():
     """
     Returns random hidden location in world
     """
     current_location = predator.step.location
-    #current_location = world.cells[150].location
-    invis_id_list = visibility.invisible_locations(current_location, world)
-    location_id = choice(invis_id_list)
-    return world.cells.get("location")[location_id]
+    hidden_cells = visibility.hidden_cells(current_location, world.cells)
+    new_cell = choice(hidden_cells)
+    return new_cell.location
 
 
 def on_step(step: Step):
@@ -121,10 +121,12 @@ def on_click(event):
 def on_keypress(event):
     global running
     if event.key == "p":
+        print("pause")
         controller.pause()
     if event.key == "r":
         controller.resume()
     if event.key == "q":
+        controller.pause()
         running = False
     if event.key == "m":
         global controller_timer
@@ -143,13 +145,15 @@ world = None
 # set globals - initial destination, behavior
 load_world("10_05")
 cell_size = world.implementation.cell_transformation.size
-current_predator_destination = random_location()
-print("oihfeoisdfhsdiofhdoisfh",current_predator_destination)
-behavior = -1
+
 
 #  create predator and prey objects
 predator = AgentData("predator")
 prey = AgentData("prey")
+
+# set initial desitnation
+current_predator_destination = hidden_location()
+behavior = -1
 
 # connect to experiment server
 experiment_service = ExperimentClient()
@@ -198,7 +202,7 @@ while running:
 
     # check predator distance from destination
     if current_predator_destination.dist(predator.step.location) < cell_size and controller_timer != 1: # make this cell length
-        current_predator_destination = random_location()
+        current_predator_destination = hidden_location()
         controller.set_destination(current_predator_destination)
         controller_timer.reset()                                  # reset timer
         display.circle(current_predator_destination, 0.01, "red")

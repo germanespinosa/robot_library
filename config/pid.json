@@ -1,7 +1,10 @@
 {
-  "P_value" : 1.0,
-  "I_value" : 0.01,
-  "D_value" : 0.03,
-  "pursue_speed"   : 0.5,
-  "explore_speed"  : 0.2
+  "P_pursue" : 0.04,
+  "I_pursue" : 0.004,
+  "D_pursue" : 0.22,
+  "pursue_speed" : 1,
+  "P_explore" : 0.06,
+  "I_explore" : 0.001,
+  "D_explore" : 0.35,
+  "explore_speed"  : 0.6
 }
