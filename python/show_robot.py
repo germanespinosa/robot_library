@@ -39,7 +39,9 @@ def on_episode_started(experiment_name):
 experiment_service = ExperimentClient()
 experiment_service.on_experiment_started = on_experiment_started
 experiment_service.on_episode_started = on_episode_started
-experiment_service.connect("127.0.0.1")
+if not experiment_service.connect("127.0.0.1"):
+    print("Failed to connect to experiment service")
+    exit(1)
 experiment_service.set_request_time_out(5000)
 experiment_service.subscribe()
 
