@@ -1,7 +1,7 @@
 from time import sleep
 import sys
 from cellworld import World, Display, Location, Agent_markers, Capture, Capture_parameters, Step, Timer, Cell_group_builder
-from controller import ControllerClient
+from cellworld_controller_service import ControllerClient
 from cellworld_experiment_service import ExperimentClient
 
 
@@ -39,7 +39,7 @@ def on_episode_started(experiment_name):
 experiment_service = ExperimentClient()
 experiment_service.on_experiment_started = on_experiment_started
 experiment_service.on_episode_started = on_episode_started
-if not experiment_service.connect("127.0.0.1"):
+if not experiment_service.connect():
     print("Failed to connect to experiment service")
     exit(1)
 experiment_service.set_request_time_out(5000)
@@ -69,15 +69,9 @@ def on_step(step: Step):
     if step.agent_name == "predator":
         predator.is_valid = Timer(time_out)
         predator.step = step
-        if behavior != ControllerClient.Behavior.Explore:
-            controller.set_behavior(ControllerClient.Behavior.Explore)
-            behavior = ControllerClient.Behavior.Explore
     else:
         prey.is_valid = Timer(time_out)
         prey.step = step
-        if behavior != ControllerClient.Behavior.Pursue:
-            controller.set_behavior(ControllerClient.Behavior.Pursue)
-            behavior = ControllerClient.Behavior.Pursue
 
 # connect to controller
 
@@ -131,14 +125,23 @@ display.set_agent_marker("predator", Agent_markers.arrow())
 
 display.set_agent_marker("prey", Agent_markers.arrow())
 
+
+def SetBehavior(new_behavior):
+    global behavior
+    if behavior != new_behavior:
+        controller.set_behavior(new_behavior)
+        behavior = new_behavior
+
 while running:
     if world_changed:
         display.set_occlusions(occlusions)
         world_changed = False
 
     if prey.is_valid:
+        SetBehavior(ControllerClient.Behavior.Pursue)
         display.agent(step=prey.step, color="green", size=10)
     else:
+        SetBehavior(ControllerClient.Behavior.Explore)
         display.agent(step=prey.step, color="gray", size=10)
 
     if predator.is_valid:
