@@ -4,6 +4,7 @@ Program Inputs:
 1. To start autonomous motion type m
 2. To start experiment and avoind occlusions right click
 3. To follow robot path modify path variable controller_service.cpp
+4. Specify occlusions
 
 TO DO:
 1. change random location to "belief state" new location
@@ -104,7 +105,7 @@ def on_click(event):
         display.circle(current_predator_destination, 0.01, "red")
     else:
         print("starting experiment")
-        occlusions = "10_05"
+        occlusions = "20_05"
         exp = experiment_service.start_experiment(  # call start experiment
             prefix="PREFIX",
             suffix="SUFFIX",
@@ -143,7 +144,7 @@ display = None
 world = None
 
 # set globals - initial destination, behavior
-load_world("10_05")
+load_world("20_05")
 cell_size = world.implementation.cell_transformation.size
 
 
@@ -151,17 +152,22 @@ cell_size = world.implementation.cell_transformation.size
 predator = AgentData("predator")
 prey = AgentData("prey")
 
-# set initial desitnation
-current_predator_destination = hidden_location()
+# set initial desitnation - current predator location
+current_predator_destination = predator.step.location
 behavior = -1
 
 # connect to experiment server
 experiment_service = ExperimentClient()
 experiment_service.on_experiment_started = on_experiment_started
 experiment_service.on_episode_started = on_episode_started
-experiment_service.connect("127.0.0.1")
+#experiment_service.connect("127.0.0.1")
+if not experiment_service.connect("127.0.0.1"):
+    print("Failed to connect to experiment service")
+    exit(1)
 experiment_service.set_request_time_out(5000)
-experiment_service.subscribe()
+experiment_service.subscribe()                  # having issues subscribing to exp service
+
+
 experiments = {}
 if "-e" in sys.argv:
     e = experiment_service.start_experiment(prefix="PREFIX",
@@ -169,7 +175,7 @@ if "-e" in sys.argv:
                                             subject_name="SUBJECT",
                                             world_configuration="hexagonal",
                                             world_implementation="vr",
-                                            occlusions="10_05",         # world config
+                                            occlusions="20_05",         # world config
                                             duration=10)
     print(e)
 
@@ -201,7 +207,7 @@ running = True
 while running:
 
     # check predator distance from destination
-    if current_predator_destination.dist(predator.step.location) < cell_size and controller_timer != 1: # make this cell length
+    if current_predator_destination.dist(predator.step.location) < (cell_size * 2) and controller_timer != 1: # make this cell length
         current_predator_destination = hidden_location()
         controller.set_destination(current_predator_destination)
         controller_timer.reset()                                  # reset timer

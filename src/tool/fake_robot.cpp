@@ -21,8 +21,6 @@ using namespace experiment;
 using namespace controller;
 
 struct Robot_experiment_client : Experiment_client {
-    Robot_experiment_client(std::map<string, string> &experiment_occlusions) :
-            experiment_occlusions(experiment_occlusions){}
     void on_experiment_started(const Start_experiment_response &experiment) {
         experiment_occlusions[experiment.experiment_name] = experiment.world.occlusions;
     }
@@ -33,7 +31,7 @@ struct Robot_experiment_client : Experiment_client {
                 key("occlusions").get_resource<Cell_group_builder>();
         Robot_simulator::set_occlusions(occlusions);
     };
-    std::map<string, string> &experiment_occlusions;
+    std::map<string, string> experiment_occlusions;
 };
 
 int main(int argc, char *argv[])
@@ -58,7 +56,7 @@ int main(int argc, char *argv[])
 
     auto rotation = stof(p.get(rotation_key,"0"));
     auto interval = stoi(p.get(interval_key,"30"));
-    auto spawn_coordinates_str = p.get(spawn_coordinates_key, "{\"x\":0,\"y\":0}");
+    auto spawn_coordinates_str = p.get(spawn_coordinates_key, "{\"x\":4,\"y\":0}");
     auto verbose = p.contains(Key("-v"));
 
     Experiment_service::set_logs_folder("experiment_logs/");
@@ -67,12 +65,11 @@ int main(int argc, char *argv[])
 
     auto &controller_experiment_client = experiment_server.create_local_client<Controller_server::Controller_experiment_client>();
     controller_experiment_client.subscribe();
-    std::map<string, string> experiment_occlusions;
     Tracking_simulator tracking_server;
 
     auto &tracking_client = tracking_server.create_local_client<Controller_server::Controller_tracking_client>(visibility, 90, capture, peeking, "predator", "prey");
 
-    auto &experiment_client= experiment_server.create_local_client<Robot_experiment_client>(experiment_occlusions);
+    auto &experiment_client= experiment_server.create_local_client<Robot_experiment_client>();
     experiment_client.subscribe();
 
 
