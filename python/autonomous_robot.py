@@ -47,7 +47,9 @@ def load_world(occlusions):
     global display
     global world
     global visibility
-    world = World.get_from_parameters_names("hexagonal", "canonical", occlusions) ################# fix this
+    occlusions = Cell_group_builder.get_from_name("hexagonal", occlusions + ".occlusions.robot")
+
+    world.set_occlusions(occlusions)
     display = Display(world, fig_size=(9.0*.75, 8.0*.75), animated=True)
     occlusion_locations = world.cells.occluded_cells().get("location") # all oclludded LOCATIONS in world
     occlusions_polygons = Polygon_list.get_polygons(occlusion_locations, world.configuration.cell_shape.sides, world.implementation.cell_transformation.size / 2, world.implementation.space.transformation.rotation + world.implementation.cell_transformation.rotation) # ploygon object
@@ -82,7 +84,7 @@ def on_step(step: Step):
     if step.agent_name == "predator":
         predator.is_valid = Timer(time_out)
         predator.step = step
-        display.circle(step.location, 0.01, "cyan")
+        display.circle(step.location, 0.001, "cyan")
         if behavior != ControllerClient.Behavior.Explore:
             controller.set_behavior(ControllerClient.Behavior.Explore)
             behavior = ControllerClient.Behavior.Explore
@@ -143,7 +145,7 @@ def on_keypress(event):
 
 time_out = 1.0  # step timeout value
 display = None
-world = None
+world = World.get_from_parameters_names("hexagonal", "canonical")
 
 # set globals - initial destination, behavior
 load_world("10_03")
