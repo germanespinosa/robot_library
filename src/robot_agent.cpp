@@ -38,7 +38,8 @@ namespace robot{
 
     bool Robot_agent::update() {
         if (!need_update) return true;
-        cout << "robot " << int(message[0]) << "-" << int(message[0]) << endl;
+
+        cout << "robot_agent" << int(message[0]) << " : " << int(message[1]) << endl;
         bool res = connection.send_data(message,3);
         message[2] &=~(1UL << 3);
         message[2] &=~(1UL << 4);
