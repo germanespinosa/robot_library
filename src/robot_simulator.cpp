@@ -6,7 +6,7 @@
 #include <atomic>
 #include <chrono>
 #include <robot_lib/tracking_simulator.h>
-#include <controller.h>
+#include <robot_lib/prey_simulator.h>
 
 using namespace json_cpp;
 using namespace std;
@@ -27,6 +27,8 @@ namespace robot {
     int frame_number = 0;
     mutex rm;
     Tracking_simulator *tracking_simulator = nullptr;
+
+    Prey_simulator_server prey_simulator;
 
     unsigned int robot_interval = 50;
     atomic<bool> robot_running = false;
@@ -111,6 +113,13 @@ namespace robot {
             robot_state.update();
             auto step = robot_state.to_step();
             tracking_simulator->send_update(step);
+            if (!prey_simulator.last_update.time_out()) {
+                auto prey_step = step;
+                prey_step.location = prey_simulator.location;
+                prey_step.rotation = prey_simulator.rotation;
+                prey_step.agent_name = "prey";
+                tracking_simulator->send_update(prey_step);
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(robot_interval));
         }
         log.close();
@@ -167,6 +176,10 @@ namespace robot {
         for (auto &cell:occluded_cells) {
             cell_polygons.push_back(Polygon(cell.get().location,robot_world.cell_shape, robot_world.cell_transformation));
         }
+    }
+
+    bool Robot_simulator::start_prey() {
+        return prey_simulator.start(Prey_simulator_service::get_port());
     }
 
 }

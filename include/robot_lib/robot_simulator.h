@@ -43,5 +43,6 @@ namespace robot {
         static void end_simulation();
         static bool is_running();
         static Robot_state get_robot_state();
+        static bool start_prey();
     };
 }

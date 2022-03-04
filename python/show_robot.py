@@ -3,7 +3,8 @@ import sys
 from cellworld import World, Display, Location, Agent_markers, Capture, Capture_parameters, Step, Timer, Cell_group_builder
 from cellworld_controller_service import ControllerClient
 from cellworld_experiment_service import ExperimentClient
-
+from prey_simulator import PreySimulator
+from matplotlib.backend_bases import MouseButton
 
 time_out = 1.0
 
@@ -18,6 +19,11 @@ class AgentData:
 display = None
 world = None
 occlusions = Cell_group_builder()
+
+prey_simulator = PreySimulator()
+if not prey_simulator.connect():
+    print("failed to connect to prey simulator")
+    exit(1)
 
 
 def on_experiment_started(experiment):
@@ -90,8 +96,8 @@ capture = Capture(Capture_parameters(2.0, 90.0), world)
 
 
 def on_click(event):
-    if event.button == 1:
-        location = Location(event.xdata, event.ydata)  # event.x, event.y
+    location = Location(event.xdata, event.ydata)  # event.x, event.y
+    if event.button == MouseButton.LEFT:
         cell_id = world.cells.find(location)
         destination_cell = world.cells[cell_id]
         if destination_cell.occluded:
@@ -100,8 +106,11 @@ def on_click(event):
         t = Timer()
         controller.set_destination(destination_cell.location)
         print(t.to_seconds() * 1000)
-    else:
-        display.set_occlusions(occlusions)
+    elif event.button == MouseButton.RIGHT:
+        # display.set_occlusions(occlusions)
+        prey_simulator.update_location(location)
+        print("updating prey location to ", location)
+
 
 
 cid1 = display.fig.canvas.mpl_connect('button_press_event', on_click)

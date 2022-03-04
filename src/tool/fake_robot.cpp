@@ -38,7 +38,9 @@ int main(int argc, char *argv[])
 {
     Key spawn_coordinates_key{"-s","--spawn_coordinates"};
     Key rotation_key{"-r","--theta"};
+    Key prey_key{"-p","--prey"};
     Key interval_key{"-i","--interval"};
+
 
     Parser p(argc, argv);
     auto wc = Resources::from("world_configuration").key("hexagonal").get_resource<World_configuration>();
@@ -58,6 +60,10 @@ int main(int argc, char *argv[])
     auto interval = stoi(p.get(interval_key,"30"));
     auto spawn_coordinates_str = p.get(spawn_coordinates_key, "{\"x\":4,\"y\":0}");
     auto verbose = p.contains(Key("-v"));
+
+    if (p.contains(prey_key)){
+        Robot_simulator::start_prey();
+    }
 
     Experiment_service::set_logs_folder("experiment_logs/");
     Experiment_server experiment_server;
