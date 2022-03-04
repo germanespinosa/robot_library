@@ -44,13 +44,13 @@ def on_episode_started(experiment_name):
     print(occlusions)
 
 
-def load_world(occlusions):
+def load_world():
     global display
     global world
     global visibility
-    occlusions = Cell_group_builder.get_from_name("hexagonal", occlusions + ".occlusions.robot")
-
-    world.set_occlusions(occlusions)
+    #occlusion = Cell_group_builder.get_from_name("hexagonal", occlusions + ".occlusions.robot")
+    occlusion = Cell_group_builder.get_from_name("hexagonal", occlusions + ".occlusions")
+    world.set_occlusions(occlusion)
     display = Display(world, fig_size=(9.0*.75, 8.0*.75), animated=True)
     occlusion_locations = world.cells.occluded_cells().get("location") # all oclludded LOCATIONS in world
     occlusions_polygons = Polygon_list.get_polygons(occlusion_locations, world.configuration.cell_shape.sides, world.implementation.cell_transformation.size / 2, world.implementation.space.transformation.rotation + world.implementation.cell_transformation.rotation) # ploygon object
@@ -76,8 +76,13 @@ def hidden_location():
     """
     current_location = predator.step.location
     hidden_cells = visibility.hidden_cells(current_location, world.cells)
-    new_cell = choice(hidden_cells)
-    return new_cell.location
+    try:
+        new_cell = choice(hidden_cells)
+        new_cell_location = new_cell.location
+    except:
+        # if no hidden locations
+        new_cell_location = random_location()
+    return new_cell_location
 
 
 def on_step(step: Step):
@@ -99,7 +104,7 @@ def on_click(event):
     global current_predator_destination
     if event.button == 1:
         location = Location(event.xdata, event.ydata)  # event.x, event.y
-        cell_id =destination_timer.reset(); world.cells.find(location)
+        cell_id = world.cells.find(location)
         destination_cell = world.cells[cell_id]
         print("CELL", destination_cell)
         if destination_cell.occluded:
@@ -110,7 +115,6 @@ def on_click(event):
         display.circle(current_predator_destination, 0.01, "red")
     else:
         print("starting experiment")
-        occlusions = "20_05"
         exp = experiment_service.start_experiment(  # call start experiment
             prefix="PREFIX",
             suffix="SUFFIX",
@@ -147,9 +151,10 @@ def on_keypress(event):
 time_out = 1.0  # step timeout value
 display = None
 world = World.get_from_parameters_names("hexagonal", "canonical")
+occlusions = "00_00" # global
 
 # set globals - initial destination, behavior
-load_world("20_05")
+load_world()
 cell_size = world.implementation.cell_transformation.size
 
 
@@ -179,7 +184,7 @@ if "-e" in sys.argv:
                                             subject_name="SUBJECT",
                                             world_configuration="hexagonal",
                                             world_implementation="vr",
-                                            occlusions="20_05",         # world config
+                                            occlusions=occlusions,         # world config
                                             duration=10)
     print(e)
 
