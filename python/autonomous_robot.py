@@ -9,6 +9,7 @@ Program Inputs:
 TO DO:
 1. change random location to "belief state" new location
 2. test predator canonicalpursuit
+3. load random location from robot world
 """
 
 import sys
@@ -81,6 +82,7 @@ def on_step(step: Step):
     if step.agent_name == "predator":
         predator.is_valid = Timer(time_out)
         predator.step = step
+        display.circle(step.location, 0.01, "cyan")
         if behavior != ControllerClient.Behavior.Explore:
             controller.set_behavior(ControllerClient.Behavior.Explore)
             behavior = ControllerClient.Behavior.Explore
@@ -133,7 +135,7 @@ def on_keypress(event):
         global controller_timer
         # set initial destination and timer
         print("m")
-        controller_timer = Timer(3.0)
+        controller_timer = Timer(10.0)
         controller.set_destination(current_predator_destination)
         display.circle(current_predator_destination, 0.01, "red")
 
@@ -160,7 +162,6 @@ behavior = -1
 experiment_service = ExperimentClient()
 experiment_service.on_experiment_started = on_experiment_started
 experiment_service.on_episode_started = on_episode_started
-#experiment_service.connect("127.0.0.1")
 if not experiment_service.connect("127.0.0.1"):
     print("Failed to connect to experiment service")
     exit(1)
@@ -207,17 +208,19 @@ running = True
 while running:
 
     # check predator distance from destination
-    if current_predator_destination.dist(predator.step.location) < (cell_size * 2) and controller_timer != 1: # make this cell length
+    if current_predator_destination.dist(predator.step.location) < (cell_size * 1.5) and controller_timer != 1: # make this cell length
         current_predator_destination = hidden_location()
         controller.set_destination(current_predator_destination)
         controller_timer.reset()                                  # reset timer
         display.circle(current_predator_destination, 0.01, "red")
+        print("DIST", current_predator_destination.dist(predator.step.location), cell_size * 1.5)
         print("NEW DESTINATION", current_predator_destination)
 
     # check for timeout
     if not controller_timer:
         controller.set_destination(current_predator_destination) # resend destination
         controller_timer.reset()
+        print("RESEND DESTINATION", current_predator_destination)
 
     # check if prey was seen
     # if prey.is_valid:
