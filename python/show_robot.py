@@ -65,7 +65,6 @@ behavior = -1
 
 
 def on_step(step: Step):
-    global behavior
     if step.agent_name == "predator":
         predator.is_valid = Timer(time_out)
         predator.step = step

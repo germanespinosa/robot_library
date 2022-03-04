@@ -8,12 +8,12 @@ Program Inputs:
 
 TO DO:
 1. change random location to "belief state" new location
-2. test predator pursuit
+2. test predator canonicalpursuit
 """
 
 import sys
 from cellworld import World, Display, Location, Agent_markers, Capture, Capture_parameters, Step, Timer, Cell_group_builder, Polygon, Polygon_list, Location_visibility
-from controller import ControllerClient
+from cellworld_controller_service import ControllerClient
 from cellworld_experiment_service import ExperimentClient
 from random import choice
 from time import sleep
@@ -105,7 +105,7 @@ def on_click(event):
         display.circle(current_predator_destination, 0.01, "red")
     else:
         print("starting experiment")
-        occlusions = "20_05"
+        occlusions = "10_03"
         exp = experiment_service.start_experiment(  # call start experiment
             prefix="PREFIX",
             suffix="SUFFIX",
@@ -144,7 +144,7 @@ display = None
 world = None
 
 # set globals - initial destination, behavior
-load_world("20_05")
+load_world("10_03")
 cell_size = world.implementation.cell_transformation.size
 
 
@@ -175,7 +175,7 @@ if "-e" in sys.argv:
                                             subject_name="SUBJECT",
                                             world_configuration="hexagonal",
                                             world_implementation="vr",
-                                            occlusions="20_05",         # world config
+                                            occlusions="10_03",         # world config
                                             duration=10)
     print(e)
 
