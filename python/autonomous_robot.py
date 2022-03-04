@@ -10,6 +10,7 @@ TO DO:
 1. change random location to "belief state" new location
 2. test predator canonicalpursuit
 3. load random location from robot world
+4. fix 10_03
 """
 
 import sys
@@ -98,7 +99,7 @@ def on_click(event):
     global current_predator_destination
     if event.button == 1:
         location = Location(event.xdata, event.ydata)  # event.x, event.y
-        cell_id = world.cells.find(location)
+        cell_id =destination_timer.reset(); world.cells.find(location)
         destination_cell = world.cells[cell_id]
         print("CELL", destination_cell)
         if destination_cell.occluded:
@@ -109,7 +110,7 @@ def on_click(event):
         display.circle(current_predator_destination, 0.01, "red")
     else:
         print("starting experiment")
-        occlusions = "10_03"
+        occlusions = "20_05"
         exp = experiment_service.start_experiment(  # call start experiment
             prefix="PREFIX",
             suffix="SUFFIX",
@@ -137,7 +138,7 @@ def on_keypress(event):
         global controller_timer
         # set initial destination and timer
         print("m")
-        controller_timer = Timer(10.0)
+        controller_timer = Timer(5.0)
         controller.set_destination(current_predator_destination)
         display.circle(current_predator_destination, 0.01, "red")
 
@@ -148,7 +149,7 @@ display = None
 world = World.get_from_parameters_names("hexagonal", "canonical")
 
 # set globals - initial destination, behavior
-load_world("10_03")
+load_world("20_05")
 cell_size = world.implementation.cell_transformation.size
 
 
@@ -178,7 +179,7 @@ if "-e" in sys.argv:
                                             subject_name="SUBJECT",
                                             world_configuration="hexagonal",
                                             world_implementation="vr",
-                                            occlusions="10_03",         # world config
+                                            occlusions="20_05",         # world config
                                             duration=10)
     print(e)
 
