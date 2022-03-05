@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
     Key rotation_key{"-r","--theta"};
     Key prey_key{"-p","--prey"};
     Key interval_key{"-i","--interval"};
-
+    Key noise_key{"-n","--noise"};
 
     Parser p(argc, argv);
     auto wc = Resources::from("world_configuration").key("hexagonal").get_resource<World_configuration>();
@@ -71,7 +71,13 @@ int main(int argc, char *argv[])
 
     auto &controller_experiment_client = experiment_server.create_local_client<Controller_server::Controller_experiment_client>();
     controller_experiment_client.subscribe();
+
     Tracking_simulator tracking_server;
+    if (!p.contains(noise_key)){
+        tracking_server.noise = 0;
+        tracking_server.frame_drop = 0;
+        tracking_server.bad_reads = 0;
+    }
 
     auto &tracking_client = tracking_server.create_local_client<Controller_server::Controller_tracking_client>(visibility, 90, capture, peeking, "predator", "prey");
 
