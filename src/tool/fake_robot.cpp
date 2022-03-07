@@ -67,7 +67,6 @@ int main(int argc, char *argv[])
 
     Experiment_service::set_logs_folder("experiment_logs/");
     Experiment_server experiment_server;
-    experiment_server.start(Experiment_service::get_port());
 
     auto &controller_experiment_client = experiment_server.create_local_client<Controller_server::Controller_experiment_client>();
     controller_experiment_client.subscribe();
@@ -78,6 +77,11 @@ int main(int argc, char *argv[])
         tracking_server.frame_drop = 0;
         tracking_server.bad_reads = 0;
     }
+    auto &experiment_tracking_client = tracking_server.create_local_client<Experiment_tracking_client>();
+    experiment_tracking_client.subscribe();
+    experiment_server.set_tracking_client(experiment_tracking_client);
+    experiment_server.start(Experiment_service::get_port());
+
 
     auto &tracking_client = tracking_server.create_local_client<Controller_server::Controller_tracking_client>(visibility, 90, capture, peeking, "predator", "prey");
 

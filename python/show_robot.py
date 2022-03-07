@@ -78,16 +78,6 @@ experiment_service.subscribe()
 
 experiments = {}
 
-if "-e" in sys.argv:
-    e = experiment_service.start_experiment(prefix="PREFIX",
-                                            suffix="SUFFIX",
-                                            subject_name="SUBJECT",
-                                            world_configuration="hexagonal",
-                                            world_implementation="vr",
-                                            occlusions="10_05",
-                                            duration=10)
-    print(e)
-
 predator = AgentData("predator")
 prey = AgentData("prey")
 
