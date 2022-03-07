@@ -2,7 +2,7 @@
 Automated robot controller
 Program Inputs:
 1. To start autonomous motion type m
-2. To start experiment and avoind occlusions right click
+2. To start experiment and avoind occlusions right click********************************
 3. To follow robot path modify path variable controller_service.cpp
 4. Specify occlusions
 
@@ -11,6 +11,8 @@ TO DO:
 2. test predator canonicalpursuit
 3. load random location from robot world
 4. fix 10_03
+5. look at PID fix distance overshoot check normalize error correct
+6. added pause and resume to avoid overshoot fix later
 """
 
 import sys
@@ -103,6 +105,7 @@ def on_step(step: Step):
 def on_click(event):
     global current_predator_destination
     if event.button == 1:
+        controller.resume()
         location = Location(event.xdata, event.ydata)  # event.x, event.y
         cell_id = world.cells.find(location)
         destination_cell = world.cells[cell_id]
@@ -151,7 +154,7 @@ def on_keypress(event):
 time_out = 1.0  # step timeout value
 display = None
 world = World.get_from_parameters_names("hexagonal", "canonical")
-occlusions = "00_00" # global
+occlusions = "10_03" # global
 
 # set globals - initial destination, behavior
 load_world()
@@ -217,18 +220,27 @@ while running:
 
     # check predator distance from destination
     if current_predator_destination.dist(predator.step.location) < (cell_size * 1.5) and controller_timer != 1: # make this cell length
+        controller.pause()
         current_predator_destination = hidden_location()
         controller.set_destination(current_predator_destination)
         controller_timer.reset()                                  # reset timer
         display.circle(current_predator_destination, 0.01, "red")
         print("DIST", current_predator_destination.dist(predator.step.location), cell_size * 1.5)
         print("NEW DESTINATION", current_predator_destination)
+        controller.resume()
+
+    # creating distance tolerance
+    elif current_predator_destination.dist(predator.step.location) < (cell_size * 1.5):
+        controller.pause()
+        current_predator_destination = predator.step.location
 
     # check for timeout
     if not controller_timer:
         controller.set_destination(current_predator_destination) # resend destination
         controller_timer.reset()
         print("RESEND DESTINATION", current_predator_destination)
+
+
 
     # check if prey was seen
     # if prey.is_valid:
