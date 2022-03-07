@@ -1,0 +1,9 @@
+#\bin\bash
+
+for WORLD in $(seq -f "%02g" 0 9)
+do
+    for ENTROPY in $(seq -f "%02g" 0 19)
+    do
+        .robot_paths "${WORLD}_${ENTROPY}"
+    done
+done
