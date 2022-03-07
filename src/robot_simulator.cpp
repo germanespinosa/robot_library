@@ -16,8 +16,8 @@ using namespace tcp_messages;
 
 namespace robot {
 
-    double robot_speed = .1;
-    double robot_rotation_speed = M_PI / 2; // 90 degrees at full speed
+    double robot_speed = .2;
+    double robot_rotation_speed = M_PI ; // 90 degrees at full speed
     Robot_state robot_state;
     Cell_group robot_cells;
     Timer robot_time_stamp;

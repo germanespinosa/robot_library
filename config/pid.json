@@ -1,9 +1,9 @@
 {
-  "P_pursue" : 0.04,
+  "P_pursue" : 0.1,
   "I_pursue" : 0.004,
   "D_pursue" : 0.22,
   "pursue_speed" : 1,
-  "P_explore" : 0.06,
+  "P_explore" : 0.2,
   "I_explore" : 0.001,
   "D_explore" : 0.35,
   "explore_speed"  : 0.6
