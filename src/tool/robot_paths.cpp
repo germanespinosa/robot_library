@@ -63,10 +63,10 @@ bool adj_occlusions(auto &coord, Map &map1){
 }
 
 
-int main(){
+int main(int argc, char **argv){
 
     // load world and create new_world to modify
-    string occlusions_name = "04_05";
+    string occlusions_name = argv[1];
     auto wc = Resources::from("world_configuration").key("hexagonal").get_resource<World_configuration>();
     auto wi = Resources::from("world_implementation").key("hexagonal").key("mice").get_resource<World_implementation>();
     auto occlusions = Resources::from("cell_group").key("hexagonal").key(occlusions_name).key("occlusions").get_resource<Cell_group_builder>();
@@ -98,9 +98,9 @@ int main(){
     Paths paths(graph);
     auto new_path = paths.get_astar(graph);
     cout << new_path << endl;
-    new_path.save("../../cellworld_data/paths/hexagonal.04_05.astar.robot");
+    new_path.save("../../cellworld_data/paths/hexagonal." + occlusions_name + ".astar.robot");
     // create new occluded list
-    cg2.occluded_cells().save("../../cellworld_data/cell_group/hexagonal.04_05.occlusions.robot");
+    cg2.occluded_cells().save("../../cellworld_data/cell_group/hexagonal." + occlusions_name + ".occlusions.robot");
     cout << "done....." << endl;
 
 
