@@ -2,7 +2,7 @@
 Automated robot controller
 Program Inputs:
 1. To start autonomous motion type m
-2. To start experiment and avoind occlusions right click
+2. To start experiment and avoind occlusions right click********************************
 3. To follow robot path modify path variable controller_service.cpp
 4. Specify occlusions
 
@@ -11,6 +11,8 @@ TO DO:
 2. test predator canonicalpursuit
 3. load random location from robot world
 4. fix 10_03
+5. look at PID fix distance overshoot check normalize error correct
+6. added pause and resume to avoid overshoot fix later
 """
 
 import sys
@@ -19,6 +21,7 @@ from cellworld_controller_service import ControllerClient
 from cellworld_experiment_service import ExperimentClient
 from random import choice
 from time import sleep
+from matplotlib.backend_bases import MouseButton
 
 
 class AgentData:
@@ -52,9 +55,26 @@ def load_world():
     occlusion = Cell_group_builder.get_from_name("hexagonal", occlusions + ".occlusions")
     world.set_occlusions(occlusion)
     display = Display(world, fig_size=(9.0*.75, 8.0*.75), animated=True)
-    occlusion_locations = world.cells.occluded_cells().get("location") # all oclludded LOCATIONS in world
-    occlusions_polygons = Polygon_list.get_polygons(occlusion_locations, world.configuration.cell_shape.sides, world.implementation.cell_transformation.size / 2, world.implementation.space.transformation.rotation + world.implementation.cell_transformation.rotation) # ploygon object
-    visibility = Location_visibility(occlusions_polygons) # create visiblilty object
+    # visibility set up
+    # occlusion_locations = world.cells.occluded_cells().get("location") # all ocludded LOCATIONS in world
+    # occlusions_polygons = Polygon_list.get_polygons(occlusion_locations, world.configuration.cell_shape.sides, world.implementation.cell_transformation.size / 2, world.implementation.space.transformation.rotation + world.implementation.cell_transformation.rotation) # ploygon object
+    # visibility = Location_visibility(occlusions_polygons) # create visiblilty object
+
+
+def load_robot_world():
+    """
+    Locations where the robot cannot navigste are occluded in this world
+    """
+    global robot_world
+    global robot_visibility
+    occlusion = Cell_group_builder.get_from_name("hexagonal", occlusions + ".occlusions.robot")
+    robot_world.set_occlusions(occlusion)
+    #display = Display(world, fig_size=(9.0*.75, 8.0*.75), animated=True)
+
+    # visibility set up
+    occlusion_locations = robot_world.cells.occluded_cells().get("location") # all ocludded LOCATIONS in world
+    occlusions_polygons = Polygon_list.get_polygons(occlusion_locations, robot_world.configuration.cell_shape.sides, robot_world.implementation.cell_transformation.size / 2, robot_world.implementation.space.transformation.rotation + robot_world.implementation.cell_transformation.rotation) # ploygon object
+    robot_visibility = Location_visibility(occlusions_polygons) # create visiblilty object
 
 
 def on_episode_started(experiment_name):
@@ -66,7 +86,7 @@ def random_location():
     """
     Returns random open location in world
     """
-    location = choice(world.cells.free_cells().get("location"))
+    location = choice(robot_world.cells.free_cells().get("location"))
     return location
 
 
@@ -75,7 +95,7 @@ def hidden_location():
     Returns random hidden location in world
     """
     current_location = predator.step.location
-    hidden_cells = visibility.hidden_cells(current_location, world.cells)
+    hidden_cells = robot_visibility.hidden_cells(current_location, robot_world.cells)
     try:
         new_cell = choice(hidden_cells)
         new_cell_location = new_cell.location
@@ -103,6 +123,7 @@ def on_step(step: Step):
 def on_click(event):
     global current_predator_destination
     if event.button == 1:
+        controller.resume()
         location = Location(event.xdata, event.ydata)  # event.x, event.y
         cell_id = world.cells.find(location)
         destination_cell = world.cells[cell_id]
@@ -130,6 +151,7 @@ def on_click(event):
 
 def on_keypress(event):
     global running
+    global current_predator_destination
     if event.key == "p":
         print("pause")
         controller.pause()
@@ -142,19 +164,25 @@ def on_keypress(event):
         global controller_timer
         # set initial destination and timer
         print("m")
+        controller.resume()
         controller_timer = Timer(5.0)
+        current_predator_destination = hidden_location()
         controller.set_destination(current_predator_destination)
         display.circle(current_predator_destination, 0.01, "red")
 
 
-
+# GLOBALS
 time_out = 1.0  # step timeout value
 display = None
+robot_visibility = None
 world = World.get_from_parameters_names("hexagonal", "canonical")
-occlusions = "00_00" # global
+robot_world = World.get_from_parameters_names("hexagonal", "canonical")
+occlusions = "10_03" # global
+
 
 # set globals - initial destination, behavior
 load_world()
+load_robot_world()
 cell_size = world.implementation.cell_transformation.size
 
 
@@ -214,21 +242,30 @@ display.set_agent_marker("prey", Agent_markers.arrow())
 
 running = True
 while running:
-
+    print(controller_timer)
     # check predator distance from destination
     if current_predator_destination.dist(predator.step.location) < (cell_size * 1.5) and controller_timer != 1: # make this cell length
+        controller.pause()
         current_predator_destination = hidden_location()
         controller.set_destination(current_predator_destination)
         controller_timer.reset()                                  # reset timer
         display.circle(current_predator_destination, 0.01, "red")
         print("DIST", current_predator_destination.dist(predator.step.location), cell_size * 1.5)
         print("NEW DESTINATION", current_predator_destination)
+        controller.resume()
 
-    # check for timeout
+    # creating distance tolerance to avoid overshooting desitionation (account for inertia)
+    elif current_predator_destination.dist(predator.step.location) < (cell_size * 1.5):
+        controller.pause()
+        current_predator_destination = predator.step.location
+
+    # check for timeout and resend desitination
     if not controller_timer:
         controller.set_destination(current_predator_destination) # resend destination
         controller_timer.reset()
         print("RESEND DESTINATION", current_predator_destination)
+
+
 
     # check if prey was seen
     # if prey.is_valid:
@@ -256,3 +293,8 @@ while running:
 
 controller.unsubscribe()
 controller.stop()
+
+
+## add gamepad code
+# when hit button on gamepad stop autonomus control and switch to joystick
+# hit button again to switch back to autonomous
