@@ -8,11 +8,12 @@ Program Inputs:
 
 TO DO:
 1. change random location to "belief state" new location
-2. test predator canonicalpursuit
+2. test predator canonical pursuit
 3. load random location from robot world
 4. fix 10_03
 5. look at PID fix distance overshoot check normalize error correct
 6. added pause and resume to avoid overshoot fix later
+7. gamepad wrapper
 """
 
 import sys
