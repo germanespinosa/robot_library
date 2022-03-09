@@ -97,7 +97,7 @@ int main(int argc, char **argv){
     Graph graph = world2.create_graph();
     Paths paths(graph);
     auto new_path = paths.get_astar(graph);
-    cout << new_path << endl;
+    //cout << new_path << endl;
     new_path.save("../../cellworld_data/paths/hexagonal." + occlusions_name + ".astar.robot");
     // create new occluded list
     cg2.occluded_cells().save("../../cellworld_data/cell_group/hexagonal." + occlusions_name + ".occlusions.robot");

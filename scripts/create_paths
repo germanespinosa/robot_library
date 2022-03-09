@@ -1,9 +1,10 @@
 #\bin\bash
 
-for WORLD in $(seq -f "%02g" 0 9)
+for WORLD in $(seq -f "%02g" 0 19)
 do
-    for ENTROPY in $(seq -f "%02g" 0 19)
+    for ENTROPY in $(seq -f "%02g" 0 10)
     do
-        .robot_paths "${WORLD}_${ENTROPY}"
+        echo "Working on ${WORLD}_${ENTROPY}"
+        ./robot_paths "${WORLD}_${ENTROPY}"
     done
 done
