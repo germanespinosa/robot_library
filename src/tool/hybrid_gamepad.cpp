@@ -25,18 +25,19 @@ int main(int argc, char *argv[]){
     Timer predator_ts;
     mutex mtx_update;
 
-    agent_tracking::Tracking_client tracking;
-    cell_world::Location prey_location {-10000,-10000};
-    cell_world::Location predator_location {10000,10000};
-    Timer puff_timer;
-    Timer robot_update;
-    puff_timer.reset();
-    if (!tracking.connect())
-    {
-        cout << "Unable to connect to Tracking service." <<  endl;
-        exit(0);
-    }
-    tracking.register_consumer();
+    //agent_tracking::Tracking_client tracking;
+    //cell_world::Location prey_location {-10000,-10000};
+    //cell_world::Location predator_location {10000,10000};
+    //Timer puff_timer;
+    //Timer robot_update;
+    //puff_timer.reset();
+//    if (!tracking.connect())
+////    {
+////        cout << "Unable to connect to Tracking service." <<  endl;
+////        exit(0);
+////    }
+////    tracking.register_consumer();
+
     Robot robot;
     if (!robot.connect(robot_ip))
     {
