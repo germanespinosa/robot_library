@@ -157,6 +157,7 @@ def on_keypress(event):
         print("pause")
         controller.pause()
     if event.key == "r":
+        print("resume")
         controller.resume()
     if event.key == "q":
         controller.pause()
@@ -170,6 +171,7 @@ def on_keypress(event):
         current_predator_destination = hidden_location()
         controller.set_destination(current_predator_destination)
         display.circle(current_predator_destination, 0.01, "red")
+
 
 
 # GLOBALS

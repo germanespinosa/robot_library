@@ -4,14 +4,18 @@ using namespace std;
 
 namespace robot{
     Robot_agent::Robot_agent(const controller::Agent_operational_limits &limits):
-            Robot_agent(limits,4690){
+        //Robot_agent(limits,4690){  // port for joystick 4690
+        Robot_agent(limits,"/dev/input/js0"){  // joystick device
         set_leds(true);
     }
 
     void Robot_agent::set_left(double left_value) {
         char left = limits.convert(left_value);
-//        gamepad.buttons[1-8]
-//left = (gamepad.axes[1] + left ) /2 ;
+        // for joystick control press R2
+        if (gamepad.buttons[7].state){
+            left = (-gamepad.axes[1] * 2 / 256 / 3); // normalize this to config file
+        }
+        //left = ((-gamepad.axes[1] * 2 / 256 / 3) + left ) /2 ;  // hybrid
         if (message[0] != left)
             need_update = true;
         message[0] = left;
@@ -19,7 +23,9 @@ namespace robot{
 
     void Robot_agent::set_right(double right_value) {
         char right = limits.convert(right_value);
-//left = (gamepad.axes[4] + left ) /2 ;
+        if (gamepad.buttons[7].state){
+            right = (-gamepad.axes[4] * 2 / 256/ 3);
+        }
         if (message[1] != right)
             need_update = true;
         message[1] = right;
