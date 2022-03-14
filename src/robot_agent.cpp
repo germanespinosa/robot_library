@@ -4,13 +4,14 @@ using namespace std;
 
 namespace robot{
     Robot_agent::Robot_agent(const controller::Agent_operational_limits &limits):
-            message{0,0,0},
-            limits(limits){
+            Robot_agent(limits,4690){
         set_leds(true);
     }
 
     void Robot_agent::set_left(double left_value) {
         char left = limits.convert(left_value);
+//        gamepad.buttons[1-8]
+//left = (gamepad.axes[1] + left ) /2 ;
         if (message[0] != left)
             need_update = true;
         message[0] = left;
@@ -18,6 +19,7 @@ namespace robot{
 
     void Robot_agent::set_right(double right_value) {
         char right = limits.convert(right_value);
+//left = (gamepad.axes[4] + left ) /2 ;
         if (message[1] != right)
             need_update = true;
         message[1] = right;
@@ -88,6 +90,20 @@ namespace robot{
     bool Robot_agent::connect() {
         //return connect("192.168.137.155");
         return connect("127.0.0.1");
+    }
+
+    Robot_agent::Robot_agent(const controller::Agent_operational_limits &limits, int game_pad_port):
+            message{0,0,0},
+            limits(limits),
+            gamepad(game_pad_port){
+        set_leds(true);
+    }
+
+    Robot_agent::Robot_agent(const controller::Agent_operational_limits &limits, std::string device_path):
+            message{0,0,0},
+            limits(limits),
+            gamepad(device_path){
+        set_leds(true);
     }
 
 }
