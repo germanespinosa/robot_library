@@ -51,14 +51,16 @@ int main(){
 //        }
 
         // output joystick inputs
-        for (int i = 0;i<j->axes.size();i++) {
-            if (j->axes[i])
-                cout << "axis " << i << ": " << j->axes[i] << endl;
-        }
-         for (int i = 0;i<j->buttons.size();i++) {
-             if (j->buttons[i].state == 1)
-                 cout << "button " << i << ": " << j->buttons[i].state << "\t";
-        }
+//        for (int i = 0;i<j->axes.size();i++) {
+//            if (j->axes[i])
+//                cout << "axis " << i << ": " << j->axes[i] << endl;
+//        }
+//         for (int i = 0;i<j->buttons.size();i++) {
+//             if (j->buttons[i].state == 1)
+//                 cout << "button " << i << ": " << j->buttons[i].state << "\t";
+//        }
+        int i = 7;
+        cout << "button " << i << ": " << j->buttons[i].state << endl;
 
         usleep(30000);
         if (j->buttons[8].state == 1) h = false; // exit loop
