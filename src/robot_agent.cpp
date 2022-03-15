@@ -12,9 +12,10 @@ namespace robot{
     void Robot_agent::set_left(double left_value) {
         char left = limits.convert(left_value);
         // for joystick control press R2
-        if (gamepad.buttons[7].state){
+        if (gamepad.buttons[7].state == 1){
             left = (-gamepad.axes[1] * 2 / 256 / 3); // normalize this to config file
         }
+        cout << "not pressed" << endl;
         //left = ((-gamepad.axes[1] * 2 / 256 / 3) + left ) /2 ;  // hybrid
         if (message[0] != left)
             need_update = true;
@@ -23,7 +24,7 @@ namespace robot{
 
     void Robot_agent::set_right(double right_value) {
         char right = limits.convert(right_value);
-        if (gamepad.buttons[7].state){
+        if (gamepad.buttons[7].state == 1){
             right = (-gamepad.axes[4] * 2 / 256/ 3);
         }
         if (message[1] != right)
