@@ -22,7 +22,6 @@ from cellworld_controller_service import ControllerClient
 from cellworld_experiment_service import ExperimentClient
 from random import choice
 from time import sleep
-from matplotlib.backend_bases import MouseButton
 
 
 class AgentData:
@@ -111,7 +110,7 @@ def on_step(step: Step):
     if step.agent_name == "predator":
         predator.is_valid = Timer(time_out)
         predator.step = step
-        display.circle(step.location, 0.001, "cyan")
+        display.circle(step.location, 0.005, "cyan")
         if behavior != ControllerClient.Behavior.Explore:
             controller.set_behavior(ControllerClient.Behavior.Explore)
             behavior = ControllerClient.Behavior.Explore
@@ -242,10 +241,9 @@ cid_keypress = display.fig.canvas.mpl_connect('key_press_event', on_keypress)
 display.set_agent_marker("predator", Agent_markers.arrow())
 display.set_agent_marker("prey", Agent_markers.arrow())
 
-
+last_destination = current_predator_destination
 running = True
 while running:
-    print(controller_timer)
     # check predator distance from destination
     if current_predator_destination.dist(predator.step.location) < (cell_size * 1.5) and controller_timer != 1: # make this cell length
         controller.pause()
@@ -257,7 +255,7 @@ while running:
         print("NEW DESTINATION", current_predator_destination)
         controller.resume()
 
-    # creating distance tolerance to avoid overshooting desitionation (account for inertia)
+    # creating distance tolerance to avoid overshooting destination (account for inertia) if controller timer not started
     elif current_predator_destination.dist(predator.step.location) < (cell_size * 1.5):
         controller.pause()
         current_predator_destination = predator.step.location
@@ -271,10 +269,10 @@ while running:
 
 
     # check if prey was seen
-    # if prey.is_valid:
-    #     current_predator_destination = prey.step.destination
-    #     print("ATTACK", current_predator_destination)
-    #     controller.set_destination(current_predator_destination)      # if prey is visible set new destination to prey location
+    if prey.is_valid:
+        print("ATTACK")
+        current_predator_destination = prey.step.location
+        controller.set_destination(current_predator_destination)      # if prey is visible set new destination to prey location
 
 
     # plotting the current location of the predator and prey
@@ -289,6 +287,11 @@ while running:
 
     else:
         display.agent(step=predator.step, color="gray", size=10)
+
+    # # remove old desitination dots from plot:
+    # if last_destination != current_predator_destination:
+    #     display.circle(current_predator_destination, 0.01, "white")
+
 
     display.update()
     sleep(0.1)

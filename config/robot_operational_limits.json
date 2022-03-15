@@ -1,7 +1,7 @@
 {
-  "max_forward": 105,
-  "min_forward": 70,
-  "max_backward": -90,
-  "min_backward": -65,
+  "max_forward": 106,
+  "min_forward": 67,
+  "max_backward": -99,
+  "min_backward": -60,
   "stop": 0
 }

@@ -1,6 +1,9 @@
 #include <robot_lib/robot_agent.h>
 
 using namespace std;
+// temp constants
+#define MAX 106
+#define MIN 60
 
 namespace robot{
     Robot_agent::Robot_agent(const controller::Agent_operational_limits &limits):
@@ -15,7 +18,6 @@ namespace robot{
         if (gamepad.buttons[7].state == 1){
             left = (-gamepad.axes[1] * 2 / 256 / 3); // normalize this to config file
         }
-        cout << "not pressed" << endl;
         //left = ((-gamepad.axes[1] * 2 / 256 / 3) + left ) /2 ;  // hybrid
         if (message[0] != left)
             need_update = true;
