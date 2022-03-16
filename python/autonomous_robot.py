@@ -6,6 +6,11 @@ Program Inputs:
 3. To follow robot path modify path variable controller_service.cpp
 4. Specify occlusions
 
+Program timers:
+1. predator step updates
+2. prey step updates
+3. controller - destination timer
+
 TO DO:
 1. change random location to "belief state" new location
 2. test predator canonical pursuit
@@ -29,7 +34,7 @@ class AgentData:
     Class to initialize prey and predator objects
     """
     def __init__(self, agent_name: str):
-        self.is_valid = None
+        self.is_valid = None # timers for predator and prey updates
         self.step = Step()
         self.step.agent_name = agent_name
 
@@ -80,7 +85,7 @@ def load_robot_world():
 
 def random_location():
     """
-    Returns random open location in world (keep this for cases where there are no hidden locations)
+    Returns random open location in robot_world (keep this for cases where there are no hidden locations)
     """
     location = choice(robot_world.cells.free_cells().get("location"))
     return location
@@ -88,7 +93,7 @@ def random_location():
 
 def hidden_location():
     """
-    Returns random hidden location in world
+    Returns random hidden location in robot_world
     """
     current_location = predator.step.location
     hidden_cells = robot_visibility.hidden_cells(current_location, robot_world.cells)
@@ -102,29 +107,30 @@ def hidden_location():
 
 def on_step(step: Step):
     """
-
+    Updates steps and predator behavior
     """
     global behavior
 
     if step.agent_name == "predator":
         predator.is_valid = Timer(time_out)
         predator.step = step
-        display.circle(step.location, 0.002, "blue")
+        display.circle(step.location, 0.002, "blue")    # plot predator path (steps)
         if behavior != ControllerClient.Behavior.Explore:
-            controller.set_behavior(ControllerClient.Behavior.Explore)
+            controller.set_behavior(ControllerClient.Behavior.Explore) # explore when prey not seen
             behavior = ControllerClient.Behavior.Explore
     else:
-        prey.is_valid = Timer(time_out)
+        prey.is_valid = Timer(time_out) # pursue when prey is seen
         prey.step = step
         controller.set_behavior(ControllerClient.Behavior.Pursue)
 
 
 def on_click(event):
     """
-    Assign destiantion by clicking on map
-    Right click to start experiment
+    Assign destination by clicking on map
+    Right-click to start experiment
     """
     global current_predator_destination
+    global destination_list
 
     if event.button == 1:
         controller.resume()
@@ -137,6 +143,7 @@ def on_click(event):
             return
         current_predator_destination = destination_cell.location
         controller.set_destination(destination_cell.location)
+        destination_list.append(destination_cell.location)
         display.circle(current_predator_destination, 0.01, "red")
     else:
         print("starting experiment")
@@ -154,6 +161,9 @@ def on_click(event):
 
 
 def on_keypress(event):
+    """
+    Sets up keyboard intervention
+    """
     global running
     global current_predator_destination
     global controller_timer
@@ -178,7 +188,7 @@ def on_keypress(event):
 
 # SET UP GLOBAL VARIABLES
 occlusions = "10_03"
-time_out = 1.0      # step timeout value
+time_out = 1.0      # step timer for predator and prey
 
 display = None
 robot_visibility = None
@@ -193,7 +203,7 @@ predator = AgentData("predator")
 prey = AgentData("prey")
 # set initial destination and behavior
 current_predator_destination = predator.step.location  # initial predator destination
-
+destination_list = [current_predator_destination]       # keeps track any NEW destinations
 behavior = -1                                          # Explore or Pursue
 
 
@@ -210,7 +220,7 @@ experiments = {}
 
 
 # CONNECT TO CONTROLLER
-controller_timer = 1 # initialize controller timer variable
+controller_timer = 1  # initialize controller timer variable
 controller = ControllerClient()
 if not controller.connect("127.0.0.1", 4590):
     print("failed to connect to the controller")
@@ -220,7 +230,7 @@ controller.subscribe()
 controller.on_step = on_step
 
 
-# INITIALIZE KEYBOARD & CLICK INTERUPTS
+# INITIALIZE KEYBOARD & CLICK INTERRUPTS
 cid1 = display.fig.canvas.mpl_connect('button_press_event', on_click)
 cid_keypress = display.fig.canvas.mpl_connect('key_press_event', on_keypress)
 
@@ -237,6 +247,7 @@ while running:
         controller.pause()                                           # prevents overshoot - stop robot omce close enough to destination
         current_predator_destination = hidden_location()             # assign new destination
         controller.set_destination(current_predator_destination)     # set destination
+        destination_list.append(current_predator_destination)
         controller_timer.reset()                                     # reset controller timer
         display.circle(current_predator_destination, 0.01, "red")
         print("NEW DESTINATION: ", current_predator_destination)
@@ -256,9 +267,12 @@ while running:
     # check if prey was seen
     if prey.is_valid:
         print("PREY SEEN")
+        controller.resume()
         current_predator_destination = prey.step.location
         controller.set_destination(current_predator_destination)      # if prey is visible set new destination to prey location
-
+        destination_list.append(current_predator_destination)
+        display.circle(current_predator_destination, 0.01, "green")
+        controller_timer.reset()
 
     # plotting the current location of the predator and prey
     if prey.is_valid:
@@ -272,6 +286,11 @@ while running:
 
     else:
         display.agent(step=predator.step, color="gray", size=10)
+
+    # remove old destinations from map
+    if destination_list > 1:
+        display.circle(destination_list[0], 0.01, "white")
+        destination_list.remove(destination_list[0])
 
     display.update()
     sleep(0.1)
