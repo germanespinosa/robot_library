@@ -167,6 +167,7 @@ def on_keypress(event):
     global running
     global current_predator_destination
     global controller_timer
+    global destination_list
 
     if event.key == "p":
         print("pause")
@@ -183,7 +184,9 @@ def on_keypress(event):
         controller_timer = Timer(5.0)                           # set initial destination and timer
         current_predator_destination = hidden_location()        # assign new destination
         controller.set_destination(current_predator_destination)
+        destination_list.append(current_predator_destination)
         display.circle(current_predator_destination, 0.01, "red")
+
 
 
 # SET UP GLOBAL VARIABLES
@@ -203,7 +206,7 @@ predator = AgentData("predator")
 prey = AgentData("prey")
 # set initial destination and behavior
 current_predator_destination = predator.step.location  # initial predator destination
-destination_list = [current_predator_destination]       # keeps track any NEW destinations
+destination_list = []       # keeps track any NEW destinations
 behavior = -1                                          # Explore or Pursue
 
 
@@ -288,7 +291,7 @@ while running:
         display.agent(step=predator.step, color="gray", size=10)
 
     # remove old destinations from map
-    if destination_list > 1:
+    if len(destination_list) > 1:
         display.circle(destination_list[0], 0.01, "white")
         destination_list.remove(destination_list[0])
 
