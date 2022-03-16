@@ -109,7 +109,7 @@ def on_step(step: Step):
     if step.agent_name == "predator":
         predator.is_valid = Timer(time_out)
         predator.step = step
-        display.circle(step.location, 0.005, "cyan")
+        display.circle(step.location, 0.002, "blue")
         if behavior != ControllerClient.Behavior.Explore:
             controller.set_behavior(ControllerClient.Behavior.Explore)
             behavior = ControllerClient.Behavior.Explore
