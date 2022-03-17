@@ -2,8 +2,9 @@
 
 using namespace std;
 // temp constants
-#define MAX 106
-#define MIN 60
+#define MAX_J 123
+#define MIN_J 60
+#define JOYSTICK 32767
 
 namespace robot{
     Robot_agent::Robot_agent(const controller::Agent_operational_limits &limits):
@@ -16,7 +17,13 @@ namespace robot{
         char left = limits.convert(left_value);
         // for joystick control press R2
         if (gamepad.buttons[7].state == 1){
-            left = (-gamepad.axes[1] * 2 / 256 / 3); // normalize this to config file
+            float joystick_left = (float)-gamepad.axes[1]/JOYSTICK; // normalize this to config file
+            if (joystick_left > 0){
+                joystick_left = abs(joystick_left) * (MAX_J - MIN_J) + MIN_J;
+            } else if (joystick_left < 0){
+                joystick_left = -(abs(joystick_left) * (MAX_J - MIN_J) + MIN_J);
+            }
+            left = (char) joystick_left;
         }
         //left = ((-gamepad.axes[1] * 2 / 256 / 3) + left ) /2 ;  // hybrid
         if (message[0] != left)
@@ -27,7 +34,13 @@ namespace robot{
     void Robot_agent::set_right(double right_value) {
         char right = limits.convert(right_value);
         if (gamepad.buttons[7].state == 1){
-            right = (-gamepad.axes[4] * 2 / 256/ 3);
+            float joystick_right = (float)-gamepad.axes[4]/JOYSTICK;
+            if (joystick_right > 0){
+                joystick_right = abs(joystick_right) * (MAX_J - MIN_J) + MIN_J;
+            } else if (joystick_right < 0){
+                joystick_right = -(abs(joystick_right) * (MAX_J - MIN_J) + MIN_J);
+            }
+            right = (char) joystick_right;
         }
         if (message[1] != right)
             need_update = true;
