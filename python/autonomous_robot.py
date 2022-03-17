@@ -114,7 +114,7 @@ def on_step(step: Step):
     if step.agent_name == "predator":
         predator.is_valid = Timer(time_out)
         predator.step = step
-        display.circle(step.location, 0.002, "blue")    # plot predator path (steps)
+        display.circle(step.location, 0.002, "cyan")    # plot predator path (steps)
         if behavior != ControllerClient.Behavior.Explore:
             controller.set_behavior(ControllerClient.Behavior.Explore) # explore when prey not seen
             behavior = ControllerClient.Behavior.Explore
@@ -190,7 +190,7 @@ def on_keypress(event):
 
 
 # SET UP GLOBAL VARIABLES
-occlusions = "10_03"
+occlusions = "20_05"
 time_out = 1.0      # step timer for predator and prey
 
 display = None
@@ -292,7 +292,7 @@ while running:
 
     # remove old destinations from map
     if len(destination_list) > 1:
-        display.circle(destination_list[0], 0.01, "white")
+        display.circle(destination_list[0], 0.008, "white")
         destination_list.remove(destination_list[0])
 
     display.update()
