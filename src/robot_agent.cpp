@@ -2,7 +2,7 @@
 
 using namespace std;
 // temp constants
-#define MAX_J 123
+#define MAX_J 95
 #define MIN_J 60
 #define JOYSTICK 32767
 
