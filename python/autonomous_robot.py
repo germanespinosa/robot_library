@@ -11,14 +11,14 @@ Program timers:
 2. prey step updates
 3. controller - destination timer
 
+Mutable Variables:
+1. occlusions
+
 TO DO:
 1. change random location to "belief state" new location
 2. test predator canonical pursuit
-3. load random location from robot world
-4. fix 10_03
 5. look at PID fix distance overshoot check normalize error correct
 6. added pause and resume to avoid overshoot fix later
-7. gamepad wrapper
 """
 
 import sys
@@ -180,7 +180,8 @@ def on_keypress(event):
         controller.pause()
         running = False
     if event.key == "m":
-        controller.resume()                                     #  change controller state to Playing
+        print("auto")
+        controller.resume()                                     # change controller state to Playing
         controller_timer = Timer(5.0)                           # set initial destination and timer
         current_predator_destination = hidden_location()        # assign new destination
         controller.set_destination(current_predator_destination)

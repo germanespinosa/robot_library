@@ -26,6 +26,7 @@ int main(){
         cout << "Unable to connect to robot." <<  endl;
         exit(0);
     }
+
     Gamepad *j;
     j = new Gamepad_wrapper(device);
     //j = new Gamepad_wrapper(port);
@@ -65,6 +66,15 @@ int main(){
 
         pleft = left;
         pright = right;
+
+
+//        if ( j->buttons[5].state == 1 ){
+//            robot.set_puf();
+//            update = true;
+//        }
+
+
+
 
         if (update) {
             robot.update();
