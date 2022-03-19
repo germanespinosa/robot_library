@@ -168,13 +168,16 @@ def on_keypress(event):
     global current_predator_destination
     global controller_timer
     global destination_list
+    global controller_state
 
     if event.key == "p":
         print("pause")
         controller.pause()
+        controller_state = 0
     if event.key == "r":
         print("resume")
         controller.resume()
+        controller_state = 1
     if event.key == "q":
         print("quit")
         controller.pause()
@@ -192,10 +195,12 @@ def on_keypress(event):
 
 # SET UP GLOBAL VARIABLES
 occlusions = "20_05"
+inertia_buffer = 1.5 # 1.5
 time_out = 1.0      # step timer for predator and prey
 
 display = None
 robot_visibility = None
+controller_state = 1 # resume = 1, pause = 0
 # create world
 world = World.get_from_parameters_names("hexagonal", "canonical")
 robot_world = World.get_from_parameters_names("hexagonal", "canonical")
@@ -224,7 +229,8 @@ experiments = {}
 
 
 # CONNECT TO CONTROLLER
-controller_timer = 1  # initialize controller timer variable
+#controller_timer = 1  # initialize controller timer variable
+controller_timer = 1     # initialize controller timer variable
 controller = ControllerClient()
 if not controller.connect("127.0.0.1", 4590):
     print("failed to connect to the controller")
@@ -247,7 +253,7 @@ running = True
 while running:
 
     # check predator distance from destination and send new on if reached
-    if current_predator_destination.dist(predator.step.location) < (cell_size * 1.5) and controller_timer != 1:
+    if current_predator_destination.dist(predator.step.location) < (cell_size * inertia_buffer) and controller_timer != 1:
         controller.pause()                                           # prevents overshoot - stop robot omce close enough to destination
         current_predator_destination = hidden_location()             # assign new destination
         controller.set_destination(current_predator_destination)     # set destination
@@ -258,7 +264,7 @@ while running:
         controller.resume()                                          # Resume controller (unpause)
 
     # create distance tolerance to account for inertia
-    elif current_predator_destination.dist(predator.step.location) < (cell_size * 1.5):
+    elif current_predator_destination.dist(predator.step.location) < (cell_size * inertia_buffer):
         controller.pause()
         current_predator_destination = predator.step.location  # assign destination to current predator location (artificially reach goal when "close enough")
 
@@ -269,14 +275,21 @@ while running:
         print("RESEND DESTINATION: ", current_predator_destination)
 
     # check if prey was seen
-    if prey.is_valid:
+    print("PREY ", prey.step)
+    if prey.is_valid and controller_state:
         print("PREY SEEN")
-        controller.resume()
+        #controller.resume()
         current_predator_destination = prey.step.location
         controller.set_destination(current_predator_destination)      # if prey is visible set new destination to prey location
         destination_list.append(current_predator_destination)
-        display.circle(current_predator_destination, 0.01, "green")
-        controller_timer.reset()
+        print("PLOTTTTTT")
+        print(type(predator.step.location))
+        print(type(prey.step.location))
+        display.circle(prey.step.location, 0.01, "blue")
+        display.circle(Location(0.5,0.5), 0.01, "blue")
+        display.update()
+        print(prey.step.location, predator.step.location)
+        #controller_timer.reset()
 
     # plotting the current location of the predator and prey
     if prey.is_valid:
