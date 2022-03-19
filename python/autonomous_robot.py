@@ -19,6 +19,7 @@ TO DO:
 2. test predator canonical pursuit
 5. look at PID fix distance overshoot check normalize error correct
 6. added pause and resume to avoid overshoot fix later
+7. PREYS LOCATION NOT CANNONICAL FIX THIS!!!
 """
 
 import sys
@@ -137,7 +138,7 @@ def on_click(event):
         location = Location(event.xdata, event.ydata)
         cell_id = world.cells.find(location)
         destination_cell = world.cells[cell_id]
-        print("CELL", destination_cell)
+        #QQQQQQQQQQprint("CELL", destination_cell)
         if destination_cell.occluded:
             print("can't navigate to an occluded cell")
             return
@@ -275,19 +276,13 @@ while running:
         print("RESEND DESTINATION: ", current_predator_destination)
 
     # check if prey was seen
-    print("PREY ", prey.step)
     if prey.is_valid and controller_state:
         print("PREY SEEN")
         #controller.resume()
         current_predator_destination = prey.step.location
         controller.set_destination(current_predator_destination)      # if prey is visible set new destination to prey location
         destination_list.append(current_predator_destination)
-        print("PLOTTTTTT")
-        print(type(predator.step.location))
-        print(type(prey.step.location))
         display.circle(prey.step.location, 0.01, "blue")
-        display.circle(Location(0.5,0.5), 0.01, "blue")
-        display.update()
         print(prey.step.location, predator.step.location)
         #controller_timer.reset()
 
