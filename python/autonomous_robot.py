@@ -196,7 +196,7 @@ def on_keypress(event):
 
 # SET UP GLOBAL VARIABLES
 occlusions = "20_05"
-inertia_buffer = 1.5 # 1.5
+inertia_buffer = 1.8 # 1.5
 time_out = 1.0      # step timer for predator and prey
 
 display = None
@@ -261,7 +261,7 @@ while running:
         destination_list.append(current_predator_destination)
         controller_timer.reset()                                     # reset controller timer
         display.circle(current_predator_destination, 0.01, "red")
-        print("NEW DESTINATION: ", current_predator_destination)
+        #print("NEW DESTINATION: ", current_predator_destination)
         controller.resume()                                          # Resume controller (unpause)
 
     # create distance tolerance to account for inertia
@@ -273,22 +273,22 @@ while running:
     if not controller_timer:
         controller.set_destination(current_predator_destination)  # resend destination
         controller_timer.reset()
-        print("RESEND DESTINATION: ", current_predator_destination)
+        #print("RESEND DESTINATION: ", current_predator_destination)
 
     # check if prey was seen
-    if prey.is_valid and controller_state:
-        print("PREY SEEN")
-        #controller.resume()
-        current_predator_destination = prey.step.location
-        controller.set_destination(current_predator_destination)      # if prey is visible set new destination to prey location
-        destination_list.append(current_predator_destination)
-        display.circle(prey.step.location, 0.01, "blue")
-        print(prey.step.location, predator.step.location)
-        #controller_timer.reset()
+    # if prey.is_valid and controller_state:
+    #     print("PREY SEEN")
+    #     #controller.resume()
+    #     current_predator_destination = prey.step.location
+    #     controller.set_destination(current_predator_destination)      # if prey is visible set new destination to prey location
+    #     destination_list.append(current_predator_destination)
+    #     display.circle(prey.step.location, 0.01, "blue")
+    #     print(prey.step.location, predator.step.location)
+    #     #controller_timer.reset()
 
     # plotting the current location of the predator and prey
     if prey.is_valid:
-        display.agent(step=prey.step, color="blue", size=10)
+        display.agent(step=prey.step, color="green", size=10)
 
     else:
         display.agent(step=prey.step, color="gray", size=10)
