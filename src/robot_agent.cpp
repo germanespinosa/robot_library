@@ -23,9 +23,15 @@ namespace robot{
             } else if (joystick_left < 0){
                 joystick_left = -(abs(joystick_left) * (MAX_J - MIN_J) + MIN_J);
             }
+            // drive straight
+            if (gamepad.axes[7] == -32767){
+                joystick_left = 70;
+            }
             left = (char) joystick_left;
         }
-        //left = ((-gamepad.axes[1] * 2 / 256 / 3) + left ) /2 ;  // hybrid
+
+
+        // autonomous
         if (message[0] != left)
             need_update = true;
         message[0] = left;
@@ -39,6 +45,10 @@ namespace robot{
                 joystick_right = abs(joystick_right) * (MAX_J - MIN_J) + MIN_J;
             } else if (joystick_right < 0){
                 joystick_right = -(abs(joystick_right) * (MAX_J - MIN_J) + MIN_J);
+            }
+            // drive straight
+            if (gamepad.axes[7] == -32767){
+                joystick_right = 70;
             }
             right = (char) joystick_right;
         }
