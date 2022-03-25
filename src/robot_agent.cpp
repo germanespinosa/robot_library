@@ -25,7 +25,10 @@ namespace robot{
             }
             // drive straight
             if (gamepad.axes[7] == -32767){
-                joystick_left = 70;
+                joystick_left = joystick_left + 70;
+            }
+            else if (gamepad.axes[7] == 32767){
+                joystick_left = joystick_left - 70;
             }
             left = (char) joystick_left;
         }
@@ -48,7 +51,10 @@ namespace robot{
             }
             // drive straight
             if (gamepad.axes[7] == -32767){
-                joystick_right = 70;
+                joystick_right = joystick_right + -70;
+            }
+            if (gamepad.axes[7] == 32767){
+                joystick_right = joystick_right - 70;
             }
             right = (char) joystick_right;
         }
