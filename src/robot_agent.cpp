@@ -43,7 +43,7 @@ namespace robot{
 
     void Robot_agent::set_right(double right_value) {
         char right = limits.convert(right_value);
-        if (!gamepad.buttons.empty() && gamepad.buttons[7].state == 1){
+        if (!gamepad.buttons.empty() && gamepad.buttons[5].state == 1){
             float joystick_right = (float)-gamepad.axes[4]/JOYSTICK;
             if (joystick_right > 0){
                 joystick_right = abs(joystick_right) * (MAX_J - MIN_J) + MIN_J;
