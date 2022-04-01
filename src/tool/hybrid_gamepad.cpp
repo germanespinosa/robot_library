@@ -2,8 +2,8 @@
 #include <iostream>
 #include <robot_lib/gamepad_wrapper.h>
 
-#define MAX 100
-#define MIN 60
+#define MAX 120
+#define MIN 65
 #define JOYSTICK_MAX 32767
 
 #define puff_delay 5
@@ -41,8 +41,8 @@ int main(){
 
         float left = -j->axes[1];
         float right = -j->axes[4];
-
-
+//
+//
         // modify speeds to robot range
         if (left > 0){
             left = abs((float)(left/JOYSTICK_MAX)) * (MAX - MIN) + MIN;;
@@ -55,7 +55,7 @@ int main(){
             right = -(abs((float)(right/JOYSTICK_MAX)) * (MAX - MIN) + MIN);
         }
 
-
+//
         if (pleft != left || pright != right) {
             robot.set_left(left);
             robot.set_right(right);
@@ -63,7 +63,7 @@ int main(){
             //cout << "left: "<< -j->axes[1] << " right: "<<  -j->axes[4]<< endl;
             cout << "left: " << left << " right: " << right << endl;
         }
-
+//
         pleft = left;
         pright = right;
 
@@ -76,9 +76,9 @@ int main(){
 
 
 
-        if (update) {
-            robot.update();
-        }
+//        if (update) {
+//            robot.update();
+//        }
 
         // test all joystick inputs
 //        for (int i = 0;i<j->axes.size();i++) {
@@ -89,6 +89,18 @@ int main(){
 //             if (j->buttons[i].state == 1)
 //                 cout << "button " << i << ": " << j->buttons[i].state << "\t";
 //        }
+//         if (j->axes[7] == -32767){
+//             cout << "up" << endl;
+//
+//         }
+//        cout << j->buttons[7].state << endl;
+//        if (j->buttons[7].state == 1){
+//            cout << "hi" << endl;
+//        }
+
+         if (update) {
+            robot.update();
+        }
 
         usleep(30000);
         if (j->buttons[8].state == 1) h = false; // exit loop
