@@ -16,7 +16,7 @@ namespace robot{
     void Robot_agent::set_left(double left_value) {
         char left = limits.convert(left_value);
         // for joystick control press R2
-        if (!gamepad.buttons.empty() && gamepad.buttons[7].state == 1){
+        if (!gamepad.buttons.empty() && gamepad.buttons[5].state == 1){
             float joystick_left = (float)-gamepad.axes[1]/JOYSTICK; // normalize this to config file
             if (joystick_left > 0){
                 joystick_left = abs(joystick_left) * (MAX_J - MIN_J) + MIN_J;
