@@ -2,8 +2,8 @@
 
 using namespace std;
 // temp constants
-#define MAX_J 100
-#define MIN_J 30
+#define MAX_J 120
+#define MIN_J 65
 #define JOYSTICK 32767
 
 namespace robot{
@@ -16,6 +16,7 @@ namespace robot{
     void Robot_agent::set_left(double left_value) {
         char left = limits.convert(left_value);
         // for joystick control press R2
+        cout << gamepad.buttons[7].state << endl;
         if (gamepad.buttons[7].state == 1){
             float joystick_left = (float)-gamepad.axes[1]/JOYSTICK; // normalize this to config file
             if (joystick_left > 0){
@@ -80,7 +81,7 @@ namespace robot{
     bool Robot_agent::update() {
         if (!need_update) return true;
 
-        //cout << "robot_agent " << int(message[0]) << " : " << int(message[1]) << endl;
+        cout << "robot_agent " << int(message[0]) << " : " << int(message[1]) << endl;
         bool res = connection.send_data(message,3);
         message[2] &=~(1UL << 3);
         message[2] &=~(1UL << 4);
