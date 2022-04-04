@@ -2,8 +2,8 @@
 
 using namespace std;
 // temp constants
-#define MAX_J 100
-#define MIN_J 30
+#define MAX_J 26
+#define MIN_J 0
 #define JOYSTICK 32767
 
 namespace robot{
@@ -80,7 +80,7 @@ namespace robot{
     bool Robot_agent::update() {
         if (!need_update) return true;
 
-        //cout << "robot_agent " << int(message[0]) << " : " << int(message[1]) << endl;
+        cout << "robot_agent " << int(message[0]) << " : " << int(message[1]) << endl;
         bool res = connection.send_data(message,3);
         message[2] &=~(1UL << 3);
         message[2] &=~(1UL << 4);
