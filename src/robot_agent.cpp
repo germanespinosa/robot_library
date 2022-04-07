@@ -2,8 +2,8 @@
 
 using namespace std;
 // temp constants
-#define MAX_J 100
-#define MIN_J 30
+#define MAX_J 30
+#define MIN_J 0
 #define JOYSTICK 32767
 
 namespace robot{
@@ -25,11 +25,11 @@ namespace robot{
             }
             // drive straight
             if (gamepad.axes[7] == -32767){
-                joystick_left = joystick_left/2 + 70; // max value for char 127
+                joystick_left = joystick_left/2 + 20; // max value for char 127
 
             }
             else if (gamepad.axes[7] == 32767){
-                joystick_left = joystick_left/2 - 70;
+                joystick_left = joystick_left/2 - 20;
             }
             left = (char) joystick_left;
         }
@@ -52,10 +52,10 @@ namespace robot{
             }
             // drive straight
             if (gamepad.axes[7] == -32767){
-                joystick_right = joystick_right/2 + 70;
+                joystick_right = joystick_right/2 + 20;
             }
             if (gamepad.axes[7] == 32767){
-                joystick_right = joystick_right/2 - 70;
+                joystick_right = joystick_right/2 - 20;
             }
             right = (char) joystick_right;
         }
@@ -85,6 +85,7 @@ namespace robot{
         message[2] &=~(1UL << 3);
         message[2] &=~(1UL << 4);
         message[2] &=~(1UL << 5);
+        message[2] &=~(1UL << 6);
         return res;
     }
 
@@ -143,6 +144,13 @@ namespace robot{
             limits(limits),
             gamepad(device_path){
         set_leds(true);
+    }
+
+    bool Robot_agent::stop() {
+        message[2] |= 1UL << 6;
+        need_update = true;
+        update();
+        return true;
     }
 
 }
