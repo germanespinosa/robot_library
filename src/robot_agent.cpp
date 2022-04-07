@@ -25,11 +25,11 @@ namespace robot{
             }
             // drive straight
             if (gamepad.axes[7] == -32767){
-                joystick_left = joystick_left/2 + 70; // max value for char 127
+                joystick_left = joystick_left/2 + 20; // max value for char 127
 
             }
             else if (gamepad.axes[7] == 32767){
-                joystick_left = joystick_left/2 - 70;
+                joystick_left = joystick_left/2 - 20;
             }
             left = (char) joystick_left;
         }
@@ -52,10 +52,10 @@ namespace robot{
             }
             // drive straight
             if (gamepad.axes[7] == -32767){
-                joystick_right = joystick_right/2 + 70;
+                joystick_right = joystick_right/2 + 20;
             }
             if (gamepad.axes[7] == 32767){
-                joystick_right = joystick_right/2 - 70;
+                joystick_right = joystick_right/2 - 20;
             }
             right = (char) joystick_right;
         }
