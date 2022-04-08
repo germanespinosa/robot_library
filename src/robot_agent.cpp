@@ -66,8 +66,8 @@ namespace robot{
 
     void Robot_agent::capture() {
         message[2] |= 1UL << 3;
+        message[2] |= 1UL << 6;
         need_update = true;
-        update();
     }
 
     void Robot_agent::set_led(int led_number, bool val) {
@@ -149,7 +149,6 @@ namespace robot{
     bool Robot_agent::stop() {
         message[2] |= 1UL << 6;
         need_update = true;
-        update();
         return true;
     }
 
