@@ -65,8 +65,8 @@ namespace robot{
     }
 
     void Robot_agent::capture() {
-        message[2] |= 1UL << 3;
-        message[2] |= 1UL << 6;
+        message[2] |= 1UL << 3; //puff
+        message[2] |= 1UL << 6; // stop
         need_update = true;
     }
 
