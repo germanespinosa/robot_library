@@ -28,7 +28,9 @@ from cellworld_controller_service import ControllerClient
 from cellworld_experiment_service import ExperimentClient
 from random import choice
 from time import sleep
+from json_cpp import JsonList
 
+episode_in_progress = False
 
 class AgentData:
     """
@@ -47,9 +49,21 @@ def on_experiment_started(experiment):
     print("Experiment started:", experiment)
     experiments[experiment.experiment_name] = experiment.copy()
 
+def on_episode_finished():
+    global episode_in_progress, current_predator_destination
+    episode_in_progress = False
+    current_predator_destination = choice(spawn_locations)
+    controller.set_destination(current_predator_destination)     # set destination
+    destination_list.append(current_predator_destination)
+    controller_timer.reset()                                     # reset controller timer
+    display.circle(current_predator_destination, 0.01, "red")
+    #print("NEW DESTINATION: ", current_predator_destination)
+    controller.resume()
+
 
 def on_episode_started(experiment_name):
-    global display
+    global display, episode_in_progress
+    episode_in_progress = True
     print("New Episode: ", experiment_name)
     print("Occlusions: ", experiments[experiment_name].world.occlusions)
     # occlusions = Cell_group_builder.get_from_name("hexagonal", experiments[experiment_name].world.occlusions, "occlusions")
@@ -115,7 +129,7 @@ def on_step(step: Step):
     if step.agent_name == "predator":
         predator.is_valid = Timer(time_out)
         predator.step = step
-        display.circle(step.location, 0.002, "cyan")    # plot predator path (steps)
+        display.circle(step.location, 0.002, "royalblue")    # plot predator path (steps)
         if behavior != ControllerClient.Behavior.Explore:
             controller.set_behavior(ControllerClient.Behavior.Explore) # explore when prey not seen
             behavior = ControllerClient.Behavior.Explore
@@ -193,11 +207,20 @@ def on_keypress(event):
         display.circle(current_predator_destination, 0.01, "red")
 
 
+def get_spawn_locations(w: World):
+    entrance = Location(0, .5)
+    min_dist = .5
+    spawn_locations = JsonList(list_type=Location)
+    for cell in w.cells.free_cells():
+        if cell.location.dist(entrance) >= min_dist:
+            spawn_locations.append(cell.location)
+    return spawn_locations
+
 
 # SET UP GLOBAL VARIABLES
-occlusions = "20_05"
-inertia_buffer = 1.5 # 1.5
-time_out = 1.0      # step timer for predator and prey
+occlusions = "10_05"
+inertia_buffer = 1.8 #1.8 # 1.5
+time_out = 1.0      # step timer for predator and preyQ
 
 display = None
 robot_visibility = None
@@ -207,6 +230,7 @@ world = World.get_from_parameters_names("hexagonal", "canonical")
 robot_world = World.get_from_parameters_names("hexagonal", "canonical")
 load_world()
 load_robot_world()
+spawn_locations = get_spawn_locations(robot_world)
 cell_size = world.implementation.cell_transformation.size
 #  create predator and prey objects
 predator = AgentData("predator")
@@ -221,6 +245,7 @@ behavior = -1                                          # Explore or Pursue
 experiment_service = ExperimentClient()
 experiment_service.on_experiment_started = on_experiment_started
 experiment_service.on_episode_started = on_episode_started
+experiment_service.on_episode_finished = on_episode_finished
 if not experiment_service.connect("127.0.0.1"):
     print("Failed to connect to experiment service")
     exit(1)
@@ -252,17 +277,25 @@ display.set_agent_marker("prey", Agent_markers.arrow())
 
 running = True
 while running:
+# add inertia buffer logic
+    if prey.is_valid:
+        inertia_buffer = 1.8
+    else:
+        inertia_buffer = 1
+
 
     # check predator distance from destination and send new on if reached
     if current_predator_destination.dist(predator.step.location) < (cell_size * inertia_buffer) and controller_timer != 1:
         controller.pause()                                           # prevents overshoot - stop robot omce close enough to destination
-        current_predator_destination = hidden_location()             # assign new destination
-        controller.set_destination(current_predator_destination)     # set destination
-        destination_list.append(current_predator_destination)
-        controller_timer.reset()                                     # reset controller timer
-        display.circle(current_predator_destination, 0.01, "red")
-        print("NEW DESTINATION: ", current_predator_destination)
-        controller.resume()                                          # Resume controller (unpause)
+        experiment_service.set_behavior(0)
+        if episode_in_progress:
+            current_predator_destination = hidden_location()             # assign new destination
+            controller.set_destination(current_predator_destination)     # set destination
+            destination_list.append(current_predator_destination)
+            controller_timer.reset()                                     # reset controller timer
+            display.circle(current_predator_destination, 0.01, "red")
+            #print("NEW DESTINATION: ", current_predator_destination)
+            controller.resume()                                          # Resume controller (unpause)
 
     # create distance tolerance to account for inertia
     elif current_predator_destination.dist(predator.step.location) < (cell_size * inertia_buffer):
@@ -273,22 +306,24 @@ while running:
     if not controller_timer:
         controller.set_destination(current_predator_destination)  # resend destination
         controller_timer.reset()
-        print("RESEND DESTINATION: ", current_predator_destination)
+        #print("RESEND DESTINATION: ", current_predator_destination)
 
     # check if prey was seen
-    if prey.is_valid and controller_state:
+    if prey.is_valid and controller_state: # controller state allows pause to overule pursue
         print("PREY SEEN")
-        #controller.resume()
+        controller.pause()
+        experiment_service.set_behavior(1)
         current_predator_destination = prey.step.location
         controller.set_destination(current_predator_destination)      # if prey is visible set new destination to prey location
         destination_list.append(current_predator_destination)
         display.circle(prey.step.location, 0.01, "blue")
         print(prey.step.location, predator.step.location)
+        controller.resume()
         #controller_timer.reset()
 
     # plotting the current location of the predator and prey
     if prey.is_valid:
-        display.agent(step=prey.step, color="blue", size=10)
+        display.agent(step=prey.step, color="green", size=10)
 
     else:
         display.agent(step=prey.step, color="gray", size=10)
