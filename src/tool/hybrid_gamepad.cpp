@@ -1,9 +1,10 @@
 #include <robot_lib/robot.h>
 #include <iostream>
 #include <robot_lib/gamepad_wrapper.h>
+#include <robot_lib/robot_agent.h>
 
-#define MAX 120
-#define MIN 65
+#define MAX 40 // why did I think this was 26
+#define MIN 0
 #define JOYSTICK_MAX 32767
 
 #define puff_delay 5
@@ -11,6 +12,7 @@
 using namespace std;
 using namespace robot;
 using namespace gamepad;
+using namespace controller;
 
 
 
@@ -18,9 +20,10 @@ int main(){
     cout << "hi" << endl;
     string robot_ip = "192.168.137.155";
     string device = "/dev/input/js0";
-
+    Agent_operational_limits limits;
+    limits.load("../config/robot_operational_limits.json");
     // connect to robot
-    Robot robot;
+    Robot_agent robot(limits);
     if (!robot.connect(robot_ip))
     {
         cout << "Unable to connect to robot." <<  endl;
@@ -45,13 +48,17 @@ int main(){
 //
         // modify speeds to robot range
         if (left > 0){
-            left = abs((float)(left/JOYSTICK_MAX)) * (MAX - MIN) + MIN;;
+//            left = 47;
+            left = abs((float)(left/JOYSTICK_MAX)) * (MAX - MIN) + MIN;
         } else if (left < 0){
+//            left = -47;
             left = -(abs((float)(left/JOYSTICK_MAX)) * (MAX - MIN) + MIN);
         }
         if (right > 0){
+//            right = 47;
             right = abs((float)(right/JOYSTICK_MAX)) * (MAX - MIN) + MIN;
         } else if (right < 0){
+//            right = -47;
             right = -(abs((float)(right/JOYSTICK_MAX)) * (MAX - MIN) + MIN);
         }
 
@@ -62,6 +69,23 @@ int main(){
             update = true;
             //cout << "left: "<< -j->axes[1] << " right: "<<  -j->axes[4]<< endl;
             cout << "left: " << left << " right: " << right << endl;
+        }
+
+        if (j->buttons[0].state == 1){
+            while (j->buttons[0].state == 1);
+            robot.stop();
+            robot.update();
+            cout << "hi" << endl;
+        }
+        if (j->buttons[1].state == 1){
+            while (j->buttons[1].state == 1);
+            robot.set_left(0);
+            robot.set_right(0);
+            robot.capture();
+            robot.update();
+            robot.update();
+            cout << "stop" << endl;
+
         }
 //
         pleft = left;
@@ -87,7 +111,7 @@ int main(){
 //        }
 //         for (int i = 0;i<j->buttons.size();i++) {
 //             if (j->buttons[i].state == 1)
-//                 cout << "button " << i << ": " << j->buttons[i].state << "\t";
+//                 cout << "button " << i << ": " << j->buttons[i].state << endl;
 //        }
 //         if (j->axes[7] == -32767){
 //             cout << "up" << endl;
@@ -99,7 +123,7 @@ int main(){
 //        }
 
          if (update) {
-            robot.update();
+            //robot.update();
         }
 
         usleep(30000);
