@@ -2,8 +2,8 @@
 
 using namespace std;
 // temp constants
-#define MAX_J 100
-#define MIN_J 30
+#define MAX_J 30
+#define MIN_J 0
 #define JOYSTICK 32767
 
 namespace robot{
@@ -16,16 +16,26 @@ namespace robot{
     void Robot_agent::set_left(double left_value) {
         char left = limits.convert(left_value);
         // for joystick control press R2
-        if (gamepad.buttons[7].state == 1){
+        if (!gamepad.buttons.empty() && gamepad.buttons[5].state == 1){
             float joystick_left = (float)-gamepad.axes[1]/JOYSTICK; // normalize this to config file
             if (joystick_left > 0){
                 joystick_left = abs(joystick_left) * (MAX_J - MIN_J) + MIN_J;
             } else if (joystick_left < 0){
                 joystick_left = -(abs(joystick_left) * (MAX_J - MIN_J) + MIN_J);
             }
+            // drive straight
+            if (gamepad.axes[7] == -32767){
+                joystick_left = joystick_left/2 + 20; // max value for char 127
+
+            }
+            else if (gamepad.axes[7] == 32767){
+                joystick_left = joystick_left/2 - 20;
+            }
             left = (char) joystick_left;
         }
-        //left = ((-gamepad.axes[1] * 2 / 256 / 3) + left ) /2 ;  // hybrid
+
+
+        // autonomous
         if (message[0] != left)
             need_update = true;
         message[0] = left;
@@ -33,12 +43,19 @@ namespace robot{
 
     void Robot_agent::set_right(double right_value) {
         char right = limits.convert(right_value);
-        if (gamepad.buttons[7].state == 1){
+        if (!gamepad.buttons.empty() && gamepad.buttons[5].state == 1){
             float joystick_right = (float)-gamepad.axes[4]/JOYSTICK;
             if (joystick_right > 0){
                 joystick_right = abs(joystick_right) * (MAX_J - MIN_J) + MIN_J;
             } else if (joystick_right < 0){
                 joystick_right = -(abs(joystick_right) * (MAX_J - MIN_J) + MIN_J);
+            }
+            // drive straight
+            if (gamepad.axes[7] == -32767){
+                joystick_right = joystick_right/2 + 20;
+            }
+            if (gamepad.axes[7] == 32767){
+                joystick_right = joystick_right/2 - 20;
             }
             right = (char) joystick_right;
         }
@@ -48,9 +65,9 @@ namespace robot{
     }
 
     void Robot_agent::capture() {
-        message[2] |= 1UL << 3;
+        message[2] |= 1UL << 3; //puff
+        message[2] |= 1UL << 6; // stop
         need_update = true;
-        update();
     }
 
     void Robot_agent::set_led(int led_number, bool val) {
@@ -63,7 +80,7 @@ namespace robot{
     bool Robot_agent::update() {
         if (!need_update) return true;
 
-        cout << "robot_agent " << int(message[0]) << " : " << int(message[1]) << endl;
+        //cout << "robot_agent " << int(message[0]) << " : " << int(message[1]) << endl;
         bool res = connection.send_data(message,3);
         message[2] &=~(1UL << 3);
         message[2] &=~(1UL << 4);
@@ -132,7 +149,6 @@ namespace robot{
     bool Robot_agent::stop() {
         message[2] |= 1UL << 6;
         need_update = true;
-        update();
         return true;
     }
 
