@@ -14,6 +14,7 @@ namespace robot {
         virtual void set_right(double) override;
         virtual void capture() override;
         virtual bool update() override;
+        virtual bool stop() override;
         void set_led(int, bool);
         void set_leds(bool);
         void increase_brightness();
