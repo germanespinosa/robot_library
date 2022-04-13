@@ -68,6 +68,7 @@ namespace robot{
         message[2] &=~(1UL << 3);
         message[2] &=~(1UL << 4);
         message[2] &=~(1UL << 5);
+        message[2] &=~(1UL << 6);
         return res;
     }
 
@@ -126,6 +127,13 @@ namespace robot{
             limits(limits),
             gamepad(device_path){
         set_leds(true);
+    }
+
+    bool Robot_agent::stop() {
+        message[2] |= 1UL << 6;
+        need_update = true;
+        update();
+        return true;
     }
 
 }
