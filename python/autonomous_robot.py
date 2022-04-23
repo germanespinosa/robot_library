@@ -138,7 +138,7 @@ def on_step(step: Step):
     if step.agent_name == "predator":
         predator.is_valid = Timer(time_out)
         predator.step = step
-        display.circle(step.location, 0.002, "royalblue")    # plot predator path (steps)
+        #display.circle(step.location, 0.002, "royalblue")    # plot predator path (steps)
         if behavior != ControllerClient.Behavior.Explore:
             controller.set_behavior(ControllerClient.Behavior.Explore) # explore when prey not seen
             behavior = ControllerClient.Behavior.Explore
@@ -229,7 +229,7 @@ def get_spawn_locations(w: Cell_group):
 def get_possible_destinations(w: World) -> Cell_group:
     res = Cell_group()
     map = Cell_map(w.configuration.cell_coordinates)
-    for cell in w.cells:
+    for cell in w.cells.free_cells():
         connection_count = 0
         for connection in w.configuration.connection_pattern:
             connection_coordinates = connection + cell.coordinates
@@ -242,7 +242,8 @@ def get_possible_destinations(w: World) -> Cell_group:
     return res
 
 # SET UP GLOBAL VARIABLES
-occlusions = "20_05"
+occlusions = sys.argv[1]
+
 inertia_buffer = 1 #1.8 # 1.5
 time_out = 1.0      # step timer for predator and preyQ
 display = None
