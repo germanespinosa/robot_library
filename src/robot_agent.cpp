@@ -2,7 +2,7 @@
 
 using namespace std;
 // temp constants
-#define MAX_J 30
+#define MAX_J 60
 #define MIN_J 0
 #define JOYSTICK 32767
 
@@ -25,11 +25,11 @@ namespace robot{
             }
             // drive straight
             if (gamepad.axes[7] == -32767){
-                joystick_left = joystick_left/2 + 20; // max value for char 127
+                joystick_left = joystick_left/2 + 50; // max value for char 127
 
             }
             else if (gamepad.axes[7] == 32767){
-                joystick_left = joystick_left/2 - 20;
+                joystick_left = joystick_left/2 - 50;
             }
             left = (char) joystick_left;
         }
@@ -52,10 +52,10 @@ namespace robot{
             }
             // drive straight
             if (gamepad.axes[7] == -32767){
-                joystick_right = joystick_right/2 + 20;
+                joystick_right = joystick_right/2 + 50;
             }
             if (gamepad.axes[7] == 32767){
-                joystick_right = joystick_right/2 - 20;
+                joystick_right = joystick_right/2 - 50;
             }
             right = (char) joystick_right;
         }
@@ -80,7 +80,7 @@ namespace robot{
     bool Robot_agent::update() {
         if (!need_update) return true;
 
-        //cout << "robot_agent " << int(message[0]) << " : " << int(message[1]) << endl;
+        cout << "robot_agent " << int(message[0]) << " : " << int(message[1]) << endl;
         bool res = connection.send_data(message,3);
         message[2] &=~(1UL << 3);
         message[2] &=~(1UL << 4);
