@@ -26,7 +26,7 @@ import sys
 from cellworld import *
 from cellworld_controller_service import ControllerClient
 from cellworld_experiment_service import ExperimentClient
-from random import choice
+from random import choice, choices
 from time import sleep
 from json_cpp import JsonList
 
@@ -129,7 +129,7 @@ def random_location():
     """
     Returns random open location in robot_world (keep this for cases where there are no hidden locations)
     """
-    location = choice(robot_world.cells.free_cells().get("location"))
+    location = choice(robot_world.cells.free_cells().get("location")) #this is probably wrong?
     return location
 
 
@@ -139,10 +139,11 @@ def hidden_location():
     """
     current_location = predator.step.location
     #hidden_cells = robot_visibility.hidden_cells(current_location, robot_world.cells)
-    hidden_cells = robot_visibility.hidden_cells(current_location, possible_destinations)
+    #hidden_cells = robot_visibility.hidden_cells(current_location, possible_destinations)
 
     try:    # find random hidden cell
-        new_cell = choice(hidden_cells)
+        #new_cell = choices(hidden_cells)
+        new_cell = choices(possible_destinations, weights=possible_destinations_weights)
         new_cell_location = new_cell.location
     except:  # if no hidden locations
         new_cell_location = random_location()
