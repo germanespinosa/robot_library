@@ -31,6 +31,15 @@ from time import sleep
 from json_cpp import JsonList
 
 episode_in_progress = False
+experiment_log_folder = "/habitat/logsV2"
+current_experiment_name = ""
+
+pheromone_charge = .25
+pheromone_decay = 1.0
+pheromone_max = 10
+
+possible_destinations = Cell_group()
+possible_destinations_weights = []
 
 class AgentData:
     """
@@ -49,6 +58,7 @@ def on_experiment_started(experiment):
     print("Experiment started:", experiment)
     experiments[experiment.experiment_name] = experiment.copy()
 
+
 def on_episode_finished(m):
     global episode_in_progress, current_predator_destination, inertia_buffer
     controller.set_behavior(0)
@@ -60,16 +70,25 @@ def on_episode_finished(m):
     controller_timer.reset()                                     # reset controller timer
     display.circle(current_predator_destination, 0.01, "red")
     #print("NEW DESTINATION: ", current_predator_destination)
+    last_trajectory = Experiment.get_from_file(experiment_log_folder + "/" + current_experiment_name + "_experiment.json").episodes[-1].trajectories.get_agent_trajectory("prey")
+    for step in last_trajectory:
+        cell_index = possible_destinations.find(step.location)
+        possible_destinations_weights[cell_index] = min(possible_destinations_weights[cell_index] + pheromone_charge, pheromone_max)
+    for i in range(len(possible_destinations_weights)):
+        possible_destinations_weights[i] = max(possible_destinations_weights[i] - pheromone_decay, 1)
     controller.resume()
 
-def on_capture(frame :int):
+
+def on_capture( frame:int ):
     global inertia_buffer
     controller.set_behavior(0)
     inertia_buffer = 1
     print ("PREY CAPTURED")
 
+
 def on_episode_started(experiment_name):
-    global display, episode_in_progress
+    global display, episode_in_progress, current_experiment_name
+    current_experiment_name = experiment_name
     episode_in_progress = True
     print("New Episode: ", experiment_name)
     print("Occlusions: ", experiments[experiment_name].world.occlusions)
@@ -255,6 +274,7 @@ robot_world = World.get_from_parameters_names("hexagonal", "canonical")
 load_world()
 load_robot_world()
 possible_destinations = get_possible_destinations(robot_world)
+possible_destinations_weights = [1 for x in possible_destinations]
 spawn_locations = get_spawn_locations(possible_destinations)
 cell_size = world.implementation.cell_transformation.size
 #  create predator and prey objects
@@ -362,6 +382,9 @@ while running:
         display.circle(destination_list[0], 0.008, "white")
         destination_list.remove(destination_list[0])
 
+    cmap = plt.cm.Reds(possible_destinations_weights)
+    for i, cell in enumerate(possible_destinations):
+        display.cell(cell_id=cell.id, color=cmap[i])
     display.update()
     sleep(0.1)
 
