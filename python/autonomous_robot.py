@@ -36,7 +36,7 @@ current_experiment_name = ""
 
 pheromone_charge = .25
 pheromone_decay = 1.0
-pheromone_max = 10
+pheromone_max = 50
 
 possible_destinations = Cell_group()
 possible_destinations_weights = []
@@ -67,7 +67,8 @@ def on_episode_finished(m):
     current_predator_destination = choice(spawn_locations)
     controller.set_destination(current_predator_destination)     # set destination
     destination_list.append(current_predator_destination)
-    controller_timer.reset()                                     # reset controller timer
+    if controller_timer != 1: # no idea why the timer would be an integer but whatevs
+        controller_timer.reset()                                     # reset controller timer
     display.circle(current_predator_destination, 0.01, "red")
     #print("NEW DESTINATION: ", current_predator_destination)
     last_trajectory = Experiment.get_from_file(experiment_log_folder + "/" + current_experiment_name + "_experiment.json").episodes[-1].trajectories.get_agent_trajectory("prey")
@@ -382,7 +383,7 @@ while running:
         display.circle(destination_list[0], 0.008, "white")
         destination_list.remove(destination_list[0])
 
-    cmap = plt.cm.Reds(possible_destinations_weights)
+    cmap = plt.cm.Reds([x/max(possible_destinations_weights) for x in possible_destinations_weights])
     for i, cell in enumerate(possible_destinations):
         display.cell(cell_id=cell.id, color=cmap[i])
     display.update()
