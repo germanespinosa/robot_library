@@ -384,9 +384,9 @@ while running:
         display.circle(destination_list[0], 0.008, "white")
         destination_list.remove(destination_list[0])
 
-    cmap = plt.cm.Reds([x/max(possible_destinations_weights) for x in possible_destinations_weights])
-    for i, cell in enumerate(possible_destinations):
-        display.cell(cell_id=cell.id, color=cmap[i])
+    #cmap = plt.cm.Reds([x/max(possible_destinations_weights) for x in possible_destinations_weights])
+    # for i, cell in enumerate(possible_destinations):
+    #     display.cell(cell_id=cell.id, color=cmap[i])
     display.update()
     sleep(0.1)
 
