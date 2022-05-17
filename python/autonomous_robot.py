@@ -99,6 +99,7 @@ def on_episode_started(experiment_name):
     # print(occlusions)
 
 def on_prey_entered_arena():
+    print("PREY HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     global episode_in_progress
     episode_in_progress = True
 
