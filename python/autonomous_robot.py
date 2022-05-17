@@ -91,13 +91,16 @@ def on_episode_started(experiment_name):
     print("hi")
     global display, episode_in_progress, current_experiment_name
     current_experiment_name = experiment_name
-    episode_in_progress = True
+    # episode_in_progress = True
     print("New Episode: ", experiment_name)
     print("Occlusions: ", experiments[experiment_name].world.occlusions)
     # occlusions = Cell_group_builder.get_from_name("hexagonal", experiments[experiment_name].world.occlusions, "occlusions")
     # display.set_occlusions(occlusions)
     # print(occlusions)
 
+def on_prey_entered_arena():
+    global episode_in_progress
+    episode_in_progress = True
 
 def load_world():
     """
@@ -293,7 +296,7 @@ behavior = -1                                          # Explore or Pursue
 experiment_service = ExperimentClient()
 experiment_service.on_experiment_started = on_experiment_started
 experiment_service.on_episode_started = on_episode_started
-# experiment_service.on_prey_entered_arena = on_episode_started
+experiment_service.on_prey_entered_arena = on_prey_entered_arena
 experiment_service.on_episode_finished = on_episode_finished
 experiment_service.on_capture = on_capture
 
