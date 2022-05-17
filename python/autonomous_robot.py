@@ -291,7 +291,8 @@ behavior = -1                                          # Explore or Pursue
 # CONNECT TO EXPERIMENT SERVER
 experiment_service = ExperimentClient()
 experiment_service.on_experiment_started = on_experiment_started
-experiment_service.on_episode_started = on_episode_started
+# experiment_service.on_episode_started = on_episode_started
+experiment_service.on_prey_entered_arena = on_episode_started
 experiment_service.on_episode_finished = on_episode_finished
 experiment_service.on_capture = on_capture
 
