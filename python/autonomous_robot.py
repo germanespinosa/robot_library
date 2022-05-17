@@ -88,6 +88,7 @@ def on_capture( frame:int ):
 
 
 def on_episode_started(experiment_name):
+    print("hi")
     global display, episode_in_progress, current_experiment_name
     current_experiment_name = experiment_name
     episode_in_progress = True
@@ -291,8 +292,8 @@ behavior = -1                                          # Explore or Pursue
 # CONNECT TO EXPERIMENT SERVER
 experiment_service = ExperimentClient()
 experiment_service.on_experiment_started = on_experiment_started
-# experiment_service.on_episode_started = on_episode_started
-experiment_service.on_prey_entered_arena = on_episode_started
+experiment_service.on_episode_started = on_episode_started
+# experiment_service.on_prey_entered_arena = on_episode_started
 experiment_service.on_episode_finished = on_episode_finished
 experiment_service.on_capture = on_capture
 
