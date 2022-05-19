@@ -99,7 +99,6 @@ def on_episode_started(experiment_name):
     # print(occlusions)
 
 def on_prey_entered_arena():
-    print("PREY HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     global episode_in_progress
     episode_in_progress = True
 
@@ -360,7 +359,7 @@ while running:
         #print("RESEND DESTINATION: ", current_predator_destination)
 
     # check if prey was seen
-    if prey.is_valid and controller_state: # controller state allows pause to overrule pursue
+    if prey.is_valid and controller_state and episode_in_progress: # controller state allows pause to overrule pursue
         print("PREY SEEN")
         controller.pause()
         controller.set_behavior(1)
