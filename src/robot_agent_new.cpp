@@ -16,6 +16,7 @@ namespace robot{
 
     }
 
+    // TODO: need to set left ticks, rigth ticks, and speed
     void Robot_agent::set_left(double left_value) {
         //TODO: change agent.cpp convert function to fit new model
         char left = left_value;
@@ -26,12 +27,18 @@ namespace robot{
         message[0] = left;
     }
 
-//    void Robot_agent::set_right(double right_value) {
-//        char right = right_value;
+    void Robot_agent::set_right(double right_value) {
+        char right = right_value;
+
+        if (message[1] != right)
+            need_update = true;
+        message[1] = right;
+    }
+
+//    void Robot_agent::set_speed(double speed_value) {
+//        char speed = speed_value;
+//        if (message[])
 //
-//        if (message[1] != right)
-//            need_update = true;
-//        message[1] = right;
 //    }
 
 
@@ -68,6 +75,7 @@ namespace robot{
         message[0] = 0;
         message[1] = 0;
         message[2] = 0;
+        message[3] = 0; // TODO: send speed
         need_update = true;
         update();
     }

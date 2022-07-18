@@ -26,7 +26,9 @@ namespace robot {
         bool connect(const std::string &, int);
         virtual void set_left(double) override;
         virtual void set_right(double) override;
-        void send_left(double, double);          // TODO: add to agent and make this a virtual function
+
+        virtual void set_speed(double) override;  // TODO: need to crete set speed function ... virtual?
+
         virtual void capture() override;
         virtual bool update() override;
         virtual bool stop() override;
