@@ -81,8 +81,8 @@ target_link_libraries( gamepad PUBLIC robot_lib)
 add_executable(hybrid_gamepad src/tool/hybrid_gamepad.cpp)
 target_link_libraries( hybrid_gamepad PUBLIC robot_lib)
 
-add_executable(hybrid_gamepad2 src/tool/hybrid_gamepad2.cpp)
-target_link_libraries( hybrid_gamepad2 PUBLIC robot_lib)
+#add_executable(hybrid_gamepad2 src/tool/hybrid_gamepad2.cpp)
+#target_link_libraries( hybrid_gamepad2 PUBLIC robot_lib)
 
 add_executable(robot_paths src/tool/robot_paths.cpp)
 target_link_libraries(robot_paths PUBLIC robot_lib)
