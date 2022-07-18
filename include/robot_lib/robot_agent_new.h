@@ -24,10 +24,10 @@ namespace robot {
         bool connect();
         bool connect(const std::string &);
         bool connect(const std::string &, int);
-        virtual void set_left(double) override;
-        virtual void set_right(double) override;
+        void set_left(double) override;
+        void set_right(double) override;
 
-        virtual void set_speed(double) override;  // TODO: need to crete set speed function ... virtual?
+        void set_speed(double);  // TODO: need to create set speed function ... virtual?
 
         virtual void capture() override;
         virtual bool update() override;
