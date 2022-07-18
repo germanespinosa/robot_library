@@ -11,12 +11,14 @@ void robot::Prey_simulator_service::prey_location(const cell_world::Location &lo
     auto server = ((Prey_simulator_server *)_server);
     server->last_update = cell_world::Timer(10);
     server->location = location;
+    server->update();
 }
 
 void robot::Prey_simulator_service::prey_rotation(double rotation) {
     auto server = ((Prey_simulator_server *)_server);
     server->last_update = cell_world::Timer(10);
     server->rotation = rotation;
+    server->update();
 }
 
 robot::Prey_simulator_server::Prey_simulator_server(): last_update(-1) {

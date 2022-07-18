@@ -17,7 +17,7 @@ install_dependency(https://github.com/germanespinosa/easy-tcp Easy-tcp)
 install_dependency(https://github.com/germanespinosa/tcp-messages Tcp_messages)
 install_dependency(https://github.com/germanespinosa/agent_tracking Agent_tracking)
 install_dependency(https://github.com/germanespinosa/experiment_service Experiment_service)
-install_dependency(https://github.com/germanespinosa/cellworld_controller Controller)
+install_dependency(https://github.com/germanespinosa/cellworld_controller|tick-controller Controller)
 
 ###
 ### MAIN LIBRARY SETUP

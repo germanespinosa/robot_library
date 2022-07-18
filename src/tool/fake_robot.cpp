@@ -10,6 +10,7 @@
 #include <controller.h>
 #include <map>
 #include <robot_lib/robot_agent.h>
+#include <robot_lib/prey_simulator.h>
 
 using namespace std;
 using namespace json_cpp;
@@ -47,7 +48,6 @@ int main(int argc, char *argv[])
     auto wi = Resources::from("world_implementation").key("hexagonal").key("canonical").get_resource<World_implementation>();
     auto capture_parameters = Resources::from("capture_parameters").key("default").get_resource<Capture_parameters>();
     auto peeking_parameters = Resources::from("peeking_parameters").key("default").get_resource<Peeking_parameters>();
-
 
     World world(wc, wi);
     Capture capture(capture_parameters, world);
@@ -119,11 +119,17 @@ int main(int argc, char *argv[])
     auto &tracker = tracking_server.create_local_client<agent_tracking::Tracking_client>();
     tracker.connect();
     tracker.subscribe();
-    while (Robot_simulator::is_running())
-        if (tracker.contains_agent_state("predator")){
-            if (verbose) cout << "track: " << tracker.get_current_state("predator") << endl;
-            Timer::wait(.5);
+    Prey_simulator_server prey_simulator_server;
+    prey_simulator_server.start(4630);
+    while (Robot_simulator::is_running()) {
+        if (tracker.contains_agent_state("predator")) {
+            if (verbose) cout << "predator: " << tracker.get_current_state("predator") << endl;
         }
+        if (tracker.contains_agent_state("prey")) {
+            if (verbose) cout << "prey: " << tracker.get_current_state("prey") << endl;
+        }
+        Timer::wait(.5);
+    }
     server.stop();
     return 0;
 }

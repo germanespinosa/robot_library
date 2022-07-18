@@ -218,7 +218,7 @@ def setBehavior(new_behavior):
 
 
 local_prey_step = Step(agent_name="prey")
-experiment = experiment_service.start_experiment("TEST", "TEST", "hexagonal", "canonical", "10_02", "TEST", 2)
+experiment = experiment_service.start_experiment("TEST", "TEST", "hexagonal", "canonical", "21_05", "TEST", 2)
 
 last_chasing_destination_timer = Timer(0)
 last_exploring_destination_timer = Timer(0)

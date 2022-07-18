@@ -19,5 +19,6 @@ namespace robot {
         cell_world::Location location;
         double rotation;
         cell_world::Timer last_update;
+        virtual void update() {};
     };
 }
