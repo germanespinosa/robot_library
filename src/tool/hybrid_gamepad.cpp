@@ -20,10 +20,8 @@ int main(){
     cout << "hi" << endl;
     string robot_ip = "192.168.137.155";
     string device = "/dev/input/js0";
-    Agent_operational_limits limits;
-    limits.load("../config/robot_operational_limits.json");
     // connect to robot
-    Robot_agent robot(limits);
+    Robot_agent robot;
     if (!robot.connect(robot_ip))
     {
         cout << "Unable to connect to robot." <<  endl;

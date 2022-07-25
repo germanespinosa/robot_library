@@ -29,7 +29,6 @@ set(robot_lib_files
         src/tracking_simulator.cpp
         src/gamepad_wrapper.cpp
         src/robot_agent.cpp
-        src/robot_agent_new.cpp
         src/prey_simulator.cpp)
 
 dependency_include(include)
@@ -66,8 +65,8 @@ target_link_libraries( robot_lib
 
 include_directories( include )
 
-add_executable(robot src/tool/fake_robot.cpp)
-target_link_libraries( robot PUBLIC robot_lib)
+add_executable(fake_robot src/tool/fake_robot.cpp)
+target_link_libraries( fake_robot PUBLIC robot_lib)
 
 add_executable(stop_fake_robot src/tool/stop_fake_robot.cpp)
 target_link_libraries( stop_fake_robot PUBLIC robot_lib)

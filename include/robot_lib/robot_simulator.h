@@ -11,8 +11,12 @@ namespace robot {
                 Add_member(time_stamp);
                 Add_member(location);
                 Add_member(theta);
-                Add_member(left);
-                Add_member(right);
+                Add_member(left_speed);
+                Add_member(right_speed);
+                Add_member(left_tick_target);
+                Add_member(right_tick_target);
+                Add_member(left_tick_counter);
+                Add_member(left_tick_counter);
                 Add_member(led0);
                 Add_member(led1);
                 Add_member(led2);
@@ -20,9 +24,12 @@ namespace robot {
                 )
         json_cpp::Json_date time_stamp;
         cell_world::Location location;
-        double theta;
-        char left, right;
-        bool led0, led1, led2, puff;
+        double theta{};
+        float left_speed{}, right_speed{};
+        int speed{};
+        int left_tick_counter{}, right_tick_counter{};
+        int left_tick_target{}, right_tick_target{};
+        bool led0{}, led1{}, led2{}, puff{};
         void update();
         void update(double);
         cell_world::Step to_step() const;

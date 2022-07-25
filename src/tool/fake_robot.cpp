@@ -10,7 +10,6 @@
 #include <controller.h>
 #include <map>
 #include <robot_lib/robot_agent.h>
-#include <robot_lib/prey_simulator.h>
 
 using namespace std;
 using namespace json_cpp;
@@ -104,9 +103,7 @@ int main(int argc, char *argv[])
         std::cout << "Server setup failed " << std::endl;
         return EXIT_FAILURE;
     }
-    Agent_operational_limits limits;
-    limits.load("../config/robot_simulator_operational_limits.json");
-    Robot_agent robot(limits);
+    Robot_agent robot;
     robot.connect("127.0.0.1");
 
     Controller_service::set_logs_folder("controller_logs/");
@@ -119,8 +116,6 @@ int main(int argc, char *argv[])
     auto &tracker = tracking_server.create_local_client<agent_tracking::Tracking_client>();
     tracker.connect();
     tracker.subscribe();
-    Prey_simulator_server prey_simulator_server;
-    prey_simulator_server.start(4630);
     while (Robot_simulator::is_running()) {
         if (tracker.contains_agent_state("predator")) {
             if (verbose) cout << "predator: " << tracker.get_current_state("predator") << endl;

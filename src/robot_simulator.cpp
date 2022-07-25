@@ -49,9 +49,29 @@ namespace robot {
     void Robot_state::update(double elapsed) {
         rm.lock();
         time_stamp = json_cpp::Json_date::now();
-        double dl = ((double)left) / 128.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
-        double dr = -((double)right) / 128.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
-        double d = ((double)left + (double)right) / 255.0 * robot_speed * elapsed; // convert motor signal to speed
+
+        left_tick_counter += elapsed * left_speed;
+        right_tick_counter += elapsed * right_speed;
+
+        float left_tick_error = left_tick_target-left_tick_counter;
+        float right_tick_error = right_tick_target-right_tick_counter;
+
+        if (abs(left_tick_error) > abs(right_tick_error)) {
+            robot_state.left_speed = speed;
+            robot_state.right_speed = right_tick_error / abs(left_tick_error) * robot_state.left_speed;
+        } else {
+            if (abs(left_tick_error) < abs(right_tick_error)) {
+                robot_state.right_speed = speed;
+                robot_state.left_speed = left_tick_error / abs(right_tick_error) * robot_state.right_speed;
+            } else {
+                robot_state.right_speed = speed;
+                robot_state.left_speed = speed;
+            }
+        }
+
+        float dl = left_speed / 1800.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
+        float dr = - right_speed / 1800.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
+        float d = left_speed + right_speed / 3600.0 * robot_speed * elapsed; // convert motor signal to speed
         theta = normalize(theta + dl + dr);
         auto new_location = location.move(theta, d);
         if (habitat_polygon.contains(new_location)) {
@@ -76,26 +96,18 @@ namespace robot {
         Service::on_connect();
     }
 
-    void Robot_simulator::on_incoming_data(const char *buff, int size) {
-        if (size == 3){ // instruction
-            rm.lock();
-            robot_state.left = buff[0];
-            robot_state.right = buff[1];
-            rm.unlock();
-        } else {
-            string message_s (buff);
-            try {
-                auto message = json_cpp::Json_create<Message>(message_s);
-                if (message.header == "stop") {
-                    end_simulation();
-                    Message response;
-                    response.header = "result";
-                    response.body = "ok";
-                    send_data(response.to_json());
-                }
-            } catch (...) {
 
-            }
+    void Robot_simulator::on_incoming_data(const char *buff, int size) {
+        struct Robot_message {
+            int32_t left, right, speed;
+        } message;
+        if (size == sizeof(message)){ // instruction
+            message = *((Robot_message *)buff);
+            rm.lock();
+            robot_state.speed = message.speed;
+            robot_state.left_tick_target += message.left;
+            robot_state.right_tick_target += message.right;
+            rm.unlock();
         }
     }
 
@@ -110,6 +122,7 @@ namespace robot {
     void simulation (){
         ofstream log;
         while (robot_running){
+            std::this_thread::sleep_for(std::chrono::milliseconds(robot_interval));
             robot_state.update();
             auto step = robot_state.to_step();
             tracking_simulator->send_update(step);
@@ -120,7 +133,6 @@ namespace robot {
                 prey_step.agent_name = "prey";
                 tracking_simulator->send_update(prey_step);
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(robot_interval));
         }
         log.close();
     }
@@ -140,8 +152,10 @@ namespace robot {
         }
         robot_state.location = location;
         robot_state.theta = rotation;
-        robot_state.left = 0;
-        robot_state.right = 0;
+        robot_state.left_tick_counter = 0;
+        robot_state.right_tick_counter = 0;
+        robot_state.left_speed = 0;
+        robot_state.right_speed = 0;
         robot_state.puff = false;
         robot_state.led0 = false;
         robot_state.led1 = false;
