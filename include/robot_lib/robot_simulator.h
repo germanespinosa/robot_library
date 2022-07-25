@@ -27,6 +27,7 @@ namespace robot {
         double theta{};
         float left_speed{}, right_speed{};
         int speed{};
+        float left_tick_counter_float{}, right_tick_counter_float{};
         int left_tick_counter{}, right_tick_counter{};
         int left_tick_target{}, right_tick_target{};
         bool led0{}, led1{}, led2{}, puff{};

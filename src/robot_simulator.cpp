@@ -50,8 +50,11 @@ namespace robot {
         rm.lock();
         time_stamp = json_cpp::Json_date::now();
 
-        left_tick_counter += elapsed * left_speed;
-        right_tick_counter += elapsed * right_speed;
+        left_tick_counter_float += elapsed * left_speed;
+        right_tick_counter_float += elapsed * right_speed;
+
+        left_tick_counter = left_tick_counter_float;
+        right_tick_counter = right_tick_counter_float;
 
         float left_tick_error = left_tick_target-left_tick_counter;
         float right_tick_error = right_tick_target-right_tick_counter;
