@@ -38,6 +38,10 @@ namespace robot {
     private:
         std::chrono::time_point<std::chrono::system_clock> last_update;
         bool initialized = false;
+        int prev_tick_target_L;
+        int prev_tick_target_R;
+        int direction_L = 0;
+        int direction_R = 0;
     };
 
     struct Robot_simulator : easy_tcp::Service {
@@ -52,5 +56,6 @@ namespace robot {
         static bool is_running();
         static Robot_state get_robot_state();
         static bool start_prey();
+
     };
 }

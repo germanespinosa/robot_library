@@ -48,40 +48,74 @@ namespace robot {
 
     void Robot_state::update(double elapsed) {
         rm.lock();
+        // TODO: state machine to manage sending multiple commands
         time_stamp = json_cpp::Json_date::now();
 
-        left_tick_counter_float += elapsed * left_speed;
+        left_tick_counter_float += elapsed * left_speed;    // elapsed: time between updates, left/right_speed: tick rate
         right_tick_counter_float += elapsed * right_speed;
 
-        left_tick_counter = left_tick_counter_float;
+        left_tick_counter = left_tick_counter_float;        // cumulative number of ticks
         right_tick_counter = right_tick_counter_float;
 
-        float left_tick_error = left_tick_target-left_tick_counter;
+        // update direction of robot when target changes
+        if (left_tick_target > prev_tick_target_L){
+            direction_L = 1;
+        } else if (left_tick_target < prev_tick_target_L)  direction_L = -1;
+        if (right_tick_target > prev_tick_target_R){
+            direction_R = 1;
+        } else if (right_tick_target < prev_tick_target_R)  direction_R = -1;
+
+
+        float left_tick_error = left_tick_target-left_tick_counter;       // tick goal - current ticks
         float right_tick_error = right_tick_target-right_tick_counter;
 
+
+
         if (abs(left_tick_error) > abs(right_tick_error)) {
-            robot_state.left_speed = speed;
-            robot_state.right_speed = right_tick_error / abs(left_tick_error) * robot_state.left_speed;
+            robot_state.left_speed = direction_L * speed;
+            robot_state.right_speed = direction_R * abs(right_tick_error) / abs(left_tick_error) * speed;
         } else {
             if (abs(left_tick_error) < abs(right_tick_error)) {
-                robot_state.right_speed = speed;
-                robot_state.left_speed = left_tick_error / abs(right_tick_error) * robot_state.right_speed;
+                robot_state.right_speed = direction_R * speed;
+                robot_state.left_speed = direction_L *abs(left_tick_error) / abs(right_tick_error) * speed;
             } else {
-                robot_state.right_speed = speed;
-                robot_state.left_speed = speed;
+                robot_state.right_speed = direction_R * speed;
+                robot_state.left_speed = direction_L * speed;
             }
+        }
+        // TODO: once tick error reaches 0 stop robot and if tick error is neg move backward
+//        cout << "L ERROR " << left_tick_error << "R ERROR " << right_tick_error << endl;
+//        cout << "L target " << left_tick_target << " prev " << prev_tick_target_L << endl;
+//        cout << "direction " << direction_L << endl;
+//        cout << "L tick count " << left_tick_counter << " R tick count " <<right_tick_counter << endl;
+
+        // check whether goal was reached
+        if (direction_L > 0){
+            if (left_tick_error < 0) left_speed = 0;
+        } else if (direction_L < 0) {
+            if (left_tick_error > 0) left_speed = 0;
+        }
+        if (direction_R > 0){
+            if (right_tick_error < 0) right_speed = 0;
+        } else if (direction_R < 0) {
+            if (right_tick_error > 0) right_speed = 0;
         }
 
         float dl = left_speed / 1800.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
         float dr = - right_speed / 1800.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
-        float d = left_speed + right_speed / 3600.0 * robot_speed * elapsed; // convert motor signal to speed
+        float d = (left_speed + right_speed) / 3600.0 * robot_speed * elapsed; // convert motor signal to speed
         theta = normalize(theta + dl + dr);
         auto new_location = location.move(theta, d);
+
+        // TODO: fix new location spot
         if (habitat_polygon.contains(new_location)) {
             if (!cell_polygons.contains(new_location)) {
                 location = location.move(theta, d);
             }
         }
+        // store tick target
+        prev_tick_target_L = left_tick_target;
+        prev_tick_target_R = right_tick_target;
         rm.unlock();
     }
 
@@ -101,6 +135,7 @@ namespace robot {
 
 
     void Robot_simulator::on_incoming_data(const char *buff, int size) {
+        // robot agent -> robot sim
         struct Robot_message {
             int32_t left, right, speed;
         } message;
@@ -129,13 +164,6 @@ namespace robot {
             robot_state.update();
             auto step = robot_state.to_step();
             tracking_simulator->send_update(step);
-            if (!prey_simulator.last_update.time_out()) {
-                auto prey_step = step;
-                prey_step.location = prey_simulator.location;
-                prey_step.rotation = prey_simulator.rotation;
-                prey_step.agent_name = "prey";
-                tracking_simulator->send_update(prey_step);
-            }
         }
         log.close();
     }

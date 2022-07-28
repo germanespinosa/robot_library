@@ -8,36 +8,23 @@ using namespace std;
 
 namespace robot{
     void Robot_agent::set_left(int left_value) {
-        int32_t left = left_value;
-
-        // autonomous
-        if (message.left != left)
-            need_update = true;
-        message.left = left;
+        message.left = left_value;
     }
 
     void Robot_agent::set_right(int right_value) {
-        int32_t right = right_value;
-        if (message.right != right)
-            need_update = true;
-        message.right = right;
+        message.right = right_value;
     }
 
     void Robot_agent::set_speed(int speed_value) {
-        int32_t speed = speed_value;
-        if (message.speed != speed)
-            need_update = true;
-        message.speed = speed;
+        message.speed = speed_value;
     }
 
     void Robot_agent::capture() {
-        //tbd maybe negative speeds?
         need_update = true;
     }
 
     bool Robot_agent::update() {
-        if (!need_update) return true;
-        bool res = connection.send_data((const char*) &message,3);
+        bool res = connection.send_data((const char*) &message,sizeof(message));
         return res;
     }
 
