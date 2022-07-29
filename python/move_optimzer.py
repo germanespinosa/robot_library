@@ -80,10 +80,17 @@ tracker.set_throughput(5)
 tracker.on_step = on_step
 
 
-robot_client.set_left(10000)
-robot_client.set_right(1000)
-robot_client.set_speed(1000)
+robot_client.set_left(300)
+robot_client.set_right(100)
+robot_client.set_speed(100)
 robot_client.update()
+sleep(0.1)
+
+robot_client.set_left(300)
+robot_client.set_right(100)
+robot_client.set_speed(100)
+robot_client.update()
+sleep(0.1)
 
 while True:
     if predator.is_valid:
@@ -91,6 +98,9 @@ while True:
         print(predator.step)
     else:
         display.agent(step=predator.step, color="grey", size= 15)
+
+
+
 
     display.update()
     sleep(0.1)

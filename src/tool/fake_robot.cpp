@@ -88,11 +88,10 @@ int main(int argc, char *argv[])
     auto peeking_parameters = Resources::from("peeking_parameters").key("default").get_resource<Peeking_parameters>();
 
 
-///
     tcp_messages::Message_server<Fake_robot_service> fake_robot_server;
     fake_robot_server.start(6300);
 
-///
+
     World world(wc, wi);
     Capture capture(capture_parameters, world);
     Peeking peeking(peeking_parameters, world);

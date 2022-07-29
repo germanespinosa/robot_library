@@ -4,6 +4,8 @@
 #include <agent_tracking/tracking_service.h>
 #include <robot_lib/tracking_simulator.h>
 
+# define ARRAY_SIZE 15
+
 namespace robot {
 
     struct Robot_state : json_cpp::Json_object  {
@@ -38,10 +40,16 @@ namespace robot {
     private:
         std::chrono::time_point<std::chrono::system_clock> last_update;
         bool initialized = false;
-        int prev_tick_target_L;
-        int prev_tick_target_R;
-        int direction_L = 0;
-        int direction_R = 0;
+        int prev_tick_target_L = 0;
+        int prev_tick_target_R = 0;
+        int prev_left_tick_counter = 0;
+        int prev_right_tick_counter = 0;
+        float direction_L = 0.0;
+        float direction_R = 0.0;
+        float speed_array[ARRAY_SIZE];
+        int left_tick_count_array[ARRAY_SIZE];
+        int right_tick_count_array[ARRAY_SIZE];
+        int message_count = 0;
     };
 
     struct Robot_simulator : easy_tcp::Service {
