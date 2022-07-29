@@ -67,52 +67,43 @@ namespace robot {
             if (right_tick_target > prev_tick_target_R){
                 right_direction_array[message_count] = 1.0;
             } else if (right_tick_target < prev_tick_target_R)  right_direction_array[message_count] = -1.0;
-//            cout << "NEW  " << left_tick_count_array[message_count] << endl;
             message_count += 1;
         }
         direction_L = left_direction_array[move_number] ;
         direction_R = right_direction_array[move_number];
 
+        float left_tick_error = left_tick_target_array[move_number]-left_tick_counter;       // tick goal - current ticks
+        float right_tick_error = right_tick_target_array[move_number]-right_tick_counter;
 
+        // if goal reached
+        if (!left_tick_error || !right_tick_error){
+            // current move is finished go to next move
+            if (message_count > 0) cout << "left_ticks: " <<left_tick_counter << "    right_ticks: " << right_tick_counter << endl;
+            if ((message_count > 1) && (message_count > move_number)){
+                cout << "MOVES_EXECUTED" << move_number << endl;
+                move_number += 1;
+            } else speed = 0;
+        }
 
 
         // Find left and right speed based on goal ticks
-        if (abs(left_tick_target_array[move_number]) > abs(right_tick_target_array[move_number])) {
+        if (abs(left_tick_error) > abs(right_tick_error)) {
             robot_state.left_speed = direction_L * speed_array[move_number];
-            robot_state.right_speed = direction_R * (float)abs(right_tick_target_array[move_number]) / (float)abs(left_tick_target_array[move_number]) * speed;
+            robot_state.right_speed = direction_R * abs(right_tick_error) / abs(left_tick_error) * speed;
         } else {
-            if (abs(left_tick_target) < abs(right_tick_target)) {
+            if (abs(left_tick_error) < abs(right_tick_error)) {
                 robot_state.right_speed = direction_R * speed_array[move_number];
-                robot_state.left_speed = direction_L * (float)abs(left_tick_target_array[move_number]) / (float)abs(right_tick_target_array[move_number]) * speed;
+                robot_state.left_speed = direction_L * abs(left_tick_error) / abs(right_tick_error) * speed;
             } else {
                 robot_state.right_speed = direction_R * speed_array[move_number];
                 robot_state.left_speed = direction_L * speed_array[move_number];
             }
         }
-
-        // Find tick count based on speed
-        left_tick_counter_float += elapsed * left_speed;    // elapsed: time between updates (0.03), left/right_speed: tick rate
-        right_tick_counter_float += elapsed * right_speed;
-        left_tick_counter = left_tick_counter_float;        // cumulative number of ticks
-        right_tick_counter = right_tick_counter_float;
-
-
-        float left_tick_error = left_tick_target_array[move_number]-left_tick_counter;       // tick goal - current ticks
-        float right_tick_error = right_tick_target_array[move_number]-right_tick_counter;
-
-
-        // if goal state will be reached slow down robot and recompute tick count
-        if ((direction_L > 0 && left_tick_error < 0) || (direction_L < 0 && left_tick_error > 0)) {
-            left_speed = left_tick_error / elapsed;
-            left_tick_counter = prev_left_tick_counter + (elapsed * left_speed);
-            left_tick_error = 0;
+        // check if error is zero of if speed needs to be reduced to prevent overshoot on last move
+        if ((abs(left_tick_error) < abs(left_speed * elapsed)) || (abs(right_tick_error) < abs(right_speed * elapsed))){
+            left_speed = left_tick_error/ elapsed;
+            right_speed = right_tick_error/ elapsed;
         }
-        if ((direction_R > 0 && right_tick_error < 0) || (direction_R < 0 && right_tick_error > 0)) {
-            right_speed = right_tick_error / elapsed;
-            right_tick_counter = prev_right_tick_counter + (elapsed * right_speed);
-            right_tick_error = 0;
-        }
-
 
         float dl = left_speed / 1800.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
         float dr = - right_speed / 1800.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
@@ -125,17 +116,10 @@ namespace robot {
                 location = location.move(theta, d);
             }
         }
+        // Find tick count based on speed
+        left_tick_counter += elapsed * left_speed;    // elapsed: time between updates (0.03), left/right_speed: tick rate
+        right_tick_counter += elapsed * right_speed;
 
-        // if goal reached
-        if (!left_tick_error || !right_tick_error){
-            // current move is finished go to next move
-            if ((message_count > 1) && (message_count > move_number)){
-                cout << left_tick_counter << "   " << right_tick_counter<< endl;
-                cout << "MOVES_EXECUTED" << move_number << endl;
-                move_number += 1;
-            } else speed = 0;
-        }
-        // reset message count if it exceeds ARRAY_SIZE
 
         // store tick target
         prev_left_tick_counter = left_tick_counter;

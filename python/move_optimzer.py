@@ -50,6 +50,7 @@ class Robot_client(MessageClient):
 
 # Variables
 time_out = 1.0
+robot_speed = 100
 
 robot_client = Robot_client()
 if robot_client.connect("127.0.0.1", 6300):
@@ -79,18 +80,19 @@ tracker.subscribe()
 tracker.set_throughput(5)
 tracker.on_step = on_step
 
-
-robot_client.set_left(300)
-robot_client.set_right(100)
-robot_client.set_speed(100)
+robot_client.set_left(600)
+robot_client.set_right(600)
+robot_client.set_speed(robot_speed)
 robot_client.update()
 sleep(0.1)
 
-robot_client.set_left(300)
-robot_client.set_right(100)
-robot_client.set_speed(100)
+robot_client.set_left(601)
+robot_client.set_right(-601)
+robot_client.set_speed(robot_speed)
 robot_client.update()
 sleep(0.1)
+
+
 
 while True:
     if predator.is_valid:
