@@ -4,7 +4,7 @@
 #include <agent_tracking/tracking_service.h>
 #include <robot_lib/tracking_simulator.h>
 
-# define ARRAY_SIZE 15
+# define ARRAY_SIZE 30
 
 namespace robot {
 
@@ -47,9 +47,12 @@ namespace robot {
         float direction_L = 0.0;
         float direction_R = 0.0;
         float speed_array[ARRAY_SIZE];
-        int left_tick_count_array[ARRAY_SIZE];
-        int right_tick_count_array[ARRAY_SIZE];
+        int left_tick_target_array[ARRAY_SIZE];
+        int right_tick_target_array[ARRAY_SIZE];
+        float left_direction_array[ARRAY_SIZE];
+        float right_direction_array[ARRAY_SIZE];
         int message_count = 0;
+        int move_number = 0;
     };
 
     struct Robot_simulator : easy_tcp::Service {

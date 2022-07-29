@@ -51,39 +51,42 @@ namespace robot {
         // proportion is based on initial input since it will not change in sim
         // TODO: state machine to manage sending multiple commands
         // TODO: really only have to do this calculation when get new tick command
-
+        // TODO: deal with case where messages sent exceed array size
         time_stamp = json_cpp::Json_date::now();
 
         // tick target is cumulative so catch incoming commands with tick target
         if ((left_tick_target != prev_tick_target_L) || (right_tick_target != prev_tick_target_R)){
             speed_array[message_count] = speed;
-            left_tick_count_array[message_count] = left_tick_target;
-            right_tick_count_array[message_count]= right_tick_target;
-            cout << "NEW  " << left_tick_count_array[message_count] << endl;
+            left_tick_target_array[message_count] = left_tick_target;
+            right_tick_target_array[message_count]= right_tick_target;
+
+            // update direction of robot when target changes
+            if (left_tick_target > prev_tick_target_L){
+                left_direction_array[message_count] = 1.0;
+            } else if (left_tick_target < prev_tick_target_L)  left_direction_array[message_count] = -1.0;
+            if (right_tick_target > prev_tick_target_R){
+                right_direction_array[message_count] = 1.0;
+            } else if (right_tick_target < prev_tick_target_R)  right_direction_array[message_count] = -1.0;
+//            cout << "NEW  " << left_tick_count_array[message_count] << endl;
             message_count += 1;
         }
+        direction_L = left_direction_array[move_number] ;
+        direction_R = right_direction_array[move_number];
 
 
-        // update direction of robot when target changes
-        if (left_tick_target > prev_tick_target_L){
-            direction_L = 1.0;
-        } else if (left_tick_target < prev_tick_target_L)  direction_L = -1.0;
-        if (right_tick_target > prev_tick_target_R){
-            direction_R = 1.0;
-        } else if (right_tick_target < prev_tick_target_R)  direction_R = -1.0;
 
 
         // Find left and right speed based on goal ticks
-        if (abs(left_tick_target) > abs(right_tick_target)) {
-            robot_state.left_speed = direction_L * speed;
-            robot_state.right_speed = direction_R * (float)abs(right_tick_target) / (float)abs(left_tick_target) * speed;
+        if (abs(left_tick_target_array[move_number]) > abs(right_tick_target_array[move_number])) {
+            robot_state.left_speed = direction_L * speed_array[move_number];
+            robot_state.right_speed = direction_R * (float)abs(right_tick_target_array[move_number]) / (float)abs(left_tick_target_array[move_number]) * speed;
         } else {
             if (abs(left_tick_target) < abs(right_tick_target)) {
-                robot_state.right_speed = direction_R * speed;
-                robot_state.left_speed = direction_L * (float)abs(left_tick_target) / (float)abs(right_tick_target) * speed;
+                robot_state.right_speed = direction_R * speed_array[move_number];
+                robot_state.left_speed = direction_L * (float)abs(left_tick_target_array[move_number]) / (float)abs(right_tick_target_array[move_number]) * speed;
             } else {
-                robot_state.right_speed = direction_R * speed;
-                robot_state.left_speed = direction_L * speed;
+                robot_state.right_speed = direction_R * speed_array[move_number];
+                robot_state.left_speed = direction_L * speed_array[move_number];
             }
         }
 
@@ -94,8 +97,8 @@ namespace robot {
         right_tick_counter = right_tick_counter_float;
 
 
-        float left_tick_error = left_tick_target-left_tick_counter;       // tick goal - current ticks
-        float right_tick_error = right_tick_target-right_tick_counter;
+        float left_tick_error = left_tick_target_array[move_number]-left_tick_counter;       // tick goal - current ticks
+        float right_tick_error = right_tick_target_array[move_number]-right_tick_counter;
 
 
         // if goal state will be reached slow down robot and recompute tick count
@@ -125,8 +128,15 @@ namespace robot {
 
         // if goal reached
         if (!left_tick_error || !right_tick_error){
-            speed = 0;
+            // current move is finished go to next move
+            if ((message_count > 1) && (message_count > move_number)){
+                cout << left_tick_counter << "   " << right_tick_counter<< endl;
+                cout << "MOVES_EXECUTED" << move_number << endl;
+                move_number += 1;
+            } else speed = 0;
         }
+        // reset message count if it exceeds ARRAY_SIZE
+
         // store tick target
         prev_left_tick_counter = left_tick_counter;
         prev_right_tick_counter = right_tick_counter;
