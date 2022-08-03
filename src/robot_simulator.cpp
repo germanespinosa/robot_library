@@ -18,6 +18,7 @@ namespace robot {
 
     double robot_speed = .2;
     double robot_rotation_speed = M_PI ; // 90 degrees at full speed
+    Robot_agent local_robot;
     Robot_state robot_state;
     Cell_group robot_cells;
     Timer robot_time_stamp;
@@ -27,6 +28,7 @@ namespace robot {
     int frame_number = 0;
     mutex rm;
     Tracking_simulator *tracking_simulator = nullptr;
+    Fake_robot_server fake_robot_server(local_robot);
 
     Prey_simulator_server prey_simulator;
 
@@ -48,19 +50,16 @@ namespace robot {
 
     void Robot_state::update(double elapsed) {
         rm.lock();
-        // proportion is based on initial input since it will not change in sim
-        // TODO: state machine to manage sending multiple commands
-        // TODO: really only have to do this calculation when get new tick command
         // TODO: deal with case where messages sent exceed array size
         time_stamp = json_cpp::Json_date::now();
 
-        // tick target is cumulative so catch incoming commands with tick target
+        // catch and store new messages
         if ((left_tick_target != prev_tick_target_L) || (right_tick_target != prev_tick_target_R)){
             speed_array[message_count] = speed;
             left_tick_target_array[message_count] = left_tick_target;
             right_tick_target_array[message_count]= right_tick_target;
 
-            // update direction of robot when target changes
+            // store desired direction of robot for move request
             if (left_tick_target > prev_tick_target_L){
                 left_direction_array[message_count] = 1.0;
             } else if (left_tick_target < prev_tick_target_L)  left_direction_array[message_count] = -1.0;
@@ -75,18 +74,19 @@ namespace robot {
         float left_tick_error = left_tick_target_array[move_number]-left_tick_counter;       // tick goal - current ticks
         float right_tick_error = right_tick_target_array[move_number]-right_tick_counter;
 
-        // if goal reached
+        // if move completed stop or execute next move - when error is 0
         if (!left_tick_error || !right_tick_error){
-            // current move is finished go to next move
-            if (message_count > 0) cout << "left_ticks: " <<left_tick_counter << "    right_ticks: " << right_tick_counter << endl;
-            if ((message_count > 1) && (message_count > move_number)){
+
+            // for multiple messages
+            if ((message_count > 0) && (message_count > move_number)){
+                fake_robot_server.move_done(move_number);
                 cout << "MOVES_EXECUTED" << move_number << endl;
+                cout << "left_ticks: " <<left_tick_counter << "    right_ticks: " << right_tick_counter << endl;
                 move_number += 1;
-            } else speed = 0;
+            }
         }
 
-
-        // Find left and right speed based on goal ticks
+        // Find left and right speed based on tick error
         if (abs(left_tick_error) > abs(right_tick_error)) {
             robot_state.left_speed = direction_L * speed_array[move_number];
             robot_state.right_speed = direction_R * abs(right_tick_error) / abs(left_tick_error) * speed;
@@ -99,7 +99,8 @@ namespace robot {
                 robot_state.left_speed = direction_L * speed_array[move_number];
             }
         }
-        // check if error is zero of if speed needs to be reduced to prevent overshoot on last move
+
+        // check if error is zero or if speed needs to be reduced to prevent overshoot on last move
         if ((abs(left_tick_error) < abs(left_speed * elapsed)) || (abs(right_tick_error) < abs(right_speed * elapsed))){
             left_speed = left_tick_error/ elapsed;
             right_speed = right_tick_error/ elapsed;
@@ -116,14 +117,11 @@ namespace robot {
                 location = location.move(theta, d);
             }
         }
-        // Find tick count based on speed
+        // Measure position of robot
         left_tick_counter += elapsed * left_speed;    // elapsed: time between updates (0.03), left/right_speed: tick rate
         right_tick_counter += elapsed * right_speed;
 
-
         // store tick target
-        prev_left_tick_counter = left_tick_counter;
-        prev_right_tick_counter = right_tick_counter;
         prev_tick_target_L = left_tick_target;
         prev_tick_target_R = right_tick_target;
         rm.unlock();
@@ -181,6 +179,7 @@ namespace robot {
 
     thread simulation_thread;
 
+
     void Robot_simulator::start_simulation(cell_world::World world, Location location, double rotation, unsigned int interval, Tracking_simulator &new_tracking_simulator) {
         tracking_simulator = &new_tracking_simulator;
         robot_world = world;
@@ -204,6 +203,12 @@ namespace robot {
         robot_interval = interval;
         robot_running = true;
         simulation_thread=thread(&simulation);
+
+        if (!local_robot.connect("127.0.0.1")){
+            std::cout << "Can't connect to robot " << std::endl;
+            exit(1);
+        };
+        fake_robot_server.start(6300);
     }
 
     Robot_state Robot_simulator::get_robot_state() {
@@ -237,4 +242,19 @@ namespace robot {
         return prey_simulator.start(Prey_simulator_service::get_port());
     }
 
+    bool Fake_robot_service::set_left(int v) {
+        return ((Fake_robot_server *)this->_server)->set_left(v);
+    }
+
+    bool Fake_robot_service::set_right(int v) {
+        return ((Fake_robot_server *)this->_server)->set_right(v);
+    }
+
+    bool Fake_robot_service::set_speed(int v) {
+        return ((Fake_robot_server *)this->_server)->set_speed(v);
+    }
+
+    bool Fake_robot_service::update() {
+        return ((Fake_robot_server *)this->_server)->update();
+    }
 }
