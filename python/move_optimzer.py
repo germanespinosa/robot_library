@@ -257,17 +257,19 @@ class Tuner:
         if ((r_actual < (self.r_d + ratio_accuracy)) and (r_actual > (self.r_d - ratio_accuracy))):
             print("STEP 1 DONE!")
             print(f"outer ticks = {tick_guess_dict[self.move][outer_key]}, inner ticks = {tick_guess_dict[self.move][inner_key]}")
+            print(" ")
             predator.move_done = True
             return True
 
         # inner wheel too many ticks
         elif r_actual > self.r_d:
-            tick_guess_dict[self.move][outer_key] += 20
+            tick_guess_dict[self.move][outer_key] += 1 #20
 
         # outer wheel too many ticks
         else:
-            tick_guess_dict[self.move][inner_key] += 20
+            tick_guess_dict[self.move][inner_key] += 1 #20
 
+        print(f"outer ticks = {tick_guess_dict[self.move][outer_key]}, inner ticks = {tick_guess_dict[self.move][inner_key]}")
         print(f'radius desired: {self.r_d}, radius actual: {r_actual}')
         return False
 
@@ -278,8 +280,8 @@ class Tuner:
 
         alpha_accuracy = 1
         d = current_step.location.dist(previous_step.location)/2
-        #r = self.center_location.dist(current_step.location)    # TODO: IMPROVE PRECISION
-        r = self.r_d
+        r = self.center_location.dist(current_step.location)    # TODO: IMPROVE PRECISION
+        # r = self.r_d
         print(f'd: {d}, r: {r}')
         alpha = 2 * asin(d/r)
         alpha = alpha * (180/pi)
@@ -310,8 +312,8 @@ class Tuner:
 
 
 # CONSTANTS
-R1 = 0.0635/2.34
-R2 = R1 + 0.11/2.34
+R1 = (0.0635/2)/2.34
+R2 = R1 + (0.127/2)/2.34
 TH1 = 120
 TH2 = 60
 TH3 = 180
@@ -329,8 +331,8 @@ robot_speed = 100
 #                "m5" :  np.array([x1, -y1, -120]),
 #                "m6" :  np.array([0, 0, 180])}
 # initial tick guess
-tick_guess_dict =  {"m1": {'L': 212, 'R': 815},# 70, 260
-                    "m2": {'L': 128, 'R': 306},
+tick_guess_dict =  {"m1": {'L': 212, 'R': 815},
+                    "m2": {'L': 231, 'R': 535},  # 497, 1135
                     "m3": {'L': 216, 'R': 216},
                     "m4": {'L': 306, 'R': 128},
                     "m5": {'L': 323, 'R':-33},
@@ -354,7 +356,7 @@ function_dict =  {  "m1": 0,
                     "m6": 0,
                     "m7": 0 }
 moves = ["m1", "m2", "m3", "m4", "m5", "m6", "m7"]
-move = moves[0]
+move = moves[1]
 
 
 # Setup
@@ -426,7 +428,7 @@ if move!= moves[2] or move!= moves[5]:
     step2_done = False
 
 # Try initial guess
-assert tuner_object.r_d == R1
+# assert tuner_object.r_d == R1
 tuner_object.center_location = tuner_object.get_center_location(previous_step) # based on previous location
 robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
 
