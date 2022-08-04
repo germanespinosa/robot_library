@@ -16,11 +16,13 @@ namespace robot {
                 Add_route_with_response("set_right", set_right, int);
                 Add_route_with_response("set_speed", set_speed, int);
                 Add_route_with_response("update", update);
+                Add_route_with_response("is_move_done", is_move_done);
                 Allow_subscription();
         );
         bool set_left(int v);
         bool set_right(int v);
         bool set_speed(int v);
+        bool is_move_done();
         bool update();
     };
 
@@ -42,9 +44,13 @@ namespace robot {
             robot.update();
             return true;
         }
-        void move_done(int i){
-            broadcast_subscribed(tcp_messages::Message("move_done",i));
+        bool is_move_done(){
+            robot.is_move_done();
+            return true;
         }
+//        void move_done(int i){
+//            broadcast_subscribed(tcp_messages::Message("move_done",i));
+//        }
         Robot_agent &robot;
     };
 
@@ -93,18 +99,23 @@ namespace robot {
         int move_number = 0;
     };
 
+    struct Robot_simulator_server;
+
     struct Robot_simulator : easy_tcp::Service {
         void on_connect() override;
         void on_incoming_data(const char *, int) override;
         void on_disconnect() override;
         static void set_robot_speed(double);
         static void set_robot_rotation_speed(double);
-        static void start_simulation(cell_world::World world, cell_world::Location, double, unsigned int, Tracking_simulator &);
+        static void start_simulation(cell_world::World world, cell_world::Location, double, unsigned int, Tracking_simulator &, Robot_simulator_server &);
         static void set_occlusions(cell_world::Cell_group_builder occlusions);
         static void end_simulation();
         static bool is_running();
         static Robot_state get_robot_state();
         static bool start_prey();
+    };
+
+    struct Robot_simulator_server : easy_tcp::Server<Robot_simulator> {
 
     };
 }

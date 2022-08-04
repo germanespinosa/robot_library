@@ -8,6 +8,8 @@
 #include <robot_lib/tracking_simulator.h>
 #include <robot_lib/prey_simulator.h>
 
+// TODO: add system argument to modify code depending on whether controller or tuner is being used
+
 using namespace json_cpp;
 using namespace std;
 using namespace cell_world;
@@ -29,6 +31,7 @@ namespace robot {
     mutex rm;
     Tracking_simulator *tracking_simulator = nullptr;
     Fake_robot_server fake_robot_server(local_robot);
+    Robot_simulator_server *robot_simulator_server;
 
     Prey_simulator_server prey_simulator;
 
@@ -79,9 +82,12 @@ namespace robot {
 
             // for multiple messages
             if ((message_count > 0) && (message_count > move_number)){
-                fake_robot_server.move_done(move_number);
+                for (auto &client:robot_simulator_server->clients){
+                    client->send_data((char *)&move_number,sizeof(move_number));
+                }
+                cout << "SHOULD BE TRUE  " << local_robot.is_move_done() << endl;
                 cout << "MOVES_EXECUTED" << move_number << endl;
-                cout << "left_ticks: " <<left_tick_counter << "    right_ticks: " << right_tick_counter << endl;
+                cout << "left_ticks: " << left_tick_counter << "    right_ticks: " << right_tick_counter << endl;
                 move_number += 1;
             }
         }
@@ -180,7 +186,8 @@ namespace robot {
     thread simulation_thread;
 
 
-    void Robot_simulator::start_simulation(cell_world::World world, Location location, double rotation, unsigned int interval, Tracking_simulator &new_tracking_simulator) {
+    void Robot_simulator::start_simulation(cell_world::World world, Location location, double rotation, unsigned int interval, Tracking_simulator &new_tracking_simulator, Robot_simulator_server &new_robot_simulator_server) {
+        robot_simulator_server = &new_robot_simulator_server;
         tracking_simulator = &new_tracking_simulator;
         robot_world = world;
         habitat_polygon = Polygon(robot_world.space.center, robot_world.space.shape, robot_world.space.transformation);
@@ -256,5 +263,9 @@ namespace robot {
 
     bool Fake_robot_service::update() {
         return ((Fake_robot_server *)this->_server)->update();
+    }
+
+    bool Fake_robot_service::is_move_done() {
+        return ((Fake_robot_server *)this->_server)->robot.is_move_done();
     }
 }

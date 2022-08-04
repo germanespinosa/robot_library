@@ -1,3 +1,5 @@
+// TODO: add sys arg that allows you to decide autonomous or moveoptimizer
+
 #include <iostream>
 #include <easy_tcp.h>
 #include <robot_lib/robot_simulator.h>
@@ -7,9 +9,10 @@
 #include <robot_lib/tracking_simulator.h>
 #include <cell_world.h>
 #include <experiment.h>
-//#include <controller.h>
+#include <controller.h>  // CONTROLLER SERVER
 #include <map>
 #include <robot_lib/robot_agent.h>
+
 
 using namespace std;
 using namespace json_cpp;
@@ -19,10 +22,6 @@ using namespace params_cpp;
 using namespace robot;
 using namespace experiment;
 using namespace controller;
-
-
-// TODO: get this service working
-// to send tick commands from python
 
 
 struct Robot_experiment_client : Experiment_client {
@@ -68,8 +67,8 @@ int main(int argc, char *argv[])
     Experiment_service::set_logs_folder("experiment_logs/");
     Experiment_server experiment_server;
 
-//    auto &controller_experiment_client = experiment_server.create_local_client<Controller_server::Controller_experiment_client>();
-//    controller_experiment_client.subscribe();
+    auto &controller_experiment_client = experiment_server.create_local_client<Controller_server::Controller_experiment_client>(); // CONTROLLER SERVER
+    controller_experiment_client.subscribe();                                                                                       // CONTROLLER SERVER
 
     Tracking_simulator tracking_server;
     tracking_server.start(4510);
@@ -85,7 +84,7 @@ int main(int argc, char *argv[])
     experiment_server.start(Experiment_service::get_port());
 
 
-//    auto &tracking_client = tracking_server.create_local_client<Controller_server::Controller_tracking_client>(visibility, 90, capture, peeking, "predator", "prey");
+    auto &tracking_client = tracking_server.create_local_client<Controller_server::Controller_tracking_client>(visibility, 90, capture, peeking, "predator", "prey");   // CONTROLLER SERVER
 
     auto &experiment_client= experiment_server.create_local_client<Robot_experiment_client>();
     experiment_client.subscribe();
@@ -99,21 +98,27 @@ int main(int argc, char *argv[])
         cout << "Wrong parameters "<< endl;
         exit(1);
     }
-    Server<Robot_simulator> server;
+
+
+    Robot_simulator_server server;
     if (!server.start(Robot::port())) {
         std::cout << "Server setup failed " << std::endl;
         return EXIT_FAILURE;
     }
 
     Location location = map[spawn_coordinates].location;
-    Robot_simulator::start_simulation(world, location, rotation, interval, tracking_server);
+    Robot_simulator::start_simulation(world, location, rotation, interval, tracking_server, server);
 
-//    Controller_service::set_logs_folder("controller_logs/");
-//    Controller_server controller_server("../config/pid.json", local_robot, tracking_client, controller_experiment_client);
-//    if (!controller_server.start(Controller_service::get_port())) {
-//        cout << "failed to start controller" << endl;
-//        exit(1);
-//    }
+    // CONTROLLER SERVER - this block
+    Robot_agent robot_agent;
+    robot_agent.connect("127.0.0.1");
+    Controller_service::set_logs_folder("controller_logs/");
+    Controller_server controller_server("../config/pid.json", robot_agent, tracking_client, controller_experiment_client);
+    if (!controller_server.start(Controller_service::get_port())) {
+        cout << "failed to start controller" << endl;
+        exit(1);
+    }
+    //
 
     auto &tracker = tracking_server.create_local_client<agent_tracking::Tracking_client>();
     tracker.connect();
