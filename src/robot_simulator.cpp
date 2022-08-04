@@ -106,8 +106,8 @@ namespace robot {
             right_speed = right_tick_error/ elapsed;
         }
 
-        float dl = left_speed / 1800.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
-        float dr = - right_speed / 1800.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
+        float dl = 2 *left_speed / 1800.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
+        float dr = 2 *- right_speed / 1800.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
         float d = (left_speed + right_speed) / 3600.0 * robot_speed * elapsed; // convert motor signal to speed
         theta = normalize(theta + dl + dr);
         auto new_location = location.move(theta, d);

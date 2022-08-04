@@ -21,44 +21,9 @@ using namespace experiment;
 using namespace controller;
 
 
-Robot_agent local_robot;
-
-
 // TODO: get this service working
 // to send tick commands from python
-struct Fake_robot_service : tcp_messages::Message_service {
-    Routes (
-            Add_route_with_response("set_left", set_left, int);
-            Add_route_with_response("set_right", set_right, int);
-            Add_route_with_response("set_speed", set_speed, int);
-            Add_route_with_response("stop", stop);
-            Add_route_with_response("update", update);
-    );
-    bool set_left(int v){
-        cout << "left " << v << endl;
-        local_robot.set_left(v);
-        return true;
-    };
-    bool set_right(int v){
-        cout << "right "<< v << endl;
-        local_robot.set_right(v);
-        return true;
-    };
-    bool set_speed(int v){
-        cout << "speed "<< v << endl;
-        local_robot.set_speed(v);
-        return true;
-    };
-    bool stop(){
-        cout << "stop " << endl;
-        local_robot.stop();
-        return true;
-    };
-    bool update(){
-        local_robot.update();
-        return true;
-    }
-};
+
 
 struct Robot_experiment_client : Experiment_client {
     void on_experiment_started(const Start_experiment_response &experiment) {
@@ -87,11 +52,6 @@ int main(int argc, char *argv[])
     auto capture_parameters = Resources::from("capture_parameters").key("default").get_resource<Capture_parameters>();
     auto peeking_parameters = Resources::from("peeking_parameters").key("default").get_resource<Peeking_parameters>();
 
-
-    tcp_messages::Message_server<Fake_robot_service> fake_robot_server;
-    fake_robot_server.start(6300);
-
-
     World world(wc, wi);
     Capture capture(capture_parameters, world);
     Peeking peeking(peeking_parameters, world);
@@ -101,7 +61,7 @@ int main(int argc, char *argv[])
 
     auto rotation = stof(p.get(rotation_key,"0"));
     auto interval = stoi(p.get(interval_key,"30"));
-    auto spawn_coordinates_str = p.get(spawn_coordinates_key, "{\"x\":0,\"y\":4}");
+    auto spawn_coordinates_str = p.get(spawn_coordinates_key, "{\"x\":0,\"y\":0}");
     auto verbose = p.contains(Key("-v"));
 
 
@@ -139,18 +99,14 @@ int main(int argc, char *argv[])
         cout << "Wrong parameters "<< endl;
         exit(1);
     }
-    Location location = map[spawn_coordinates].location;
-    Robot_simulator::start_simulation(world, location, rotation, interval, tracking_server);
     Server<Robot_simulator> server;
     if (!server.start(Robot::port())) {
         std::cout << "Server setup failed " << std::endl;
         return EXIT_FAILURE;
     }
 
-    if (!local_robot.connect("127.0.0.1")){
-        std::cout << "Can't connect to robot " << std::endl;
-        return EXIT_FAILURE;
-    };
+    Location location = map[spawn_coordinates].location;
+    Robot_simulator::start_simulation(world, location, rotation, interval, tracking_server);
 
 //    Controller_service::set_logs_folder("controller_logs/");
 //    Controller_server controller_server("../config/pid.json", local_robot, tracking_client, controller_experiment_client);

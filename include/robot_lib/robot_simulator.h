@@ -1,12 +1,53 @@
 #pragma once
 #include <easy_tcp.h>
+#include <tcp_messages.h>
 #include <cell_world.h>
 #include <agent_tracking/tracking_service.h>
 #include <robot_lib/tracking_simulator.h>
+#include <robot_lib/robot_agent.h>
 
 # define ARRAY_SIZE 30
 
 namespace robot {
+
+    struct Fake_robot_service : tcp_messages::Message_service {
+        Routes (
+                Add_route_with_response("set_left", set_left, int);
+                Add_route_with_response("set_right", set_right, int);
+                Add_route_with_response("set_speed", set_speed, int);
+                Add_route_with_response("update", update);
+                Allow_subscription();
+        );
+        bool set_left(int v);
+        bool set_right(int v);
+        bool set_speed(int v);
+        bool update();
+    };
+
+    struct Fake_robot_server : tcp_messages::Message_server<Fake_robot_service>{
+        Fake_robot_server(Robot_agent &ra) : robot(ra) {};
+        bool set_left(int v){
+            robot.set_left(v);
+            return true;
+        };
+        bool set_right(int v){
+            robot.set_right(v);
+            return true;
+        };
+        bool set_speed(int v){
+            robot.set_speed(v);
+            return true;
+        };
+        bool update(){
+            robot.update();
+            return true;
+        }
+        void move_done(int i){
+            broadcast_subscribed(tcp_messages::Message("move_done",i));
+        }
+        Robot_agent &robot;
+    };
+
 
     struct Robot_state : json_cpp::Json_object  {
         Json_object_members(
@@ -41,8 +82,6 @@ namespace robot {
         bool initialized = false;
         int prev_tick_target_L = 0;
         int prev_tick_target_R = 0;
-        float prev_left_tick_counter = 0;
-        float prev_right_tick_counter = 0;
         float direction_L = 0.0;
         float direction_R = 0.0;
         float speed_array[ARRAY_SIZE];
