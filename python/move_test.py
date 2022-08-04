@@ -30,7 +30,7 @@ class AgentData:
         self.step = Step()                      # step object - step is a class in experiment.py
         self.step.agent_name = agent_name
         self.move_state = None
-        self.move_done = None
+        self.move_done = False
 
 
 def on_step(step):
@@ -79,38 +79,31 @@ def robot_tick_update(left_tick, right_tick):
     robot_client.set_speed(robot_speed)
     robot_client.update()
 
+def move_done(move_number):
+    print("move ", move_number, "done")
+    predator.move_state = move_number
+    # when this function is called move state changes
+    predator.move_done = True
+
 
 
 # CONSTANTS
-R1  = 0.0635/2
-R2  = R1 + 0.127/2
-TH1 = 120
-TH2 = 60
-TH3 = 180
-STRAIGHT = 0.11
 time_out = 1.0
 robot_speed = 100
 
 
 # GLOBALS
-tick_guess_dict =  {"m1": {'L': 70, 'R': 260},
-                    "m2": {'L': 128, 'R': 306},
+tick_guess_dict =  {"m1": {'L': 212, 'R': 815},
+                    "m2": {'L': 231, 'R': 535},
+                    "m3": {'L': 432, 'R': 432},
+                    "m4": {'L': 535, 'R': 231},
+                    "m5": {'L': 815, 'R': 212},
+                    "m6": {'L': 450, 'R': -450},
+                    "m7": {'L': 420, 'R': -420},
+                    "m8": {'L': 216, 'R': 216}}   # initialize 11/2
 
-                    "m3": {'L': 216, 'R': 216},
-                    "m4": {'L': 306, 'R': 128},
-                    "m5": {'L': 323, 'R':-33},
-                    "m6": {'L': 267, 'R': -267},
-                    "m7": {'L': 450, 'R': -450}}
-# move characteristic dict
-move_constants_dict= {"m1": {'r': R1,       'th': TH1},
-                      "m2": {'r': R2,       'th': TH2},
-                      "m3": {'r': STRAIGHT, 'th': 0},
-                      "m4": {'r': R2,       'th': -TH2},
-                      "m5": {'r': R1,       'th': -TH1},
-                      "m6": {'r': 0,        'th': 180},
-                      "m7": {'r': 0,        'th': 90}}
-moves = ["m1", "m2", "m3", "m4", "m5", "m6", "m7"]
-move = moves[2]
+moves = ["m1", "m2", "m3", "m4", "m5", "m6", "m7","m8"]
+move = moves[3]
 
 
 
@@ -141,6 +134,8 @@ if robot_client.connect("127.0.0.1", 6300):
 else:
     print("failed to connect to robot! bummer")
     exit(1)
+robot_client.move_done = move_done
+robot_client.subscribe()
 
 
 
@@ -148,11 +143,14 @@ else:
 # robot_tick_update(tick_guess_dict[moves[6]]['L'], tick_guess_dict[moves[6]]['R'])
 
 
-robot_tick_update(tick_guess_dict[moves[2]]['L'], tick_guess_dict[moves[2]]['R'])
-robot_tick_update(tick_guess_dict[moves[0]]['L'], tick_guess_dict[moves[0]]['R'])
-
-
+robot_tick_update(tick_guess_dict[moves[7]]['L'], tick_guess_dict[moves[7]]['R'])
+a = 1
 while True:
+
+    if predator.move_done and a == 1:
+        robot_tick_update(tick_guess_dict[moves[5]]['L'], tick_guess_dict[moves[5]]['R'])
+        a = 0
+    print(predator.step.rotation)
 
     # display robot position
     if predator.is_valid:
