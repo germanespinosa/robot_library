@@ -20,11 +20,12 @@ namespace robot{
     }
 
     void Robot_agent::capture() {
-        need_update = true;
+        //need_update = true;
     }
 
     bool Robot_agent::update() {
-        bool res = connection.send_data((const char*) &message,sizeof(message));
+        bool res = ((easy_tcp::Connection *)this)->send_data((const char*) &message,sizeof(message));
+        //wait for finish on the robot.
         return res;
     }
 
@@ -37,21 +38,25 @@ namespace robot{
         return atoi(port_str.c_str());
     }
 
-    bool Robot_agent::connect(const string &ip, int port) {
-        try {
-            connection = connection.connect_remote(ip, port);
-            return true;
-        } catch(...) {
-            return false;
-        }
-    }
-
     bool Robot_agent::connect(const string &ip) {
-        return connect(ip, port());
+        return ((easy_tcp::Client *)this)->connect(ip, port());
     }
 
     bool Robot_agent::connect() {
         //return connect("192.168.137.155");
         return connect("127.0.0.1");
+    }
+
+    bool Robot_agent::is_move_done() {
+        // switch turns move done "on/off"
+        if (move_done){
+            move_done = false;
+            return true;
+        }
+        return false; // flase
+    }
+
+    void Robot_agent::received_data(char *buffer, size_t size) {
+        move_done = true;
     }
 }
