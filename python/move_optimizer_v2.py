@@ -80,6 +80,15 @@ def on_step(step):
 def get_location(x, y):
     return world.cells[map[Coordinates(x,y)]].location
 
+def angle_difference(a_prev, a_current, direction):
+    a1 = a_prev
+    a2 = a_current
+    if direction == "cw":
+        if a2 >= a1:
+            return a2 - a1
+        else:
+            return a2 + 360 - a1
+
 
 def robot_tick_update(left_tick, right_tick):
     robot_client.set_left(left_tick)
@@ -100,26 +109,28 @@ def turn_robot():
         return True
     return False
 
-def tune_move3():
+
+def tune_move2():
     """
     Update move straight tick dict based on error
     """
     global MOVE_TUNED
-    global PREVIOUS_LOCATION
+    global PREVIOUS_STEP
     global tick_guess_dict
+    P = 1000
 
     display.circle(predator.step.location, 0.01, "magenta")
 
     # measure state of robot after move
-    current_location = predator.step.location
+    current_step = predator.step
 
     # find error
-    distance = current_location.dist(PREVIOUS_LOCATION)
+    distance = current_step.location.dist(PREVIOUS_STEP.location)
     error = STRAIGHT - distance         # desired - actual
 
     # tick modification logic
-    if abs(error) <= 0.0001:
-        print(f"Distance: {distance}, Ticks: {tick_guess_dict['m3']}")
+    if abs(error) <= 0.0005:
+        print(f"Desired Distance: {STRAIGHT}, Distance: {distance}, Ticks: {tick_guess_dict[move]}")
         print("DONE")
         MOVE_TUNED = True
     else:
@@ -130,7 +141,52 @@ def tune_move3():
         print(f"Desired: {STRAIGHT}, Distance: {distance}, TICKS: {tick_guess_dict[move]['L']}")
 
     # record previous location
-    PREVIOUS_LOCATION = current_location
+    PREVIOUS_STEP = current_step
+
+
+def tune_move5():
+    """
+    Assuming angle difference will be less than 360
+    """
+    global MOVE_TUNED
+    global PREVIOUS_STEP
+    global tick_guess_dict
+    P = 1
+
+    if tick_guess_dict[move]['L'] > tick_guess_dict[move]['R']:
+        rot_direction = "cw"
+        fwd = 'L'
+        bck = 'R'
+    else:
+        rot_direction = "ccw"
+        fwd = 'L'
+        bck = 'R'
+
+    # measure state of robot after move
+    current_step = predator.step
+
+    # find error
+    actual_angle = angle_difference(PREVIOUS_STEP.rotation, current_step.rotation, rot_direction)
+    assert actual_angle > 0, "something wrong with angle diff function"
+
+    # tick modification logic
+    if abs(TH3 - actual_angle) <= 1:
+        print(f"Desired Angle: {TH3}, Angle: {actual_angle}, Ticks: {tick_guess_dict[move]}")
+        print("DONE")
+        MOVE_TUNED = True
+    elif (TH3 > actual_angle):
+        tick_guess_dict[move][fwd] += 10
+        tick_guess_dict[move][bck] -= 10
+    else:
+        tick_guess_dict[move][fwd] -= 10
+        tick_guess_dict[move][bck] += 10
+
+    if not MOVE_TUNED:
+        robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
+        print(f"Desired Angle: {TH3}, Angle: {actual_angle}, Ticks: {tick_guess_dict[move]}")
+
+    # record previous location
+    PREVIOUS_STEP = current_step
 
 
 # CONSTANTS
@@ -139,20 +195,20 @@ R2 = R1 + (0.127/2)/2.34
 TH1 = 120
 TH2 = 60
 TH3 = 180
-STRAIGHT = 0.11
+STRAIGHT = (0.11)/2.34
 time_out = 2.0
-robot_speed = 100
+robot_speed = 200
 
 # DICTIONARIES
 # store number of ticks for each move
 tick_guess_dict =  {"m0": {'L': 212, 'R': 815},
-                    "m1": {'L': 231, 'R': 535},  # 497, 1135
-                    "m2": {'L': 100, 'R': 100}, # 216
-                    "m3": {'L': 306, 'R': 128},
-                    "m4": {'L': 323, 'R':-33},
-                    "m5": {'L': 840, 'R': -840},
+                    "m1": {'L': 231, 'R': 535},     # 497, 1135
+                    "m2": {'L': 427, 'R': 427},     # 216
+                    "m3": {'L': 400, 'R': 400},
+                    "m4": {'L': 323, 'R': -33},
+                    "m5": {'L': 450, 'R': -450},
                     "m6": {'L': 420, 'R': -420},
-                    "m7": {'L': 216, 'R': 216}} # init
+                    "m7": {'L': 216, 'R': 216}}     # init
 # move characteristic dict
 move_constants_dict= {"m0": {'r': R1,       'th': TH1},
                       "m1": {'r': R2,       'th': TH2},
@@ -164,17 +220,16 @@ move_constants_dict= {"m0": {'r': R1,       'th': TH1},
 # function association dict
 function_dict =  {  "m0": 0,
                     "m1": 0,
-                    "m2": tune_move3,
+                    "m2": tune_move2,
                     "m3": 0,
                     "m4": 0,
-                    "m5": 0,
+                    "m5": tune_move5,
                     "m6": 0 }
 moves = ["m0", "m1", "m2", "m3", "m4", "m5", "m6"]
 
 # Variables
-move = moves[2]
+move = moves[5]
 prev_error = 0
-P = 100
 D = 1
 mode1 = False
 
@@ -201,7 +256,7 @@ tracker.set_throughput(5)
 tracker.on_step = on_step
 
 # ROBOT CLIENT -> to send ticks  - change to real robot ip
-robot_ip = sys.argv[1]
+# robot_ip = sys.argv[1]
 robot_client = Robot_client()
 if robot_client.connect("127.0.0.1", 6300):
     print("connected to robot! yay")
@@ -217,13 +272,11 @@ robot_client.subscribe()
 #     step2_done = False
 
 # INITIAL GUESS
-PREVIOUS_LOCATION = get_location(0, 0)
-display.circle(PREVIOUS_LOCATION, 0.005, "red")
+previous_location = get_location(0, 0)
+PREVIOUS_STEP = Step(agent_name=predator, location=previous_location, rotation=90)
+display.circle(PREVIOUS_STEP.location, 0.005, "red")
 robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
 
-# display.circle(tuner_object.center_location, 0.005, "cyan")
-
-a = 1
 while True:
     if robot_client.is_move_done() and not MOVE_TUNED:
         print("MOVE DONE")
@@ -235,8 +288,6 @@ while True:
                 continue
 
         function_dict[move]()
-    #     # measure state of robot after move
-    #     # current_location = predator.step.location
 
     # display robot position
     if predator.is_valid:
