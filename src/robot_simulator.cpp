@@ -85,7 +85,7 @@ namespace robot {
                 for (auto &client:robot_simulator_server->clients){
                     client->send_data((char *)&move_number,sizeof(move_number));
                 }
-                cout << "SHOULD BE TRUE  " << local_robot.is_move_done() << endl;
+                //cout << "SHOULD BE TRUE  " << local_robot.is_move_done() << endl;
                 cout << "MOVES_EXECUTED" << move_number << endl;
                 cout << "left_ticks: " << left_tick_counter << "    right_ticks: " << right_tick_counter << endl;
                 move_number += 1;
