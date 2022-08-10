@@ -69,6 +69,108 @@ class AgentData:
         self.move_done = False
 
 
+class Tuner:
+    """
+    For moves 0134
+    """
+    def __init__(self, move):
+        self.r_d = move_constants_dict[move]['r']     # (m) radius from pivot location
+        self.th_d = move_constants_dict[move]['th']   # (degrees) inner angle s = th * r
+        self.move = move
+        self.center_location = 0              # pivot location computed each iteration based on start location of robot
+
+    def get_center_location(self, current_step):
+        """
+        Finds the origin of the polar coordinate reference frame - pivot point
+        """
+        th = current_step.rotation * pi/180
+        x = current_step.location.x - (self.r_d * cos(th))
+        y = current_step.location.y - (self.r_d * -sin(th))   # fix this based on turn direction
+        center_location = Location(x, y)
+        return center_location
+
+    def find_ratio(self, current_step, move_dict):
+        """
+        STEP 1:
+        Checks distance from pivot point and adjusts tick value to achieve desired radius
+
+        :param current_step: current state of robot
+        :param move_dict: tick_guess_dict[move] so dictionary with key = L or R, value: tick number
+        :return: bool indicating whether ratio has been found
+        """
+        ratio_accuracy = 0.0001     # will change this to error
+
+        # distance from center to robot - remember center location is updated each trial
+        r_actual = self.center_location.dist(current_step.location)
+
+        outer_key = max(move_dict)
+        inner_key = min(move_dict)
+
+        # check if results are "close enough"
+        if ((r_actual < (self.r_d + ratio_accuracy)) and (r_actual > (self.r_d - ratio_accuracy))):
+            print("STEP 1 DONE!")
+            print(f"outer ticks = {tick_guess_dict[self.move][outer_key]}, inner ticks = {tick_guess_dict[self.move][inner_key]}")
+            print(" ")
+            # predator.move_done = True
+            return True
+
+        # inner wheel too many ticks
+        elif r_actual > self.r_d:
+            tick_guess_dict[self.move][outer_key] += 20 #20
+
+        # outer wheel too many ticks
+        else:
+            tick_guess_dict[self.move][inner_key] += 20 #20
+
+        print(f"outer ticks = {tick_guess_dict[self.move][outer_key]}, inner ticks = {tick_guess_dict[self.move][inner_key]}")
+        print(f'radius desired: {self.r_d}, radius actual: {r_actual}')
+        return False
+
+    def find_alpha(self, current_step, previous_step, move_dict):
+        """
+        STEP 2:
+        Adjust ticks based on desired arc length while keeping desired tick ratio found in STEP1
+
+        :param current_step: current state of robot
+        :param previous_step: state of robot before move executed/tested
+        :param move_dict: tick_guess_dict[move] so dictionary with key = L or R, value: tick number
+        :return: bool indicating whether desired arc length has been achieved
+        """
+        alpha_accuracy = 1
+
+        outer_key = max(move_dict)
+        inner_key = min(move_dict)
+        tick_ratio = tick_guess_dict[self.move][inner_key]/tick_guess_dict[self.move][outer_key]    # step 1 result
+
+        # compute arc length angle right triangle
+        d = current_step.location.dist(previous_step.location)/2
+        r = self.center_location.dist(current_step.location)    # TODO: IMPROVE PRECISION was making this r_d
+        print(f'd: {d}, r: {r}')
+        alpha = 2 * asin(d/r)
+        alpha = alpha * (180/pi)
+
+        # check if results are "close enough"
+        if ((alpha < (self.th_d + alpha_accuracy)) and (alpha > (self.th_d - alpha_accuracy))):
+            print("STEP 2 DONE!")
+            print(f"Desired: {self.th_d}, Actual: {alpha}")
+            print(f"outer ticks = {tick_guess_dict[self.move]['L'] }, inner ticks = {tick_guess_dict[self.move]['R'] }")
+            return True
+
+        # not enough ticks
+        elif alpha < self.th_d:
+            tick_guess_dict[self.move][outer_key] += 30
+            tick_guess_dict[self.move][inner_key] = int(tick_guess_dict[self.move][outer_key] * tick_ratio)
+
+        # too many ticks
+        else:
+            tick_guess_dict[self.move][outer_key] -= 30
+            tick_guess_dict[self.move][inner_key] = int(tick_guess_dict[self.move][outer_key] * tick_ratio)
+
+        print(f"Desired: {self.th_d}, Actual: {alpha}")
+        print(f"outer ticks = {tick_guess_dict[self.move]['L'] }, inner ticks = {tick_guess_dict[self.move]['R'] }")
+        return False
+
+
 def on_step(step):
     """
     Updates steps and predator behavior
@@ -189,6 +291,46 @@ def tune_move5():
     PREVIOUS_STEP = current_step
 
 
+def tune_move0134():
+    global MOVE_TUNED
+    global PREVIOUS_STEP
+    global tick_guess_dict
+    global STEP1_DONE
+    global STEP2_DONE
+
+    # measure state of robot after move
+    current_step = predator.step
+    display.circle(current_step.location, 0.005, "red")
+
+    if not STEP1_DONE:
+        # STEP 1: change tick ratio based on new state distance from center
+        STEP1_DONE = tuner_object.find_ratio(current_step, tick_guess_dict[move])
+
+        # execute new move
+        if not STEP1_DONE:
+            # update center
+            PREVIOUS_STEP = current_step
+            tuner_object.center_location = tuner_object.get_center_location(PREVIOUS_STEP)
+            display.circle(tuner_object.center_location, 0.005, "cyan")
+            robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
+
+    if not STEP2_DONE and STEP1_DONE:
+        STEP2_DONE = tuner_object.find_alpha(current_step, PREVIOUS_STEP, tick_guess_dict[move])
+        # update center location
+
+        PREVIOUS_STEP = current_step
+
+        # execute new move
+        if not STEP2_DONE:
+            robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
+
+    if STEP1_DONE and STEP2_DONE:
+        return True
+    else:
+        False
+
+
+
 # CONSTANTS
 R1 = (0.0635/2)/2.34
 R2 = R1 + (0.127/2)/2.34
@@ -197,11 +339,11 @@ TH2 = 60
 TH3 = 180
 STRAIGHT = (0.11)/2.34
 time_out = 2.0
-robot_speed = 200
+robot_speed = 100
 
 # DICTIONARIES
 # store number of ticks for each move
-tick_guess_dict =  {"m0": {'L': 212, 'R': 815},
+tick_guess_dict =  {"m0": {'L': 212, 'R': 1075},
                     "m1": {'L': 231, 'R': 535},     # 497, 1135
                     "m2": {'L': 427, 'R': 427},     # 216
                     "m3": {'L': 400, 'R': 400},
@@ -218,17 +360,17 @@ move_constants_dict= {"m0": {'r': R1,       'th': TH1},
                       "m5": {'r': 0,        'th': 180},
                       "m6": {'r': 0,        'th': 90}}
 # function association dict
-function_dict =  {  "m0": 0,
-                    "m1": 0,
+function_dict =  {  "m0": tune_move0134,
+                    "m1": tune_move0134,
                     "m2": tune_move2,
-                    "m3": 0,
-                    "m4": 0,
+                    "m3": tune_move0134,
+                    "m4": tune_move0134,
                     "m5": tune_move5,
                     "m6": 0 }
 moves = ["m0", "m1", "m2", "m3", "m4", "m5", "m6"]
 
 # Variables
-move = moves[5]
+move = moves[0]
 prev_error = 0
 D = 1
 mode1 = False
@@ -265,17 +407,21 @@ else:
     exit(1)
 robot_client.subscribe()
 
-# TUNER
-# if move!= moves[2] or move!= moves[5]:
-#     tuner_object = Tuner(move)
-#     step1_done = True
-#     step2_done = False
-
 # INITIAL GUESS
 previous_location = get_location(0, 0)
 PREVIOUS_STEP = Step(agent_name=predator, location=previous_location, rotation=90)
 display.circle(PREVIOUS_STEP.location, 0.005, "red")
 robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
+
+# TUNER
+if move != moves[2] or move != moves[5]:
+    tuner_object = Tuner(move)
+    STEP1_DONE = False
+    STEP2_DONE = False
+    tuner_object.center_location = tuner_object.get_center_location(PREVIOUS_STEP)
+    display.circle(PREVIOUS_STEP.location, 0.005, "red")
+    display.circle(tuner_object.center_location, 0.005, "cyan")
+
 
 while True:
     if robot_client.is_move_done() and not MOVE_TUNED:
@@ -286,8 +432,9 @@ while True:
             # if needs to turn wait till move is done before sending another move
             while not robot_client.is_move_done():
                 continue
-
+        # for tuning moves 2 and 5 dont use tuner class can tune in one step
         function_dict[move]()
+
 
     # display robot position
     if predator.is_valid:
@@ -301,7 +448,6 @@ while True:
 tracker.unsubscribe()
 robot_client.unsubscirbe()
 
-#
 
 
 

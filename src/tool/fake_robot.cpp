@@ -1,4 +1,4 @@
-// TODO: add sys arg that allows you to decide autonomous or moveoptimizer
+// If move optimizer no -t, if autonmous -t
 
 #include <iostream>
 #include <easy_tcp.h>
@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
     Key rotation_key{"-r","--theta"};
     Key interval_key{"-i","--interval"};
     Key noise_key{"-n","--noise"};
+    Key robot_task_key{"-t", "--task"};
 
     Parser p(argc, argv);
     auto wc = Resources::from("world_configuration").key("hexagonal").get_resource<World_configuration>();
@@ -58,17 +59,18 @@ int main(int argc, char *argv[])
     Map map(cells);
     Location_visibility visibility(cells, wc.cell_shape, wi.cell_transformation);
 
-    auto rotation = stof(p.get(rotation_key,"0"));
+    auto rotation = stof(p.get(rotation_key,"1.5707963267948966"));
     auto interval = stoi(p.get(interval_key,"30"));
     auto spawn_coordinates_str = p.get(spawn_coordinates_key, "{\"x\":0,\"y\":0}");
     auto verbose = p.contains(Key("-v"));
+    bool task = p.contains(robot_task_key);  // 1 for autorobot, 0 move_optimizer
+    if (task) cout << "TASK: " << task << endl;
+
 
 
     Experiment_service::set_logs_folder("experiment_logs/");
     Experiment_server experiment_server;
 
-    auto &controller_experiment_client = experiment_server.create_local_client<Controller_server::Controller_experiment_client>(); // CONTROLLER SERVER
-    controller_experiment_client.subscribe();                                                                                       // CONTROLLER SERVER
 
     Tracking_simulator tracking_server;
     tracking_server.start(4510);
@@ -83,8 +85,6 @@ int main(int argc, char *argv[])
     experiment_server.set_tracking_client(experiment_tracking_client);
     experiment_server.start(Experiment_service::get_port());
 
-
-    auto &tracking_client = tracking_server.create_local_client<Controller_server::Controller_tracking_client>(visibility, 90, capture, peeking, "predator", "prey");   // CONTROLLER SERVER
 
     auto &experiment_client= experiment_server.create_local_client<Robot_experiment_client>();
     experiment_client.subscribe();
@@ -109,16 +109,26 @@ int main(int argc, char *argv[])
     Location location = map[spawn_coordinates].location;
     Robot_simulator::start_simulation(world, location, rotation, interval, tracking_server, server);
 
-    // CONTROLLER SERVER - this block
+
     Robot_agent robot_agent;
     robot_agent.connect("127.0.0.1");
-    Controller_service::set_logs_folder("controller_logs/");
-    Controller_server controller_server("../config/pid.json", robot_agent, tracking_client, controller_experiment_client);
-    if (!controller_server.start(Controller_service::get_port())) {
-        cout << "failed to start controller" << endl;
-        exit(1);
+
+    Controller_server *controller_server;
+
+    if (task) {
+        auto &tracking_client = tracking_server.create_local_client<Controller_server::Controller_tracking_client>(visibility, 90, capture, peeking, "predator", "prey");   // CONTROLLER SERVER
+        auto &controller_experiment_client = experiment_server.create_local_client<Controller_server::Controller_experiment_client>(); // CONTROLLER SERVER
+        controller_experiment_client.subscribe();                                                                                       // CONTROLLER SERVER
+
+        Controller_service::set_logs_folder("controller_logs/");
+        controller_server =  new Controller_server("../config/pid.json", robot_agent, tracking_client,
+                                            controller_experiment_client);
+        if (!controller_server->start(Controller_service::get_port())) {
+            cout << "failed to start controller" << endl;
+            exit(1);
+        }
     }
-    //
+
 
     auto &tracker = tracking_server.create_local_client<agent_tracking::Tracking_client>();
     tracker.connect();
@@ -130,6 +140,12 @@ int main(int argc, char *argv[])
         }
         Timer::wait(.5);
     }
+    if (task) {
+        controller_server->stop();
+        free(controller_server);
+    }
+
     server.stop();
+
     return 0;
 }

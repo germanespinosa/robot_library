@@ -6,10 +6,10 @@ from cellworld_controller_service import ControllerClient
 from cellworld_experiment_service import ExperimentClient
 from matplotlib.backend_bases import MouseButton
 
-from gamepad import GamePad
+# from gamepad import GamePad
 
 
-game_pad = GamePad()
+# game_pad = GamePad()
 time_out = 1.0
 
 
@@ -30,7 +30,6 @@ def on_experiment_started(experiment):
 
 
 world_changed = False
-
 free_cells = Cell_group()
 spawn_locations = Location_list()
 
@@ -84,15 +83,15 @@ def on_step(step: Step):
 
 # connect to controller
 
-controller = ControllerClient()
-
-if not controller.connect("127.0.0.1", 4590):
-    print("failed to connect to the controller")
-    exit(1)
-
-controller.set_request_time_out(1000000)
-controller.subscribe()
-controller.on_step = on_step
+# controller = ControllerClient()
+#
+# if not controller.connect("127.0.0.1", 4590):
+#     print("failed to connect to the controller")
+#     exit(1)
+#
+# controller.set_request_time_out(1000000)
+# controller.subscribe()
+# controller.on_step = on_step
 
 
 world = World.get_from_parameters_names("hexagonal", "canonical")
@@ -188,8 +187,8 @@ last_exploring_destination = Location()
 while True:
     world_changed = False
     experiment_service.start_episode(experiment.experiment_name)
-    while not world_changed:
-        game_pad.wait(.1)
+    # while not world_changed:
+    #     game_pad.wait(.1)
     display.set_occlusions(occlusions)
 
     #give the predator chance to move to the spawn location
@@ -198,10 +197,10 @@ while True:
     spawn_timer = Timer(1)
     display.circle(spawn_location, .01, "red")
     set_destination(spawn_location)
-    while game_pad.update() and not reached(predator.step.location, spawn_location):
-        display.agent(step=predator.step, color="blue", size=15)
-        display.update()
-        check_destination_timeout()
+    # while game_pad.update() and not reached(predator.step.location, spawn_location):
+    #     display.agent(step=predator.step, color="blue", size=15)
+    #     display.update()
+    #     check_destination_timeout()
 
     display.circle(spawn_location, .01, "white")
 

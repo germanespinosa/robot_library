@@ -43,6 +43,7 @@ def move_done(move_number):
 def get_location(x, y):
     return world.cells[map[Coordinates(x, y)]].location
 
+
 def on_click(event):
     global current_predator_destination
     if event.button == 1:
@@ -56,11 +57,8 @@ def on_click(event):
         controller_timer.reset()
 
 
-
-
 # GLOBALS
 current_predator_destination = None
-
 
 
 # SETUP

@@ -1,4 +1,6 @@
 '''
+Finds the tick number required for each move
+
 TO DO:
 1. mode 1 initialize robot
     a. PD to desired angle  to get to destination
@@ -56,12 +58,12 @@ class Robot_client(MessageClient):
 
     def __init__(self):
         MessageClient.__init__(self)
-        self.move_done = None
-        self.router.add_route("move_done", self.__move_done__, int)
+        # self.move_done = None
+        # self.router.add_route("move_done", self.__move_done__, int)
 
-    def __move_done__(self, move_number):
-        if self.move_done:
-            self.move_done(move_number)
+    # def __move_done__(self, move_number):
+    #     if self.move_done:
+    #         self.move_done(move_number)
 
     def set_left(self, v: int) -> bool:
         return self.send_request(Message("set_left", v)).get_body(bool)
@@ -77,6 +79,9 @@ class Robot_client(MessageClient):
 
     def update(self) -> bool:
         return self.send_request(Message("update")).get_body(bool)
+
+    def is_move_done(self) -> bool:
+        return self.send_request(Message("is_move_done")).get_body(bool)
 
 
 def initialize():
@@ -178,14 +183,14 @@ def turn_robot():
         predator.move_done = False
         robot_tick_update(tick_guess_dict["m6"]['L'], tick_guess_dict["m6"]['R'])
 
-def move_done(move_number):
-    print("move ", move_number, "done")
-    # display.circle(predator.step.location)
-    # display.update()
-
-    predator.move_state = move_number
-    # when this function is called move state changes
-    predator.move_done = True
+# def move_done(move_number):
+#     print("move ", move_number, "done")
+#     # display.circle(predator.step.location)
+#     # display.update()
+#
+#     predator.move_state = move_number
+#     # when this function is called move state changes
+#     predator.move_done = True
 
 def get_location(x,y):
     return world.cells[map[Coordinates(x,y)]].location
@@ -198,7 +203,7 @@ def tune_move3():
     global PREVIOUS_LOCATION
 
     display.circle(predator.step.location, 0.01, "magenta")
-    predator.move_done = False
+    # predator.move_done = False
     # take measurement
     current_location = predator.step.location
 
@@ -258,7 +263,7 @@ class Tuner:
             print("STEP 1 DONE!")
             print(f"outer ticks = {tick_guess_dict[self.move][outer_key]}, inner ticks = {tick_guess_dict[self.move][inner_key]}")
             print(" ")
-            predator.move_done = True
+            # predator.move_done = True
             return True
 
         # inner wheel too many ticks
@@ -309,8 +314,6 @@ class Tuner:
 ########################################################################################################################
 
 
-
-
 # CONSTANTS
 R1 = (0.0635/2)/2.34
 R2 = R1 + (0.127/2)/2.34
@@ -323,13 +326,6 @@ robot_speed = 100
 
 
 # GLOBALS
-# the desired change in x,y,th for each move
-# delta_dict = { "m1" :  np.array([,y1, 120]),
-#                "m2" :  np.array([x2, y2, 60]),
-#                "m3" :  np.array([23, 23, 0]),
-#                "m4" :  np.array([x2, -y2, -60]),
-#                "m5" :  np.array([x1, -y1, -120]),
-#                "m6" :  np.array([0, 0, 180])}
 # initial tick guess
 tick_guess_dict =  {"m1": {'L': 212, 'R': 815},
                     "m2": {'L': 231, 'R': 535},  # 497, 1135
@@ -338,7 +334,7 @@ tick_guess_dict =  {"m1": {'L': 212, 'R': 815},
                     "m5": {'L': 323, 'R':-33},
                     "m6": {'L': 840, 'R': -840},
                     "m7": {'L': 420, 'R': -420},
-                    "m8": {'L': 216, 'R': 216}}
+                    "m8": {'L': 216, 'R': 216}} # init
 # move characteristic dict
 move_constants_dict= {"m1": {'r': R1,       'th': TH1},
                       "m2": {'r': R2,       'th': TH2},
@@ -385,14 +381,10 @@ if robot_client.connect("127.0.0.1", 6300):
 else:
     print("failed to connect to robot! bummer")
     exit(1)
-# robot client broadcasts when the move is done
-robot_client.move_done = move_done
+
 robot_client.subscribe()
 
-# Tasks
-# 1. initialize robot
-# 2. move tuner - dont have to have initialize done btw
-# 3. actual controller
+
 prev_error = 0
 P = 1
 D = 1
@@ -437,7 +429,7 @@ display.circle(tuner_object.center_location, 0.005, "cyan")
 
 while True:
     # turn predator around to keep it in bounds
-    if predator.move_done:
+    if robot_client.is_move_done():
         turn_robot()
 
     # send new ticks if previous move is done
@@ -448,8 +440,8 @@ while True:
         # measure state of robot after move
         #current_location = predator.step.location
 
-    while not step1_done and predator.move_done:
-        predator.move_done = False
+    while not step1_done and robot_client.is_move_done():
+        # predator.move_done = False
 
         # measure state of robot after move
         current_step = predator.step
@@ -474,8 +466,8 @@ while True:
             robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
 
 
-    while not step2_done and step1_done and predator.move_done:
-        predator.move_done = False
+    while not step2_done and step1_done and robot_client.is_move_done():
+        # predator.move_done = False
 
         # STEP1 is done == ratio found
         # STEP2 : change # ticks based on alpha

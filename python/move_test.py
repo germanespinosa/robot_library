@@ -46,12 +46,12 @@ class Robot_client(MessageClient):
 
     def __init__(self):
         MessageClient.__init__(self)
-        self.move_done = None
-        self.router.add_route("move_done", self.__move_done__, int)
-
-    def __move_done__(self, move_number):
-        if self.move_done:
-            self.move_done(move_number)
+        # self.move_done = None
+        # self.router.add_route("move_done", self.__move_done__, int)
+    #
+    # def __move_done__(self, move_number):
+    #     if self.move_done:
+    #         self.move_done(move_number)
 
     def set_left(self, v: int) -> bool:
         return self.send_request(Message("set_left", v)).get_body(bool)
@@ -59,14 +59,15 @@ class Robot_client(MessageClient):
     def set_right(self, v: int) -> bool:
         return self.send_request(Message("set_right", v)).get_body(bool)
 
-    def stop(self) -> bool:
-        return self.send_request(Message("stop")).get_body(bool)
-
     def set_speed(self, v: int) -> bool:
         return self.send_request(Message("set_speed", v)).get_body(bool)
 
     def update(self) -> bool:
         return self.send_request(Message("update")).get_body(bool)
+
+    def is_move_done(self) -> bool:
+        return self.send_request(Message("is_move_done")).get_body(bool)
+
 
 
 def initialize():
@@ -118,7 +119,7 @@ display.set_agent_marker("predator", Agent_markers.arrow())
 
 # subscribe to tracker to receive robot step updates
 tracker = TrackingClient()
-if tracker.connect("127.0.0.1"):
+if tracker.connect("192.168.137.155"):
     print("connected to tracker")
 else:
     print("failed to connect to tracker")
@@ -134,7 +135,7 @@ if robot_client.connect("127.0.0.1", 6300):
 else:
     print("failed to connect to robot! bummer")
     exit(1)
-robot_client.move_done = move_done
+
 robot_client.subscribe()
 
 
@@ -147,10 +148,11 @@ robot_tick_update(tick_guess_dict[moves[7]]['L'], tick_guess_dict[moves[7]]['R']
 a = 1
 while True:
 
-    if predator.move_done and a == 1:
-        robot_tick_update(tick_guess_dict[moves[5]]['L'], tick_guess_dict[moves[5]]['R'])
-        a = 0
-    print(predator.step.rotation)
+    # if robot_client.is_move_done() and a == 1:
+    #     print("MOVE DONE")
+    #     robot_tick_update(tick_guess_dict[moves[5]]['L'], tick_guess_dict[moves[5]]['R'])
+    #     a = 0
+    # print(predator.step.rotation)
 
     # display robot position
     if predator.is_valid:

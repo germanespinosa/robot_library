@@ -2,7 +2,7 @@
 Automated robot controller
 Program Inputs:
 1. To start autonomous motion type m
-2. To start experiment and avoind occlusions right click********************************
+2. To start experiment and avoid occlusions right click********************************
 3. To follow robot path modify path variable controller_service.cpp
 4. Specify occlusions
 
