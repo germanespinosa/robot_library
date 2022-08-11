@@ -16,9 +16,10 @@ TO DO:
 
 import math
 from time import sleep
-from cellworld import World, Display, Location, Agent_markers, Capture, Capture_parameters, Step, Timer, Cell_group_builder, to_radians, to_degrees, Location_list, Cell_group, Cell_map
+from cellworld import World, Display, Location, Agent_markers, Capture, Capture_parameters, Step, Timer, Cell_group_builder, to_radians, to_degrees, Location_list, Cell_group, Cell_map, Coordinates
 from cellworld_tracking import TrackingClient
 from tcp_messages import MessageClient, Message
+from cellworld_controller_service import ControllerClient
 
 
 class AgentData:
@@ -41,70 +42,27 @@ def on_step(step):
         predator.is_valid = Timer(time_out)
         predator.step = step
 
-
-class Robot_client(MessageClient):
-
-    def __init__(self):
-        MessageClient.__init__(self)
-        # self.move_done = None
-        # self.router.add_route("move_done", self.__move_done__, int)
-    #
-    # def __move_done__(self, move_number):
-    #     if self.move_done:
-    #         self.move_done(move_number)
-
-    def set_left(self, v: int) -> bool:
-        return self.send_request(Message("set_left", v)).get_body(bool)
-
-    def set_right(self, v: int) -> bool:
-        return self.send_request(Message("set_right", v)).get_body(bool)
-
-    def set_speed(self, v: int) -> bool:
-        return self.send_request(Message("set_speed", v)).get_body(bool)
-
-    def update(self) -> bool:
-        return self.send_request(Message("update")).get_body(bool)
-
-    def is_move_done(self) -> bool:
-        return self.send_request(Message("is_move_done")).get_body(bool)
-
-
-
-def initialize():
-    pass
-
-
-def robot_tick_update(left_tick, right_tick):
-    robot_client.set_left(left_tick)
-    robot_client.set_right(right_tick)
-    robot_client.set_speed(robot_speed)
-    robot_client.update()
-
-def move_done(move_number):
-    print("move ", move_number, "done")
-    predator.move_state = move_number
-    # when this function is called move state changes
-    predator.move_done = True
-
+def get_location(x, y):
+    return world.cells[map[Coordinates(x, y)]].location
 
 
 # CONSTANTS
 time_out = 1.0
-robot_speed = 100
+robot_speed = 1800
 
 
 # GLOBALS
-tick_guess_dict =  {"m1": {'L': 212, 'R': 815},
-                    "m2": {'L': 231, 'R': 535},
-                    "m3": {'L': 432, 'R': 432},
-                    "m4": {'L': 535, 'R': 231},
-                    "m5": {'L': 815, 'R': 212},
-                    "m6": {'L': 450, 'R': -450},
-                    "m7": {'L': 420, 'R': -420},
-                    "m8": {'L': 216, 'R': 216}}   # initialize 11/2
+tick_guess_dict =  {"m0": {'L': 1, 'R': 600}, # 44, 660
+                    "m1": {'L': 231, 'R': 535},
+                    "m2": {'L': 432, 'R': 432},
+                    "m3": {'L': 535, 'R': 231},
+                    "m4": {'L': 815, 'R': 212},
+                    "m5": {'L': 450, 'R': -450},
+                    "m6": {'L': 420, 'R': -420},
+                    "m7": {'L': 216, 'R': 216}}   # initialize 11/2
 
-moves = ["m1", "m2", "m3", "m4", "m5", "m6", "m7","m8"]
-move = moves[3]
+moves = ["m0", "m1", "m2", "m3", "m4", "m5", "m6","m7"]
+move = moves[2]
 
 
 
@@ -117,42 +75,32 @@ map = Cell_map(world.configuration.cell_coordinates)
 predator = AgentData("predator")
 display.set_agent_marker("predator", Agent_markers.arrow())
 
-# subscribe to tracker to receive robot step updates
-tracker = TrackingClient()
-if tracker.connect("192.168.137.155"):
-    print("connected to tracker")
-else:
-    print("failed to connect to tracker")
-tracker.set_request_time_out(5000)
-tracker.subscribe()
-tracker.set_throughput(5)
-tracker.on_step = on_step
-
-# connect to robot client to send ticks
-robot_client = Robot_client()
-if robot_client.connect("127.0.0.1", 6300):
-    print("connected to robot! yay")
-else:
-    print("failed to connect to robot! bummer")
+# CONTROLLER CLIENT
+controller_timer = Timer(3.0)     # initialize controller timer variable
+controller = ControllerClient()
+if not controller.connect("127.0.0.1", 4590):
+    print("failed to connect to the controller")
     exit(1)
+controller.set_request_time_out(10000)
+controller.subscribe()
+controller.on_step = on_step
 
-robot_client.subscribe()
+
+
+
+destination = get_location(2, 0)
+# print(f'destination: {destination}')
+# print(controller.set_destination(destination))
 
 
 
 # Try move
-# robot_tick_update(tick_guess_dict[moves[6]]['L'], tick_guess_dict[moves[6]]['R'])
-
-
-robot_tick_update(tick_guess_dict[moves[7]]['L'], tick_guess_dict[moves[7]]['R'])
+# controller.set_agent_values(100,100,100)
+display.circle(predator.step.location, 0.005, "cyan")
 a = 1
 while True:
 
-    # if robot_client.is_move_done() and a == 1:
-    #     print("MOVE DONE")
-    #     robot_tick_update(tick_guess_dict[moves[5]]['L'], tick_guess_dict[moves[5]]['R'])
-    #     a = 0
-    # print(predator.step.rotation)
+
 
     # display robot position
     if predator.is_valid:

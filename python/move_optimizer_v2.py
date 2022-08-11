@@ -98,7 +98,7 @@ class Tuner:
         :param move_dict: tick_guess_dict[move] so dictionary with key = L or R, value: tick number
         :return: bool indicating whether ratio has been found
         """
-        ratio_accuracy = 0.0001     # will change this to error
+        ratio_accuracy = 0.00001     # will change this to error
 
         # distance from center to robot - remember center location is updated each trial
         r_actual = self.center_location.dist(current_step.location)
@@ -109,6 +109,7 @@ class Tuner:
         # check if results are "close enough"
         if ((r_actual < (self.r_d + ratio_accuracy)) and (r_actual > (self.r_d - ratio_accuracy))):
             print("STEP 1 DONE!")
+            print(f'radius desired: {self.r_d}, radius actual: {r_actual}')
             print(f"outer ticks = {tick_guess_dict[self.move][outer_key]}, inner ticks = {tick_guess_dict[self.move][inner_key]}")
             print(" ")
             # predator.move_done = True
@@ -143,7 +144,7 @@ class Tuner:
         tick_ratio = tick_guess_dict[self.move][inner_key]/tick_guess_dict[self.move][outer_key]    # step 1 result
 
         # compute arc length angle right triangle
-        d = current_step.location.dist(previous_step.location)/2
+        d = current_step.location.dist(PREVIOUS_STEP.location)/2
         r = self.center_location.dist(current_step.location)    # TODO: IMPROVE PRECISION was making this r_d
         print(f'd: {d}, r: {r}')
         alpha = 2 * asin(d/r)
@@ -343,7 +344,7 @@ robot_speed = 100
 
 # DICTIONARIES
 # store number of ticks for each move
-tick_guess_dict =  {"m0": {'L': 212, 'R': 1075},
+tick_guess_dict =  {"m0": {'L': 1, 'R': 1000},
                     "m1": {'L': 231, 'R': 535},     # 497, 1135
                     "m2": {'L': 427, 'R': 427},     # 216
                     "m3": {'L': 400, 'R': 400},
@@ -416,7 +417,7 @@ robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
 # TUNER
 if move != moves[2] or move != moves[5]:
     tuner_object = Tuner(move)
-    STEP1_DONE = False
+    STEP1_DONE = True
     STEP2_DONE = False
     tuner_object.center_location = tuner_object.get_center_location(PREVIOUS_STEP)
     display.circle(PREVIOUS_STEP.location, 0.005, "red")

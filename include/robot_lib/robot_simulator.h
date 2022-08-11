@@ -6,7 +6,7 @@
 #include <robot_lib/tracking_simulator.h>
 #include <robot_lib/robot_agent.h>
 
-# define ARRAY_SIZE 30
+# define ARRAY_SIZE 200
 
 namespace robot {
 

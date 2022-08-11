@@ -23,10 +23,12 @@ namespace robot{
         //need_update = true;
     }
 
-    bool Robot_agent::update() {
+    int Robot_agent::update() {
+        message.move_number = move_counter ++;
         bool res = ((easy_tcp::Connection *)this)->send_data((const char*) &message,sizeof(message));
         //wait for finish on the robot.
-        return res;
+        if (!res) return -1;
+        return (int)message.move_number;
     }
 
     Robot_agent::~Robot_agent() {
@@ -53,10 +55,12 @@ namespace robot{
             move_done = false;
             return true;
         }
-        return false; // flase
+        return false; // false
     }
 
     void Robot_agent::received_data(char *buffer, size_t size) {
         move_done = true;
+        int move_id = (int)*((uint32_t *) buffer);
+        move_finished(move_id);
     }
 }

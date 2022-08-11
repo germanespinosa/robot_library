@@ -109,8 +109,13 @@ int main(int argc, char *argv[])
     Location location = map[spawn_coordinates].location;
     Robot_simulator::start_simulation(world, location, rotation, interval, tracking_server, server);
 
-
-    Robot_agent robot_agent;
+    struct : Robot_agent {
+        void move_finished(int move_number) override {
+            if (controller_server)
+            controller_server->broadcast_subscribed(tcp_messages::Message("move_finished", move_number));
+        };
+        Controller_server *controller_server = nullptr;
+    } robot_agent;
     robot_agent.connect("127.0.0.1");
 
     Controller_server *controller_server;
@@ -123,6 +128,7 @@ int main(int argc, char *argv[])
         Controller_service::set_logs_folder("controller_logs/");
         controller_server =  new Controller_server("../config/pid.json", robot_agent, tracking_client,
                                             controller_experiment_client);
+        robot_agent.controller_server = controller_server;
         if (!controller_server->start(Controller_service::get_port())) {
             cout << "failed to start controller" << endl;
             exit(1);

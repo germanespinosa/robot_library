@@ -11,7 +11,15 @@ from cellworld import World, Display, Location, Agent_markers, Step, Timer, Cell
 from cellworld_tracking import TrackingClient
 from cellworld_controller_service import ControllerClient
 from tcp_messages import MessageClient, Message
+from json_cpp import JsonObject
 
+
+
+class c(JsonObject):
+    def __init__(self):
+        self.left = 100
+        self.right = 100
+        self.speed = 100
 
 class AgentData:
     """
@@ -56,6 +64,8 @@ def on_click(event):
         print(location)
         controller_timer.reset()
 
+
+agent_values = c()
 
 # GLOBALS
 current_predator_destination = None
@@ -116,7 +126,7 @@ while running:
         display.agent(step=predator.step, color="grey", size= 15)
 
     display.update()
-    sleep(0.5)
+    sleep(0.1)
 
 
 
