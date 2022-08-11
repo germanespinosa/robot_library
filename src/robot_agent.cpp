@@ -24,9 +24,19 @@ namespace robot{
         //need_update = true;
     }
 
-    int Robot_agent::update() {;
+//    int Robot_agent::update() {;
+//        bool res = ((easy_tcp::Connection *)this)->send_data((const char*) &message,sizeof(message));
+//        return res;
+//    }
+    int Robot_agent::update() {
+        // TODO: ask why have move counter
+        message.move_number = move_counter ++;
         bool res = ((easy_tcp::Connection *)this)->send_data((const char*) &message,sizeof(message));
-        return res;
+        //wait for finish on the robot.
+        cout << "RES " << res << endl;
+        cout << "AGENT MOVE " << message.move_number << endl;
+        if (!res) return -1;
+        return (int)message.move_number;
     }
 
     Robot_agent::~Robot_agent() {
