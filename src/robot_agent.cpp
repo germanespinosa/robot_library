@@ -12,6 +12,7 @@ namespace robot{
     }
 
     void Robot_agent::set_right(int right_value) {
+        cout << "RIGHT " << right_value << endl;
         message.right = right_value;
     }
 
@@ -23,12 +24,9 @@ namespace robot{
         //need_update = true;
     }
 
-    int Robot_agent::update() {
-        message.move_number = move_counter ++;
+    int Robot_agent::update() {;
         bool res = ((easy_tcp::Connection *)this)->send_data((const char*) &message,sizeof(message));
-        //wait for finish on the robot.
-        if (!res) return -1;
-        return (int)message.move_number;
+        return res;
     }
 
     Robot_agent::~Robot_agent() {

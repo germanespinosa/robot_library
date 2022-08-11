@@ -15,7 +15,6 @@ namespace robot {
         bool is_move_done();
         struct Robot_message {
             int32_t left, right, speed;
-            uint32_t move_number;
         } message;
         ~Robot_agent();
         static int port();

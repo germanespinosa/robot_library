@@ -107,7 +107,6 @@ cell_size = world.implementation.cell_transformation.size
 current_predator_destination = destination
 
 running = True
-
 while running:
     # TODO: note check coord instead of location
     # need to know when predator reaches destination

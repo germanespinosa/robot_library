@@ -19,7 +19,77 @@ from time import sleep
 from cellworld import World, Display, Location, Agent_markers, Capture, Capture_parameters, Step, Timer, Cell_group_builder, to_radians, to_degrees, Location_list, Cell_group, Cell_map, Coordinates
 from cellworld_tracking import TrackingClient
 from tcp_messages import MessageClient, Message
-from cellworld_controller_service import ControllerClient
+# from cellworld_controller_service import ControllerClient
+from json_cpp import JsonObject
+from tcp_messages import MessageClient, Message
+from cellworld import *
+
+
+class c(JsonObject):
+    def __init__(self):
+        self.left =100
+        self.right = 100
+        self.speed = 100
+
+class ControllerClient(MessageClient):
+    class Behavior:
+        Explore = 0
+        Pursue = 1
+
+    def __init__(self):
+        MessageClient.__init__(self)
+        self.on_step = None
+        self.on_world_update = None
+        self.router.add_route("_step$", self.__process_step__, Step)
+
+    def __process_step__(self, step):
+        if self.on_step:
+            self.on_step(step)
+
+    def __process_world_update__(self, world_info):
+        if self.on_world_update:
+            self.on_world_update(world_info)
+
+    def tune(self) -> bool:
+        return self.send_request(Message("tune")).get_body(bool)
+
+    def pause(self) -> bool:
+        return self.send_request(Message("pause")).get_body(bool)
+
+    def resume(self) -> bool:
+        return self.send_request(Message("resume")).get_body(bool)
+
+    def stop(self) -> bool:
+        return self.send_request(Message("stop")).get_body(bool)
+
+    def set_destination(self, new_destination: Location) -> bool:
+        return self.send_request(Message("set_destination", new_destination)).get_body(bool)
+
+    def set_behavior(self, behavior: int) -> bool:
+        return self.send_request(Message("set_behavior", behavior)).get_body(bool)
+
+    def set_agent_values(self, values: JsonObject):
+        return self.send_request(Message("set_agent_values", values)).get_body(int)
+
+    def set_left_ticks(self, left_ticks: int) -> bool:
+        return self.send_request(Message("set_left_ticks", left_ticks)).get_body(bool)
+
+    def set_right_ticks(self, right_ticks: int) -> bool:
+        return self.send_request(Message("set_right_ticks", right_ticks)).get_body(bool)
+
+    def set_speed(self, speed: int) -> bool:
+        return self.send_request(Message("set_speed", speed)).get_body(bool)
+
+    def agent_move_number(self, move_number: int) -> bool:
+        return self.send_request(Message("move_number", move_number)).get_body(bool)
+
+
+    # def update(self) -> int:
+    #     """
+    #     in theory what to recieve move number back
+    #     """
+    #     return self.send_request(Message("agent_update")).get_body(int)
+
 
 
 class AgentData:
@@ -46,9 +116,16 @@ def get_location(x, y):
     return world.cells[map[Coordinates(x, y)]].location
 
 
+def robot_tick_update(left_tick, right_tick):
+    controller.set_left(left_tick)
+    controller.set_right(right_tick)
+    controller.set_speed(robot_speed)
+    controller.update()
+
+
 # CONSTANTS
 time_out = 1.0
-robot_speed = 1800
+robot_speed = 500
 
 
 # GLOBALS
@@ -92,14 +169,23 @@ destination = get_location(2, 0)
 # print(f'destination: {destination}')
 # print(controller.set_destination(destination))
 
+values = c()
 
 
 # Try move
-# controller.set_agent_values(100,100,100)
+# print(controller.set_agent_values(values))
+# robot_tick_update(100, 200)
+move_number = 1
+print(controller.tune())
+controller.agent_move_number(move_number)
+controller.set_left_ticks(100)
+controller.set_right_ticks(100)
+controller.set_speed(100)
+# print(controller.update())  #TODO: figure out how to recieve proper value
+
 display.circle(predator.step.location, 0.005, "cyan")
 a = 1
 while True:
-
 
 
     # display robot position
@@ -109,7 +195,7 @@ while True:
         display.agent(step=predator.step, color="grey", size= 15)
 
     display.update()
-    sleep(0.5)
+    sleep(0.2)
 
 tracker.unsubscribe()
 
