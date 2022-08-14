@@ -31,10 +31,9 @@ namespace robot{
     int Robot_agent::update() {
         // TODO: ask why have move counter
         message.move_number = move_counter ++;
+//        message.move_number = 3000;
+        cout << "MOVE NUM " <<message.move_number << endl;
         bool res = ((easy_tcp::Connection *)this)->send_data((const char*) &message,sizeof(message));
-        //wait for finish on the robot.
-        cout << "RES " << res << endl;
-        cout << "AGENT MOVE " << message.move_number << endl;
         if (!res) return -1;
         return (int)message.move_number;
     }
@@ -67,6 +66,7 @@ namespace robot{
     }
 
     void Robot_agent::received_data(char *buffer, size_t size) {
+        // receives move number from robot
         move_done = true;
         int move_id = (int)*((uint32_t *) buffer);
         move_finished(move_id);

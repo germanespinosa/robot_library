@@ -152,6 +152,7 @@ namespace robot {
         // robot agent -> robot sim
         struct Robot_message {
             int32_t left, right, speed;
+            uint32_t move_numbers;
         } message;
         if (size == sizeof(message)){ // instruction
             message = *((Robot_message *)buff);

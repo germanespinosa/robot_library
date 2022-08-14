@@ -27,11 +27,19 @@ from cellworld_tracking import TrackingClient
 from tcp_messages import MessageClient, Message
 import sys
 from cellworld_controller_service import ControllerClient
+from json_cpp import JsonObject
 
 # GLOBALS
 DIRECTION_X = 1
 MOVE_TUNED = False
 PREVIOUS_LOCATION = None
+VALUES = None
+
+class c(JsonObject):
+    def __init__(self):
+        self.left = 1000
+        self.right = 1000
+        self.speed = 100
 
 class ControllerClient(MessageClient):
     class Behavior:
@@ -52,6 +60,9 @@ class ControllerClient(MessageClient):
         if self.on_world_update:
             self.on_world_update(world_info)
 
+    def tune(self) -> bool:
+        return self.send_request(Message("tune")).get_body(bool)
+
     def pause(self) -> bool:
         return self.send_request(Message("pause")).get_body(bool)
 
@@ -67,8 +78,24 @@ class ControllerClient(MessageClient):
     def set_behavior(self, behavior: int) -> bool:
         return self.send_request(Message("set_behavior", behavior)).get_body(bool)
 
-    def set_left_ticks(self, left_ticks: int):
+    def set_agent_values(self, values: JsonObject) -> int:
+        return self.send_request(Message("set_agent_values", values)).get_body(int)
+
+    def set_left_ticks(self, left_ticks: int) -> bool:
         return self.send_request(Message("set_left_ticks", left_ticks)).get_body(bool)
+
+    def set_right_ticks(self, right_ticks: int) -> bool:
+        return self.send_request(Message("set_right_ticks", right_ticks)).get_body(bool)
+
+    def set_speed(self, speed: int) -> bool:
+        return self.send_request(Message("set_speed", speed)).get_body(bool)
+
+    def agent_move_number(self, move_number: int) -> bool:
+        return self.send_request(Message("move_number", move_number)).get_body(bool)
+
+    def is_move_done(self) -> bool:
+        return self.send_request(Message("is_move_done")).get_body(bool)
+
 
 
 class AgentData:
@@ -208,10 +235,12 @@ def angle_difference(a_prev, a_current, direction):
 
 
 def robot_tick_update(left_tick, right_tick):
-    controller.set_left_ticks(left_tick)
-    robot_client.set_right(right_tick)
-    robot_client.set_speed(robot_speed)
-    robot_client.update()
+    global VALUES
+    VALUES.left = left_tick
+    VALUES.right = right_tick;
+    VALUES.speed = robot_speed
+    # robot agent update
+    controller.set_agent_values(VALUES)
 
 
 def turn_robot():
@@ -355,6 +384,7 @@ TH3 = 180
 STRAIGHT = (0.11)/2.34
 time_out = 2.0
 robot_speed = 100
+VALUES = c()
 
 # DICTIONARIES
 # store number of ticks for each move
@@ -423,20 +453,20 @@ robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
 # TUNER
 if move != moves[2] or move != moves[5]:
     tuner_object = Tuner(move)
-    STEP1_DONE = True
+    STEP1_DONE = False
     STEP2_DONE = False
     tuner_object.center_location = tuner_object.get_center_location(PREVIOUS_STEP)
     display.circle(PREVIOUS_STEP.location, 0.005, "red")
     display.circle(tuner_object.center_location, 0.005, "cyan")
 
 while True:
-    if robot_client.is_move_done() and not MOVE_TUNED:
+    if controller.is_move_done() and not MOVE_TUNED:
         print("MOVE DONE")
         # keeps robot in habitat if  near bounds
         if turn_robot():
             print("TURNING")
             # if needs to turn wait till move is done before sending another move
-            while not robot_client.is_move_done():
+            while not controller.is_move_done():
                 continue
         # for tuning moves 2 and 5 dont use tuner class can tune in one step
         function_dict[move]()
@@ -452,7 +482,7 @@ while True:
     sleep(0.5)
 
 tracker.unsubscribe()
-robot_client.unsubscirbe()
+controller.unsubscirbe()
 
 
 

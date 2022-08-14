@@ -27,8 +27,8 @@ from cellworld import *
 
 class c(JsonObject):
     def __init__(self):
-        self.left =100
-        self.right = 100
+        self.left = 1000
+        self.right = 1000
         self.speed = 100
 
 class ControllerClient(MessageClient):
@@ -68,7 +68,7 @@ class ControllerClient(MessageClient):
     def set_behavior(self, behavior: int) -> bool:
         return self.send_request(Message("set_behavior", behavior)).get_body(bool)
 
-    def set_agent_values(self, values: JsonObject):
+    def set_agent_values(self, values: JsonObject) -> int:
         return self.send_request(Message("set_agent_values", values)).get_body(int)
 
     def set_left_ticks(self, left_ticks: int) -> bool:
@@ -82,6 +82,9 @@ class ControllerClient(MessageClient):
 
     def agent_move_number(self, move_number: int) -> bool:
         return self.send_request(Message("move_number", move_number)).get_body(bool)
+
+    def is_move_done(self) -> bool:
+        return self.send_request(Message("is_move_done")).get_body(bool)
 
 
     # def update(self) -> int:
@@ -175,27 +178,29 @@ values = c()
 # Try move
 # print(controller.set_agent_values(values))
 # robot_tick_update(100, 200)
-move_number = 1
+
+
 print(controller.tune())
-controller.agent_move_number(move_number)
-controller.set_left_ticks(100)
-controller.set_right_ticks(100)
-controller.set_speed(100)
-# print(controller.update())  #TODO: figure out how to recieve proper value
+a = controller.set_agent_values(values)
+
 
 display.circle(predator.step.location, 0.005, "cyan")
 a = 1
 while True:
 
-
+    # add is move done
     # display robot position
+
+    if controller.is_move_done():
+        print("move number: ", a)
+
     if predator.is_valid:
         display.agent(step=predator.step, color="blue", size= 15)
     else:
         display.agent(step=predator.step, color="grey", size= 15)
 
     display.update()
-    sleep(0.2)
+    sleep(0.1)
 
 tracker.unsubscribe()
 
