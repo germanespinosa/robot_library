@@ -41,6 +41,7 @@ class ControllerClient(MessageClient):
         self.on_step = None
         self.on_world_update = None
         self.router.add_route("_step$", self.__process_step__, Step)
+        self.router.add_route("move_finished", on_move_done, int)
 
     def __process_step__(self, step):
         if self.on_step:
@@ -71,18 +72,6 @@ class ControllerClient(MessageClient):
     def set_agent_values(self, values: JsonObject) -> int:
         return self.send_request(Message("set_agent_values", values)).get_body(int)
 
-    def set_left_ticks(self, left_ticks: int) -> bool:
-        return self.send_request(Message("set_left_ticks", left_ticks)).get_body(bool)
-
-    def set_right_ticks(self, right_ticks: int) -> bool:
-        return self.send_request(Message("set_right_ticks", right_ticks)).get_body(bool)
-
-    def set_speed(self, speed: int) -> bool:
-        return self.send_request(Message("set_speed", speed)).get_body(bool)
-
-    def agent_move_number(self, move_number: int) -> bool:
-        return self.send_request(Message("move_number", move_number)).get_body(bool)
-
     def is_move_done(self) -> bool:
         return self.send_request(Message("is_move_done")).get_body(bool)
 
@@ -105,6 +94,7 @@ class AgentData:
         self.step.agent_name = agent_name
         self.move_state = None
         self.move_done = False
+        self.move_number = None
 
 
 def on_step(step):
@@ -114,6 +104,15 @@ def on_step(step):
     if step.agent_name == "predator":
         predator.is_valid = Timer(time_out)
         predator.step = step
+
+def on_move_done(move_number):
+    """
+    Updates move number based on broadcasted value
+    """
+
+    predator.move_number = move_number
+    print("received: ", move_number)
+
 
 def get_location(x, y):
     return world.cells[map[Coordinates(x, y)]].location
@@ -164,6 +163,7 @@ if not controller.connect("127.0.0.1", 4590):
 controller.set_request_time_out(10000)
 controller.subscribe()
 controller.on_step = on_step
+
 
 
 

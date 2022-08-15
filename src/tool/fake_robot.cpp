@@ -1,4 +1,4 @@
-// If move optimizer no -t, if autonmous -t
+// If move optimizer no -t, if autonomous -t
 
 #include <iostream>
 #include <easy_tcp.h>
@@ -120,20 +120,20 @@ int main(int argc, char *argv[])
 
     Controller_server *controller_server;
 
-    if (task) {
-        auto &tracking_client = tracking_server.create_local_client<Controller_server::Controller_tracking_client>(visibility, 90, capture, peeking, "predator", "prey");   // CONTROLLER SERVER
-        auto &controller_experiment_client = experiment_server.create_local_client<Controller_server::Controller_experiment_client>(); // CONTROLLER SERVER
-        controller_experiment_client.subscribe();                                                                                       // CONTROLLER SERVER
 
-        Controller_service::set_logs_folder("controller_logs/");
-        controller_server =  new Controller_server("../config/pid.json", robot_agent, tracking_client,
-                                            controller_experiment_client);
-        robot_agent.controller_server = controller_server;
-        if (!controller_server->start(Controller_service::get_port())) {
-            cout << "failed to start controller" << endl;
-            exit(1);
-        }
+    auto &tracking_client = tracking_server.create_local_client<Controller_server::Controller_tracking_client>(visibility, 90, capture, peeking, "predator", "prey");   // CONTROLLER SERVER
+    auto &controller_experiment_client = experiment_server.create_local_client<Controller_server::Controller_experiment_client>(); // CONTROLLER SERVER
+    controller_experiment_client.subscribe();                                                                                       // CONTROLLER SERVER
+
+    Controller_service::set_logs_folder("controller_logs/");
+    controller_server =  new Controller_server("../config/pid.json", robot_agent, tracking_client,
+                                        controller_experiment_client);
+    robot_agent.controller_server = controller_server;
+    if (!controller_server->start(Controller_service::get_port())) {
+        cout << "failed to start controller" << endl;
+        exit(1);
     }
+
 
 
     auto &tracker = tracking_server.create_local_client<agent_tracking::Tracking_client>();

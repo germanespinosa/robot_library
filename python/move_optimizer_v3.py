@@ -35,11 +35,13 @@ MOVE_TUNED = False
 PREVIOUS_LOCATION = None
 VALUES = None
 
+
 class c(JsonObject):
     def __init__(self):
         self.left = 1000
         self.right = 1000
         self.speed = 100
+
 
 class ControllerClient(MessageClient):
     class Behavior:
@@ -81,21 +83,8 @@ class ControllerClient(MessageClient):
     def set_agent_values(self, values: JsonObject) -> int:
         return self.send_request(Message("set_agent_values", values)).get_body(int)
 
-    def set_left_ticks(self, left_ticks: int) -> bool:
-        return self.send_request(Message("set_left_ticks", left_ticks)).get_body(bool)
-
-    def set_right_ticks(self, right_ticks: int) -> bool:
-        return self.send_request(Message("set_right_ticks", right_ticks)).get_body(bool)
-
-    def set_speed(self, speed: int) -> bool:
-        return self.send_request(Message("set_speed", speed)).get_body(bool)
-
-    def agent_move_number(self, move_number: int) -> bool:
-        return self.send_request(Message("move_number", move_number)).get_body(bool)
-
     def is_move_done(self) -> bool:
         return self.send_request(Message("is_move_done")).get_body(bool)
-
 
 
 class AgentData:
@@ -221,8 +210,10 @@ def on_step(step):
         predator.is_valid = Timer(time_out)
         predator.step = step
 
+
 def get_location(x, y):
     return world.cells[map[Coordinates(x,y)]].location
+
 
 def angle_difference(a_prev, a_current, direction):
     a1 = a_prev
@@ -420,7 +411,6 @@ prev_error = 0
 D = 1
 mode1 = False
 
-
 ##### Setup #####
 # WORLD AND AGENT
 occlusions = "00_00"
@@ -429,7 +419,6 @@ display = Display(world, fig_size=(9.0*.75, 8.0*.75), animated=True)
 map = Cell_map(world.configuration.cell_coordinates)
 predator = AgentData("predator")
 display.set_agent_marker("predator", Agent_markers.arrow())
-
 
 
 # CONTROLLER CLIENT
@@ -443,12 +432,12 @@ controller.subscribe()
 controller.on_step = on_step
 
 
-
 # INITIAL GUESS
 previous_location = get_location(0, 0)
 PREVIOUS_STEP = Step(agent_name=predator, location=previous_location, rotation=90)
 display.circle(PREVIOUS_STEP.location, 0.005, "red")
 robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
+
 
 # TUNER
 if move != moves[2] or move != moves[5]:
@@ -470,7 +459,6 @@ while True:
                 continue
         # for tuning moves 2 and 5 dont use tuner class can tune in one step
         function_dict[move]()
-
 
     # display robot position
     if predator.is_valid:
