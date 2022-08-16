@@ -34,13 +34,14 @@ DIRECTION_X = 1
 MOVE_TUNED = False
 PREVIOUS_LOCATION = None
 VALUES = None
+CORRECT_EXECUTION = 0
 
 
 class c(JsonObject):
     def __init__(self):
-        self.left = 1000
-        self.right = 1000
-        self.speed = 100
+        self.left = 0
+        self.right = 0
+        self.speed = 0
 
 
 class ControllerClient(MessageClient):
@@ -236,11 +237,11 @@ def robot_tick_update(left_tick, right_tick):
 
 def turn_robot():
     global DIRECTION_X
-    if DIRECTION_X > 0 and predator.step.location.x > 0.9:
+    if DIRECTION_X > 0 and predator.step.location.x > 0.8:
         DIRECTION_X = -1
         robot_tick_update(tick_guess_dict["m6"]['L'], tick_guess_dict["m6"]['R'])
         return True
-    elif DIRECTION_X < 0 and predator.step.location.x < -0.9:
+    elif DIRECTION_X < 0 and predator.step.location.x < -0.8:
         DIRECTION_X = 1
         robot_tick_update(tick_guess_dict["m6"]['L'], tick_guess_dict["m6"]['R'])
         return True
@@ -254,6 +255,7 @@ def tune_move2():
     global MOVE_TUNED
     global PREVIOUS_STEP
     global tick_guess_dict
+    global CORRECT_EXECUTION
     P = 1000
 
     display.circle(predator.step.location, 0.01, "magenta")
@@ -264,16 +266,23 @@ def tune_move2():
     # find error
     distance = current_step.location.dist(PREVIOUS_STEP.location)
     error = STRAIGHT - distance         # desired - actual
+    #print(error, PREVIOUS_STEP.location, previous_location, current_step.location)
+
 
     # tick modification logic
-    if abs(error) <= 0.0005:
+    if abs(error) <= 0.0005: # 0.0005
         print(f"Desired Distance: {STRAIGHT}, Distance: {distance}, Ticks: {tick_guess_dict[move]}")
-        print("DONE")
-        MOVE_TUNED = True
+        print(CORRECT_EXECUTION)
+        CORRECT_EXECUTION += 1
+        if CORRECT_EXECUTION > 4:
+            print("DONE")
+            MOVE_TUNED = True
     else:
-        tick_guess_dict[move]['L'] += P * error
-        tick_guess_dict[move]['R'] += P * error
+        CORRECT_EXECUTION = 0
+        tick_guess_dict[move]['L'] += int(P * error)
+        tick_guess_dict[move]['R'] += int(P * error)
 
+        assert int(P * error) < 200, "DANGEROUS"
         robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
         print(f"Desired: {STRAIGHT}, Distance: {distance}, TICKS: {tick_guess_dict[move]['L']}")
 
@@ -288,6 +297,8 @@ def tune_move5():
     global MOVE_TUNED
     global PREVIOUS_STEP
     global tick_guess_dict
+    global CORRECT_EXECUTION
+
     P = 1
 
     if tick_guess_dict[move]['L'] > tick_guess_dict[move]['R']:
@@ -309,14 +320,19 @@ def tune_move5():
     # tick modification logic
     if abs(TH3 - actual_angle) <= 1:
         print(f"Desired Angle: {TH3}, Angle: {actual_angle}, Ticks: {tick_guess_dict[move]}")
-        print("DONE")
-        MOVE_TUNED = True
+        print(f"Correct Execution: {actual_angle}")
+        CORRECT_EXECUTION += 1
+        if CORRECT_EXECUTION > 5:
+            print("DONE")
+            MOVE_TUNED = True
     elif (TH3 > actual_angle):
-        tick_guess_dict[move][fwd] += 10
-        tick_guess_dict[move][bck] -= 10
+        CORRECT_EXECUTION = 0
+        tick_guess_dict[move][fwd] += 1
+        tick_guess_dict[move][bck] -= 1
     else:
-        tick_guess_dict[move][fwd] -= 10
-        tick_guess_dict[move][bck] += 10
+        CORRECT_EXECUTION = 0
+        tick_guess_dict[move][fwd] -= 1
+        tick_guess_dict[move][bck] += 1
 
     if not MOVE_TUNED:
         robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
@@ -374,18 +390,18 @@ TH2 = 60
 TH3 = 180
 STRAIGHT = (0.11)/2.34
 time_out = 2.0
-robot_speed = 100
+robot_speed = 800
 VALUES = c()
 
 # DICTIONARIES
 # store number of ticks for each move
 tick_guess_dict =  {"m0": {'L': 1, 'R': 1000},
                     "m1": {'L': 231, 'R': 535},     # 497, 1135
-                    "m2": {'L': 427, 'R': 427},     # 216
+                    "m2": {'L': 209, 'R': 209},     # 427
                     "m3": {'L': 400, 'R': 400},
                     "m4": {'L': 323, 'R': -33},
-                    "m5": {'L': 450, 'R': -450},
-                    "m6": {'L': 420, 'R': -420},
+                    "m5": {'L': 338, 'R': -338},
+                    "m6": {'L': 200, 'R': -420},
                     "m7": {'L': 216, 'R': 216}}     # init
 # move characteristic dict
 move_constants_dict= {"m0": {'r': R1,       'th': TH1},
@@ -406,7 +422,7 @@ function_dict =  {  "m0": tune_move0134,
 moves = ["m0", "m1", "m2", "m3", "m4", "m5", "m6"]
 
 # Variables
-move = moves[0]
+move = moves[5]
 prev_error = 0
 D = 1
 mode1 = False
@@ -430,17 +446,18 @@ if not controller.connect("127.0.0.1", 4590):
 controller.set_request_time_out(10000)
 controller.subscribe()
 controller.on_step = on_step
-
+sleep(0.1)
 
 # INITIAL GUESS
-previous_location = get_location(0, 0)
+# previous_location = get_location(0, 0)
+previous_location = predator.step.location
 PREVIOUS_STEP = Step(agent_name=predator, location=previous_location, rotation=90)
 display.circle(PREVIOUS_STEP.location, 0.005, "red")
 robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
 
 
 # TUNER
-if move != moves[2] or move != moves[5]:
+if move != moves[2] and move != moves[5]:
     tuner_object = Tuner(move)
     STEP1_DONE = False
     STEP2_DONE = False
@@ -448,7 +465,8 @@ if move != moves[2] or move != moves[5]:
     display.circle(PREVIOUS_STEP.location, 0.005, "red")
     display.circle(tuner_object.center_location, 0.005, "cyan")
 
-while True:
+loop_count = 0
+while loop_count < 30:
     if controller.is_move_done() and not MOVE_TUNED:
         print("MOVE DONE")
         # keeps robot in habitat if  near bounds
@@ -458,7 +476,9 @@ while True:
             while not controller.is_move_done():
                 continue
         # for tuning moves 2 and 5 dont use tuner class can tune in one step
+        sleep(0.2)
         function_dict[move]()
+        loop_count += 1
 
     # display robot position
     if predator.is_valid:
@@ -467,10 +487,11 @@ while True:
         display.agent(step=predator.step, color="grey", size= 15)
 
     display.update()
-    sleep(0.5)
+    sleep(0.2)
 
-tracker.unsubscribe()
-controller.unsubscirbe()
+
+
+controller.unsubscribe()
 
 
 

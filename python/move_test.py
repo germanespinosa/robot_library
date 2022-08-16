@@ -27,9 +27,9 @@ from cellworld import *
 
 class c(JsonObject):
     def __init__(self):
-        self.left = 1000
-        self.right = 1000
-        self.speed = 100
+        self.left = 0
+        self.right = 0
+        self.speed = 0
 
 class ControllerClient(MessageClient):
     class Behavior:
@@ -111,10 +111,12 @@ def get_location(x, y):
 
 
 def robot_tick_update(left_tick, right_tick):
-    controller.set_left(left_tick)
-    controller.set_right(right_tick)
-    controller.set_speed(robot_speed)
-    controller.update()
+    global VALUES
+    VALUES.left = left_tick
+    VALUES.right = right_tick;
+    VALUES.speed = robot_speed
+    # robot agent update
+    controller.set_agent_values(VALUES)
 
 
 # CONSTANTS
@@ -128,12 +130,12 @@ tick_guess_dict =  {"m0": {'L': 1, 'R': 600}, # 44, 660
                     "m2": {'L': 432, 'R': 432},
                     "m3": {'L': 535, 'R': 231},
                     "m4": {'L': 815, 'R': 212},
-                    "m5": {'L': 450, 'R': -450},
+                    "m5": {'L': 338, 'R': -338},
                     "m6": {'L': 420, 'R': -420},
                     "m7": {'L': 216, 'R': 216}}   # initialize 11/2
 
 moves = ["m0", "m1", "m2", "m3", "m4", "m5", "m6","m7"]
-move = moves[2]
+move = moves[5]
 
 
 
@@ -164,7 +166,7 @@ destination = get_location(2, 0)
 # print(f'destination: {destination}')
 # print(controller.set_destination(destination))
 
-values = c()
+VALUES = c()
 
 
 # Try move
@@ -173,7 +175,9 @@ values = c()
 
 
 print(controller.tune())
-a = controller.set_agent_values(values)
+
+robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
+
 
 
 display.circle(predator.step.location, 0.005, "cyan")
