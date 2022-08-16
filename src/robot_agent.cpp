@@ -7,7 +7,17 @@ using namespace std;
 #define JOYSTICK 32767
 
 namespace robot{
+//    Robot_agent::Robot_agent():
+//            Robot_agent("/dev/input/js0"){  // joystick device
+//    }
+
     void Robot_agent::set_left(int left_value) {
+        // add joystick modifications here ??
+//        if (gamepad.buttons.empty() && gamepad.buttons[5].state == 1){
+//            float joystick_left = (float) -gamepad.axes[1]/JOYSTICK;
+//            cout << "JOYSTICK_LEFT: "<< joystick_left << endl;
+//        }
+        cout << "LEFT " << left_value << endl;
         message.left = left_value;
     }
 
@@ -27,7 +37,9 @@ namespace robot{
 
     int Robot_agent::update() {
         // TODO: ask why have move counter
-        message.move_number = move_counter ++;
+        if (message.speed > 0) {
+            message.move_number = move_counter ++;
+        }
         bool res = ((easy_tcp::Connection *)this)->send_data((const char*) &message,sizeof(message));
         if (!res) return -1;
         return (int)message.move_number;

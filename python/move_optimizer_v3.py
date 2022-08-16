@@ -18,7 +18,8 @@ executes the move again
 
 this is an inifinite loop until move error is small enough
 """
-
+# TODO: add event handler for joystick
+# TODO: manage joystick events in robot_agent
 import math
 from math import sin, cos, pi, atan2, asin
 from time import sleep
@@ -28,6 +29,7 @@ from tcp_messages import MessageClient, Message
 import sys
 from cellworld_controller_service import ControllerClient
 from json_cpp import JsonObject
+from gamepad import GamePad
 
 # GLOBALS
 DIRECTION_X = 1
@@ -226,11 +228,11 @@ def angle_difference(a_prev, a_current, direction):
             return a2 + 360 - a1
 
 
-def robot_tick_update(left_tick, right_tick):
+def robot_tick_update(left_tick, right_tick, speed = 800):
     global VALUES
     VALUES.left = left_tick
     VALUES.right = right_tick;
-    VALUES.speed = robot_speed
+    VALUES.speed = speed
     # robot agent update
     controller.set_agent_values(VALUES)
 
@@ -381,6 +383,15 @@ def tune_move0134():
         False
 
 
+def initial_guess():
+    global PREVIOUS_STEP
+    previous_location = predator.step.location
+    PREVIOUS_STEP = Step(agent_name=predator, location=previous_location, rotation=90)
+    display.circle(PREVIOUS_STEP.location, 0.005, "red")
+    robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
+
+
+
 
 # CONSTANTS
 R1 = (0.0635/2)/2.34
@@ -448,12 +459,16 @@ controller.subscribe()
 controller.on_step = on_step
 sleep(0.1)
 
+# GAMEPAD
+gamepad = GamePad()
+
 # INITIAL GUESS
 # previous_location = get_location(0, 0)
-previous_location = predator.step.location
-PREVIOUS_STEP = Step(agent_name=predator, location=previous_location, rotation=90)
-display.circle(PREVIOUS_STEP.location, 0.005, "red")
-robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
+initial_guess()
+# previous_location = predator.step.location
+# PREVIOUS_STEP = Step(agent_name=predator, location=previous_location, rotation=90)
+# display.circle(PREVIOUS_STEP.location, 0.005, "red")
+# robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
 
 
 # TUNER
@@ -465,9 +480,27 @@ if move != moves[2] and move != moves[5]:
     display.circle(PREVIOUS_STEP.location, 0.005, "red")
     display.circle(tuner_object.center_location, 0.005, "cyan")
 
+print(controller.tune())
 loop_count = 0
-while loop_count < 30:
-    if controller.is_move_done() and not MOVE_TUNED:
+while True:
+    # TODO: for now let robot finished current move fix this later
+    # TODO: currently this will only work for real robot NOT sim
+    if gamepad.buttons[10] and controller.is_move_done():
+        print("button pressed")
+
+        # # change controller state
+        # controller.tune()
+        while gamepad.buttons[10]:
+            left_pwm = int(-gamepad.axis[1] * 1023)     # will be pwm value
+            right_pwm = int(-gamepad.axis[3] * 1023)
+            robot_tick_update(left_pwm, right_pwm, -1)  # send neg value if joystick ***
+            gamepad.update()
+
+        # change controller state
+        # controller.tune()
+        initial_guess()     # execute move to keep loop going
+
+    elif controller.is_move_done() and not MOVE_TUNED:
         print("MOVE DONE")
         # keeps robot in habitat if  near bounds
         if turn_robot():
@@ -486,6 +519,8 @@ while loop_count < 30:
     else:
         display.agent(step=predator.step, color="grey", size= 15)
 
+
+    gamepad.update()
     display.update()
     sleep(0.2)
 
