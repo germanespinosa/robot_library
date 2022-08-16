@@ -76,14 +76,6 @@ class ControllerClient(MessageClient):
         return self.send_request(Message("is_move_done")).get_body(bool)
 
 
-    # def update(self) -> int:
-    #     """
-    #     in theory what to recieve move number back
-    #     """
-    #     return self.send_request(Message("agent_update")).get_body(int)
-
-
-
 class AgentData:
     """
     Stores steps (info from tracker) for each agent
