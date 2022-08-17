@@ -33,11 +33,12 @@ from json_cpp import JsonObject
 
 # GLOBALS
 DIRECTION_X = 1
+DIRECTION_Y = 1
 MOVE_TUNED = False
 PREVIOUS_LOCATION = None
 VALUES = None
 CORRECT_EXECUTION = 0
-
+CONTROLLER_STATE = 1
 
 class c(JsonObject):
     def __init__(self):
@@ -180,8 +181,14 @@ class Tuner:
         d = current_step.location.dist(PREVIOUS_STEP.location)/2
         r = self.center_location.dist(current_step.location)    # TODO: IMPROVE PRECISION was making this r_d
         print(f'd: {d}, r: {r}')
-        alpha = 2 * asin(d/r)
-        alpha = alpha * (180/pi)
+        try:
+            alpha = 2 * asin(d/r)
+            alpha = alpha * (180/pi)
+        except:
+            print("CHECK RADIUS")
+            alpha = 2 * asin(d/self.r_d)
+            alpha = alpha * (180/pi)
+
 
         # check if results are "close enough"
         if ((alpha < (self.th_d + alpha_accuracy)) and (alpha > (self.th_d - alpha_accuracy))):
@@ -228,7 +235,7 @@ def angle_difference(a_prev, a_current, direction):
             return a2 + 360 - a1
 
 
-def robot_tick_update(left_tick, right_tick, speed = 800):
+def robot_tick_update(left_tick, right_tick, speed = 1700):
     global VALUES
     VALUES.left = left_tick
     VALUES.right = right_tick;
@@ -239,14 +246,25 @@ def robot_tick_update(left_tick, right_tick, speed = 800):
 
 def turn_robot():
     global DIRECTION_X
-    if DIRECTION_X > 0 and predator.step.location.x > 0.8:
+    global DIRECTION_Y
+    limit = 0.7
+    if DIRECTION_X > 0 and predator.step.location.x >= limit:
         DIRECTION_X = -1
-        robot_tick_update(tick_guess_dict["m6"]['L'], tick_guess_dict["m6"]['R'])
+        robot_tick_update(tick_guess_dict["m5"]['L'], tick_guess_dict["m5"]['R'])
         return True
-    elif DIRECTION_X < 0 and predator.step.location.x < -0.8:
+    elif DIRECTION_X < 0 and predator.step.location.x <= -limit:
         DIRECTION_X = 1
-        robot_tick_update(tick_guess_dict["m6"]['L'], tick_guess_dict["m6"]['R'])
+        robot_tick_update(tick_guess_dict["m5"]['L'], tick_guess_dict["m5"]['R'])
         return True
+    if DIRECTION_Y > 0 and predator.step.location.y >= limit:
+        DIRECTION_Y = -1
+        robot_tick_update(tick_guess_dict["m5"]['L'], tick_guess_dict["m5"]['R'])
+        return True
+    if DIRECTION_Y > 0 and predator.step.location.y <= -limit:
+        DIRECTION_Y = 1
+        robot_tick_update(tick_guess_dict["m5"]['L'], tick_guess_dict["m5"]['R'])
+        return True
+
     return False
 
 
@@ -273,11 +291,11 @@ def tune_move2():
 
     # tick modification logic
     if abs(error) <= 0.0005: # 0.0005
-        print(f"Desired Distance: {STRAIGHT}, Distance: {distance}, Ticks: {tick_guess_dict[move]}")
-        print(CORRECT_EXECUTION)
+        print(f'Correct Execution Count: {CORRECT_EXECUTION}')
         CORRECT_EXECUTION += 1
         if CORRECT_EXECUTION > 4:
-            print("DONE")
+            print(f"Desired Distance: {STRAIGHT}, Distance: {distance}, Ticks: {tick_guess_dict[move]}")
+            print("MOVE 2 TUNING DONE")
             MOVE_TUNED = True
     else:
         CORRECT_EXECUTION = 0
@@ -285,7 +303,9 @@ def tune_move2():
         tick_guess_dict[move]['R'] += int(P * error)
 
         assert int(P * error) < 200, "DANGEROUS"
+        assert tick_guess_dict[move]['L'] > 0, "WHY THE F IS IS NEG"
 
+    if not MOVE_TUNED:
         robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
         print(f"Desired: {STRAIGHT}, Distance: {distance}, TICKS: {tick_guess_dict[move]['L']}")
 
@@ -371,9 +391,10 @@ def tune_move0134():
     if not STEP2_DONE and STEP1_DONE:
         STEP2_DONE = tuner_object.find_alpha(current_step, PREVIOUS_STEP, tick_guess_dict[move])
         # update center location
-
+        # TODO: look into this is it causing problems added it pretty latep
         PREVIOUS_STEP = current_step
-
+        tuner_object.center_location = tuner_object.get_center_location(PREVIOUS_STEP)
+        display.circle(tuner_object.center_location, 0.005, "cyan")
         # execute new move
         if not STEP2_DONE:
             robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
@@ -384,12 +405,50 @@ def tune_move0134():
         False
 
 
+def initial_direction(rot):
+    global DIRECTION_X
+    global DIRECTION_Y
+
+    if rot <= 90:
+        DIRECTION_X = 1
+        DIRECTION_Y = 1
+    elif rot <= 180:
+        DIRECTION_X = 1
+        DIRECTION_Y = -1
+    elif rot <= 270:
+        DIRECTION_X = -1
+        DIRECTION_Y = -1
+    else:
+        DIRECTION_X = -1
+        DIRECTION_Y = 1
+    print("DIRECTION ")
+    print(DIRECTION_X, DIRECTION_Y)
+
 def initial_move():
     global PREVIOUS_STEP
     previous_location = predator.step.location
+    previous_rotation = predator.step.rotation
+    initial_direction(previous_rotation)
     PREVIOUS_STEP = Step(agent_name=predator, location=previous_location, rotation=90)
     display.circle(PREVIOUS_STEP.location, 0.005, "red")
     robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
+
+def on_keypress(event):
+    """
+    Sets up keyboard intervention
+    """
+    global CONTROLLER_STATE
+
+    if event.key == "p":
+        print("pause")
+        controller.pause()
+        CONTROLLER_STATE = 0
+
+    if event.key == "t":
+        print("resume")
+        controller.tune()
+        CONTROLLER_STATE = 1
+
 
 
 
@@ -407,12 +466,14 @@ VALUES = c()
 
 # DICTIONARIES
 # store number of ticks for each move
-tick_guess_dict =  {"m0": {'L': 1, 'R': 1000},
-                    "m1": {'L': 231, 'R': 535},     # 497, 1135
-                    "m2": {'L': 209, 'R': 209},     # 427
+# TODO: may need to change embedded code to both wheels need to reach tick value to stop
+# TODO: check into alpha calculation
+tick_guess_dict =  {"m0": {'L': 5, 'R': 600},
+                    "m1": {'L': 20, 'R': 100},     # 497, 1135
+                    "m2": {'L': 256, 'R': 256},     # straight
                     "m3": {'L': 400, 'R': 400},
                     "m4": {'L': 323, 'R': -33},
-                    "m5": {'L': 338, 'R': -338},
+                    "m5": {'L': 338, 'R': -338}, # 180
                     "m6": {'L': 200, 'R': -420},
                     "m7": {'L': 216, 'R': 216}}     # init
 # move characteristic dict
@@ -434,7 +495,7 @@ function_dict =  {  "m0": tune_move0134,
 moves = ["m0", "m1", "m2", "m3", "m4", "m5", "m6"]
 
 # Variables
-move = moves[5]
+move = moves[1]
 prev_error = 0
 D = 1
 mode1 = False
@@ -447,6 +508,7 @@ display = Display(world, fig_size=(9.0*.75, 8.0*.75), animated=True)
 map = Cell_map(world.configuration.cell_coordinates)
 predator = AgentData("predator")
 display.set_agent_marker("predator", Agent_markers.arrow())
+cid_keypress = display.fig.canvas.mpl_connect('key_press_event', on_keypress)  # keypress setup
 
 
 # CONTROLLER CLIENT
@@ -458,9 +520,13 @@ if not controller.connect("127.0.0.1", 4590):
 controller.set_request_time_out(10000)
 controller.subscribe()
 controller.on_step = on_step
+if not controller.tune():
+    print("WRONG STATE")
+    exit()
 sleep(0.1)
 
 # INITIAL GUESS
+sleep(0.2)
 initial_move()
 
 # TUNER
@@ -472,11 +538,10 @@ if move != moves[2] and move != moves[5]:
     display.circle(PREVIOUS_STEP.location, 0.005, "red")
     display.circle(tuner_object.center_location, 0.005, "cyan")
 
-print(controller.tune())
 loop_count = 0
 
 while True:
-    if controller.is_move_done() and not MOVE_TUNED:
+    if controller.is_move_done() and not MOVE_TUNED and CONTROLLER_STATE:
         print("MOVE DONE")
         # keeps robot in habitat if  near bounds
         if turn_robot():
@@ -485,7 +550,6 @@ while True:
             while not controller.is_move_done():
                 continue
         # for tuning moves 2 and 5 dont use tuner class can tune in one step
-        sleep(0.2)
         function_dict[move]()
         loop_count += 1
 
@@ -495,11 +559,10 @@ while True:
     else:
         display.agent(step=predator.step, color="grey", size= 15)
 
-
     display.update()
-    sleep(0.2)
+    sleep(0.5)
 
-
+print("PROCESS ENDED")
 
 controller.unsubscribe()
 
