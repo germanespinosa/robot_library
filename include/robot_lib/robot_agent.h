@@ -5,8 +5,8 @@
 namespace robot {
     struct Robot_agent : controller::Agent , easy_tcp::Client {
 
-//        explicit Robot_agent();  // TODO: not sure if this is correct, need to add operational limits
-//        explicit Robot_agent(std::string device_path);
+        explicit Robot_agent();  // TODO: not sure if this is correct, need to add operational limits
+        explicit Robot_agent(std::string device_path);
 
         bool connect();
         bool connect(const std::string &);
@@ -24,7 +24,7 @@ namespace robot {
         ~Robot_agent();
         static int port();
 
-//        Gamepad_wrapper gamepad;
+        Gamepad_wrapper gamepad;
     private:
         unsigned int move_counter{};
         std::atomic<bool> move_done;

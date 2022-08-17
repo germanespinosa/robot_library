@@ -29,7 +29,7 @@ from tcp_messages import MessageClient, Message
 import sys
 from cellworld_controller_service import ControllerClient
 from json_cpp import JsonObject
-from gamepad import GamePad
+
 
 # GLOBALS
 DIRECTION_X = 1
@@ -285,6 +285,7 @@ def tune_move2():
         tick_guess_dict[move]['R'] += int(P * error)
 
         assert int(P * error) < 200, "DANGEROUS"
+
         robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
         print(f"Desired: {STRAIGHT}, Distance: {distance}, TICKS: {tick_guess_dict[move]['L']}")
 
@@ -317,7 +318,7 @@ def tune_move5():
 
     # find error
     actual_angle = angle_difference(PREVIOUS_STEP.rotation, current_step.rotation, rot_direction)
-    assert actual_angle > 0, "something wrong with angle diff function"
+    # assert actual_angle > 0, "something wrong with angle diff function"
 
     # tick modification logic
     if abs(TH3 - actual_angle) <= 1:
@@ -383,7 +384,7 @@ def tune_move0134():
         False
 
 
-def initial_guess():
+def initial_move():
     global PREVIOUS_STEP
     previous_location = predator.step.location
     PREVIOUS_STEP = Step(agent_name=predator, location=previous_location, rotation=90)
@@ -459,17 +460,8 @@ controller.subscribe()
 controller.on_step = on_step
 sleep(0.1)
 
-# GAMEPAD
-gamepad = GamePad()
-
 # INITIAL GUESS
-# previous_location = get_location(0, 0)
-initial_guess()
-# previous_location = predator.step.location
-# PREVIOUS_STEP = Step(agent_name=predator, location=previous_location, rotation=90)
-# display.circle(PREVIOUS_STEP.location, 0.005, "red")
-# robot_tick_update(tick_guess_dict[move]['L'], tick_guess_dict[move]['R'])
-
+initial_move()
 
 # TUNER
 if move != moves[2] and move != moves[5]:
@@ -482,25 +474,9 @@ if move != moves[2] and move != moves[5]:
 
 print(controller.tune())
 loop_count = 0
+
 while True:
-    # TODO: for now let robot finished current move fix this later
-    # TODO: currently this will only work for real robot NOT sim
-    if gamepad.buttons[10] and controller.is_move_done():
-        print("button pressed")
-
-        # # change controller state
-        # controller.tune()
-        while gamepad.buttons[10]:
-            left_pwm = int(-gamepad.axis[1] * 1023)     # will be pwm value
-            right_pwm = int(-gamepad.axis[3] * 1023)
-            robot_tick_update(left_pwm, right_pwm, -1)  # send neg value if joystick ***
-            gamepad.update()
-
-        # change controller state
-        # controller.tune()
-        initial_guess()     # execute move to keep loop going
-
-    elif controller.is_move_done() and not MOVE_TUNED:
+    if controller.is_move_done() and not MOVE_TUNED:
         print("MOVE DONE")
         # keeps robot in habitat if  near bounds
         if turn_robot():
@@ -513,14 +489,13 @@ while True:
         function_dict[move]()
         loop_count += 1
 
-    # display robot position
+    # # display robot position
     if predator.is_valid:
         display.agent(step=predator.step, color="blue", size= 15)
     else:
         display.agent(step=predator.step, color="grey", size= 15)
 
 
-    gamepad.update()
     display.update()
     sleep(0.2)
 

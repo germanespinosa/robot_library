@@ -2,31 +2,36 @@
 
 using namespace std;
 // temp constants
-#define MAX_J 55
-#define MIN_J 0
 #define JOYSTICK 32767
+#define MAX_PWM 1000 // max pwm value
 
 namespace robot{
-//    Robot_agent::Robot_agent():
-//            Robot_agent("/dev/input/js0"){  // joystick device
-//    }
+    Robot_agent::Robot_agent():
+            Robot_agent("/dev/input/js0"){  // joystick device
+    }
 
     void Robot_agent::set_left(int left_value) {
         // add joystick modifications here ??
-//        if (gamepad.buttons.empty() && gamepad.buttons[5].state == 1){
-//            float joystick_left = (float) -gamepad.axes[1]/JOYSTICK;
-//            cout << "JOYSTICK_LEFT: "<< joystick_left << endl;
-//        }
-        cout << "LEFT " << left_value << endl;
+        // if joystick activated replace left_value
+        if (gamepad.buttons[5].state == 1){
+            float joystick_left = ((float) -gamepad.axes[1]/ (float) JOYSTICK) * MAX_PWM;
+            left_value = (int) joystick_left;
+        }
+        cout << "LEFT: "<< left_value << endl;
         message.left = left_value;
     }
 
     void Robot_agent::set_right(int right_value) {
-        cout << "RIGHT " << right_value << endl;
+        if (gamepad.buttons[5].state == 1){
+            float joystick_right = ((float) -gamepad.axes[4]/ (float) JOYSTICK) * MAX_PWM;
+            right_value = (int) joystick_right;
+        }
+        cout << "RIGHT: "<< right_value << endl;
         message.right = right_value;
     }
 
     void Robot_agent::set_speed(int speed_value) {
+        if (gamepad.buttons[5].state == 1) speed_value = -1; // send neg speed when gamepad is pressed
         message.speed = speed_value;
     }
 
@@ -37,9 +42,7 @@ namespace robot{
 
     int Robot_agent::update() {
         // TODO: ask why have move counter
-        if (message.speed > 0) {
-            message.move_number = move_counter ++;
-        }
+        if (message.speed > 0) message.move_number = move_counter ++;
         bool res = ((easy_tcp::Connection *)this)->send_data((const char*) &message,sizeof(message));
         if (!res) return -1;
         return (int)message.move_number;
@@ -78,4 +81,11 @@ namespace robot{
         int move_id = (int)*((uint32_t *) buffer);
         move_finished(move_id);
     }
+
+    Robot_agent::Robot_agent(std::string device_path):
+//            message{0,0,0},
+            gamepad(device_path){
+    }
+
+
 }
