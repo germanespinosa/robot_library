@@ -151,11 +151,11 @@ class Tuner:
 
         # inner wheel too many ticks
         elif r_actual > self.r_d:
-            tick_guess_dict[self.move][outer_key] += 20 #20
+            tick_guess_dict[self.move][outer_key] += 5 #20
 
         # outer wheel too many ticks
         else:
-            tick_guess_dict[self.move][inner_key] += 20 #20
+            tick_guess_dict[self.move][inner_key] += 5 #20
 
         print(f"outer ticks = {tick_guess_dict[self.move][outer_key]}, inner ticks = {tick_guess_dict[self.move][inner_key]}")
         print(f'radius desired: {self.r_d}, radius actual: {r_actual}')
@@ -199,12 +199,12 @@ class Tuner:
 
         # not enough ticks
         elif alpha < self.th_d:
-            tick_guess_dict[self.move][outer_key] += 30
+            tick_guess_dict[self.move][outer_key] += 2
             tick_guess_dict[self.move][inner_key] = int(tick_guess_dict[self.move][outer_key] * tick_ratio)
 
         # too many ticks
         else:
-            tick_guess_dict[self.move][outer_key] -= 30
+            tick_guess_dict[self.move][outer_key] -= 2
             tick_guess_dict[self.move][inner_key] = int(tick_guess_dict[self.move][outer_key] * tick_ratio)
 
         print(f"Desired: {self.th_d}, Actual: {alpha}")
@@ -469,10 +469,10 @@ VALUES = c()
 # TODO: may need to change embedded code to both wheels need to reach tick value to stop
 # TODO: check into alpha calculation
 tick_guess_dict =  {"m0": {'L': 5, 'R': 600},
-                    "m1": {'L': 20, 'R': 100},     # 497, 1135
+                    "m1": {'L': 73, 'R': 284},     # 497, 1135
                     "m2": {'L': 256, 'R': 256},     # straight
-                    "m3": {'L': 400, 'R': 400},
-                    "m4": {'L': 323, 'R': -33},
+                    "m3": {'L': 284, 'R': 73},
+                    "m4": {'L': 600, 'R': 5},
                     "m5": {'L': 338, 'R': -338}, # 180
                     "m6": {'L': 200, 'R': -420},
                     "m7": {'L': 216, 'R': 216}}     # init
@@ -495,7 +495,7 @@ function_dict =  {  "m0": tune_move0134,
 moves = ["m0", "m1", "m2", "m3", "m4", "m5", "m6"]
 
 # Variables
-move = moves[1]
+move = moves[2]
 prev_error = 0
 D = 1
 mode1 = False
@@ -520,6 +520,8 @@ if not controller.connect("127.0.0.1", 4590):
 controller.set_request_time_out(10000)
 controller.subscribe()
 controller.on_step = on_step
+
+
 if not controller.tune():
     print("WRONG STATE")
     exit()
@@ -558,6 +560,7 @@ while True:
         display.agent(step=predator.step, color="blue", size= 15)
     else:
         display.agent(step=predator.step, color="grey", size= 15)
+
 
     display.update()
     sleep(0.5)
