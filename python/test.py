@@ -128,7 +128,7 @@ STRAIGHT2 = 0.19/2.34
 tick_guess_dict = { "sw": {'L': -990, 'R': 990},  # 150 ccw
                     "nw": {'L': -520, 'R': 520},  # 30 ccw
                     "n": {'L': 1020, 'R': 1020},   # straight
-                    "ne": {'L': 445, 'R': -445},  # 30 cw
+                    "ne": {'L': 520, 'R': -520},  # 30 cw
                     "se": {'L': 920, 'R': -920},  # 150 cw
                     "s": {'L': 1450, 'R': -1450},  # 180
                     "nn": {'L': 1720, 'R': 1720},  # long straight
@@ -148,7 +148,7 @@ move_constants_dict = {"sw": {'r': 0,         'th': 120}, # 210
 moves = ["sw", "nw", "n", "ne", "se", "s", "nn", "w", "e"]
 
 # SET UP GLOBAL VARIABLES
-SPEED = 2000 #3100
+SPEED = 1000 #3100
 occlusions = "00_00"
 time_out = 1.0      # step timer for predator and prey
 display = None

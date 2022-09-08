@@ -121,11 +121,11 @@ def robot_tick_update(left_tick, right_tick):
 
 # CONSTANTS
 time_out = 1.0
-robot_speed = 1700
+robot_speed = 1000
 
 
 # GLOBALS
-tick_guess_dict =  {"m0": {'L': 5, 'R': 600}, # 44, 660
+tick_guess_dict =  {"m0": {'L': -1000, 'R': 1000}, # 44, 660
                     "m1": {'L': 40, 'R': 400},
                     "m2": {'L': 432, 'R': 432},
                     "m3": {'L': 535, 'R': 231},

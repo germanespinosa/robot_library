@@ -37,15 +37,15 @@ def on_step(step):
     """
     Updates steps and predator behavior
     """
-    if step.agent_name == "predator":
-        predator.is_valid = Timer(time_out)
-        predator.step = step
+    if step.agent_name == "prey":
+        prey.is_valid = Timer(time_out)
+        prey.step = step
 
 
 def move_done(move_number):
     print(f"move {move_number} done")
-    predator.move_state = move_number
-    predator.move_done = True
+    prey.move_state = move_number
+    prey.move_done = True
 
 
 def get_location(x, y):
@@ -53,14 +53,14 @@ def get_location(x, y):
 
 
 def on_click(event):
-    global current_predator_destination
+    global current_prey_destination
     if event.button == 1:
         location = Location(event.xdata, event.ydata)
         cell_id = world.cells.find(location)
         destination_cell = world.cells[cell_id]
-        current_predator_destination = destination_cell.location
+        current_prey_destination = destination_cell.location
         controller.set_destination(destination_cell.location)
-        display.circle(current_predator_destination, 0.01, "orange")
+        display.circle(current_prey_destination, 0.01, "orange")
         print(location)
         controller_timer.reset()
 
@@ -68,18 +68,18 @@ def on_click(event):
 agent_values = c()
 
 # GLOBALS
-current_predator_destination = None
+current_prey_destination = None
 
 
 # SETUP
-# world
+# worldprey
 occlusions = "00_00"
 world = World.get_from_parameters_names("hexagonal", "canonical", occlusions)
 display = Display(world, fig_size=(9.0*.75, 8.0*.75), animated=True)
 map = Cell_map(world.configuration.cell_coordinates)
 # agent
-predator = AgentData("predator")
-display.set_agent_marker("predator", Agent_markers.arrow())
+prey = AgentData("prey")
+display.set_agent_marker("prey", Agent_markers.arrow())
 
 
 # CONTROLLER CLIENT
@@ -104,7 +104,7 @@ cid1 = display.fig.canvas.mpl_connect('button_press_event', on_click)
 time_out = 1.0
 cell_size = world.implementation.cell_transformation.size
 
-current_predator_destination = destination
+current_prey_destination = destination
 
 running = True
 while running:
@@ -116,13 +116,13 @@ while running:
     # returns destination if it is navigable
     # print(controller.set_destination(destination))
     if not controller_timer:
-        controller.set_destination(current_predator_destination)
+        controller.set_destination(current_prey_destination)
         controller_timer.reset()
 
-    if predator.is_valid:
-        display.agent(step=predator.step, color="blue", size= 15)
+    if prey.is_valid:
+        display.agent(step=prey.step, color="blue", size= 15)
     else:
-        display.agent(step=predator.step, color="grey", size= 15)
+        display.agent(step=prey.step, color="grey", size= 15)
 
     display.update()
     sleep(0.1)
