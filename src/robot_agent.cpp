@@ -153,36 +153,22 @@ namespace robot{
     }
 
     Tick_robot_agent::Tick_robot_agent()
-    {  // joystick device
+    {
     }
 
     void Tick_robot_agent::set_left(int left_value) {
-        // add joystick modifications here ??
-        // if joystick activated replace left_value
-//        if (gamepad.buttons[5].state == 1){
-//            float joystick_left = ((float) -gamepad.axes[1]/ (float) JOYSTICK) * MAX_PWM;
-//            left_value = (int) joystick_left;
-//        }
-//        cout << "Prey LEFT: "<< left_value << endl;
         message.left = left_value;
     }
 
     void Tick_robot_agent::set_right(int right_value) {
-//        if (gamepad.buttons[5].state == 1){
-//            float joystick_right = ((float) -gamepad.axes[4]/ (float) JOYSTICK) * MAX_PWM;
-//            right_value = (int) joystick_right;
-//        }
-//        cout << "PREY RIGHT: "<< right_value << endl;
         message.right = right_value;
     }
 
     void Tick_robot_agent::set_speed(int speed_value) {
-//        if (gamepad.buttons[5].state == 1) speed_value = -1; // send neg speed when gamepad is pressed
         message.speed = speed_value;
     }
 
     void Tick_robot_agent::capture() {
-        //need_update = true;
     }
 
 
@@ -191,7 +177,7 @@ namespace robot{
         if (message.speed > 0) message.move_number = move_counter ++;
         bool res = ((easy_tcp::Connection *)this)->send_data((const char*) &message,sizeof(message));
         if (!res) return -1;
-        return (int)message.move_number;
+        return (int) message.move_number;
     }
 
     Tick_robot_agent::~Tick_robot_agent() {
@@ -224,13 +210,7 @@ namespace robot{
     void Tick_robot_agent::received_data(char *buffer, size_t size) {
         // receives move number from robot
         move_done = true;
-        int move_id = (int)*((uint32_t *) buffer);
-        move_finished(move_id);
-    }
-
-    Tick_robot_agent::Tick_robot_agent(std::string device_path)
-//            message{0,0,0},
-            //gamepad(device_path)
-            {
+        completed_move = (int)*((uint32_t *) buffer);
+        move_finished(completed_move);
     }
 }

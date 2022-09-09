@@ -32,8 +32,6 @@ namespace robot {
     struct Tick_robot_agent : controller::Tick_agent , easy_tcp::Client {
 
         Tick_robot_agent();  // TODO: not sure if this is correct, need to add operational limits
-        explicit Tick_robot_agent(std::string device_path);
-
         bool connect();
         bool connect(const std::string &);
         void set_left(int) override;
@@ -51,6 +49,7 @@ namespace robot {
         static int port();
     private:
         unsigned int move_counter{};
+        int completed_move{};
         std::atomic<bool> move_done;
     };
 }
