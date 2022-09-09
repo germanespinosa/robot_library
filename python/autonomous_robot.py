@@ -447,7 +447,7 @@ while running:
     # for i, cell in enumerate(possible_destinations):
     #     display.cell(cell_id=cell.id, color=cmap[i])
     display.update()
-    sleep(0.1)
+    sleep(1)
 
 
 controller.unsubscribe()
