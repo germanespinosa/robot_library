@@ -213,4 +213,8 @@ namespace robot{
         completed_move = (int)*((uint32_t *) buffer);
         move_finished(completed_move);
     }
+
+    bool Tick_robot_agent::ready() {
+        return (move_done >= move_counter - 1);
+    }
 }
