@@ -6,6 +6,7 @@ using namespace cell_world;
 #define MAX_J 55
 #define MIN_J 0
 #define JOYSTICK 32767
+#define TICK_RATE 1000
 
 namespace robot{
     Robot_agent::Robot_agent(const controller::Agent_operational_limits &limits):
@@ -167,9 +168,16 @@ namespace robot{
     }
 
 
-    int Tick_robot_agent::update() {
-        // TODO: ask why have move counter
-        if (message.speed > 0) message.move_number = move_counter ++;
+    int Tick_robot_agent::update(int move_status) {
+
+        // pause if robot is not ready to receive next command
+        message_counter ++;
+        while (message_counter >= completed_move + 2);
+
+        // move is complete when move_status arg is 0
+        if (move_status == 0) message.move_number = move_counter ++;
+
+
         bool res = ((easy_tcp::Connection *)this)->send_data((const char*) &message,sizeof(message));
         if (!res) return -1;
         return (int) message.move_number;
@@ -211,9 +219,21 @@ namespace robot{
         auto move_number = (robot_moves.index_of(move) - robot_move_orientation) % 6;
         robot_move_orientation = (robot_move_orientation + move_number) % 6;
         current_coordinates += move;
-        message.left = 1;
-        message.right = 2;
-        message.speed = 3;
-        update();
+
+        vector<pair<int,int>> move_ticks = {{432,432},{150,-150},{300,-300},{450,-450},{-300,300},{-150,150}}; // m0,m1,m2,m3,m4,m5    212,815
+        message.left = move_ticks[move_number].first;
+        message.right = move_ticks[move_number].second;
+        message.speed = TICK_RATE;
+
+        update(move_number);
+
+        // if not move 0 move requires 2 updates
+        if (move_number != 0){
+            message.left = move_ticks[0].first;
+            message.right = move_ticks[0].second;
+            message.speed = TICK_RATE;
+            update(0);
+        }
     }
 }
+
