@@ -28,7 +28,6 @@ namespace robot {
     Polygon_list cell_polygons;
     int frame_number = 0;
     mutex rm;
-    Tracking_simulator *tracking_simulator = nullptr;
 
     unsigned int robot_interval = 50;
     atomic<bool> robot_running = false;
@@ -119,10 +118,10 @@ void Robot_state::update() {
             frame_number ++;
             robot_state.update();
             auto step = robot_state.to_step();
-            tracking_simulator->send_update(step);
+            Robot_simulator::tracking_server.send_update(step);
             prey_robot_state.update();
             auto prey_step = prey_robot_state.to_step();
-            tracking_simulator->send_update(prey_step);
+            Robot_simulator::tracking_server.send_update(prey_step);
             std::this_thread::sleep_for(std::chrono::milliseconds(robot_interval));
         }
         log.close();
