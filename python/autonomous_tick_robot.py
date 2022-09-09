@@ -37,15 +37,15 @@ def on_step(step):
     """
     Updates steps and predator behavior
     """
-    if step.agent_name == "prey":
-        prey.is_valid = Timer(time_out)
-        prey.step = step
+    if step.agent_name == "predator":
+        predator.is_valid = Timer(time_out)
+        predator.step = step
 
 
 def move_done(move_number):
     print(f"move {move_number} done")
-    prey.move_state = move_number
-    prey.move_done = True
+    predator.move_state = move_number
+    predator.move_done = True
 
 
 def get_location(x, y):
@@ -53,14 +53,14 @@ def get_location(x, y):
 
 
 def on_click(event):
-    global current_prey_destination
+    global current_predator_destination
     if event.button == 1:
         location = Location(event.xdata, event.ydata)
         cell_id = world.cells.find(location)
         destination_cell = world.cells[cell_id]
-        current_prey_destination = destination_cell.location
+        current_predator_destination = destination_cell.location
         controller.set_destination(destination_cell.location)
-        display.circle(current_prey_destination, 0.01, "orange")
+        display.circle(current_predator_destination, 0.01, "orange")
         print(location)
         controller_timer.reset()
 
@@ -68,7 +68,7 @@ def on_click(event):
 agent_values = c()
 
 # GLOBALS
-current_prey_destination = None
+current_predator_destination = None
 
 
 # SETUP
@@ -78,15 +78,15 @@ world = World.get_from_parameters_names("hexagonal", "canonical", occlusions)
 display = Display(world, fig_size=(9.0*.75, 8.0*.75), animated=True)
 map = Cell_map(world.configuration.cell_coordinates)
 # agent
-prey = AgentData("prey")
-display.set_agent_marker("prey", Agent_markers.arrow())
+predator = AgentData("predator")
+display.set_agent_marker("predator", Agent_markers.arrow())
 
 
 # CONTROLLER CLIENT
 controller_timer = Timer(3.0)     # initialize controller timer variable
 
 controller = ControllerClient()
-if not controller.connect("127.0.0.1", 4590):
+if not controller.connect("192.168.1.230", 4591):
     print("failed to connect to the controller")
     exit(1)
 controller.set_request_time_out(10000)
@@ -103,8 +103,7 @@ cid1 = display.fig.canvas.mpl_connect('button_press_event', on_click)
 # VARIABLES
 time_out = 1.0
 cell_size = world.implementation.cell_transformation.size
-
-current_prey_destination = destination
+current_predator_destination = destination
 
 running = True
 while running:
@@ -116,13 +115,13 @@ while running:
     # returns destination if it is navigable
     # print(controller.set_destination(destination))
     if not controller_timer:
-        controller.set_destination(current_prey_destination)
+        controller.set_destination(current_predator_destination)
         controller_timer.reset()
 
-    if prey.is_valid:
-        display.agent(step=prey.step, color="blue", size= 15)
+    if predator.is_valid:
+        display.agent(step=predator.step, color="blue", size= 15)
     else:
-        display.agent(step=prey.step, color="grey", size= 15)
+        display.agent(step=predator.step, color="grey", size= 15)
 
     display.update()
     sleep(0.1)

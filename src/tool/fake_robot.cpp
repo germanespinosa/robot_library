@@ -109,6 +109,7 @@ int main(int argc, char *argv[])
     Location location = map[spawn_coordinates].location;
     Robot_simulator::start_simulation(world, location, rotation, interval, tracking_server, server);
 
+
     struct : Robot_agent {
         void move_finished(int move_number) override {
             if (controller_server)
