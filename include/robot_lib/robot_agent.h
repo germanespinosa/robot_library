@@ -40,6 +40,7 @@ namespace robot {
         void capture() override;
         int update() override;
         void received_data(char *, size_t) override;
+        bool ready() override;
         bool is_move_done();
         struct Robot_message {
             int32_t left, right, speed;
@@ -49,7 +50,7 @@ namespace robot {
         static int port();
     private:
         unsigned int move_counter{};
-        int completed_move{};
+        std::atomic<int> completed_move = -1;
         std::atomic<bool> move_done;
     };
 }
