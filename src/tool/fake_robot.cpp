@@ -61,15 +61,15 @@ int main(int argc, char *argv[])
     auto spawn_coordinates_str = p.get(spawn_coordinates_key, "{\"x\":4,\"y\":0}");
     auto verbose = p.contains(Key("-v"));
 
-    if (p.contains(prey_key)){
-        Robot_simulator::start_prey();
-    }
-
     Experiment_service::set_logs_folder("experiment_logs/");
     Experiment_server experiment_server;
 
     auto &controller_experiment_client = experiment_server.create_local_client<Controller_server::Controller_experiment_client>();
     controller_experiment_client.subscribe();
+
+    auto &prey_controller_experiment_client = experiment_server.create_local_client<Prey_controller_server::Controller_experiment_client>();
+    prey_controller_experiment_client.subscribe();
+
 
     Tracking_simulator tracking_server;
     if (!p.contains(noise_key)){
@@ -89,6 +89,9 @@ int main(int argc, char *argv[])
     experiment_client.subscribe();
 
 
+    auto &prey_tracking_client = tracking_server.create_local_client<Prey_controller_server::Controller_tracking_client>(visibility, 270, capture, peeking,"prey", "predator");
+    Coordinates prey_spawn_coordinates(-20,0);
+
     Coordinates spawn_coordinates;
     cout << spawn_coordinates_str << endl;
     try {
@@ -98,7 +101,8 @@ int main(int argc, char *argv[])
         exit(1);
     }
     Location location = map[spawn_coordinates].location;
-    Robot_simulator::start_simulation(world, location, rotation, interval, tracking_server);
+    Location prey_location = map[prey_spawn_coordinates].location;
+    Robot_simulator::start_simulation(world, location, rotation, prey_location, 0, interval, tracking_server);
     Server<Robot_simulator> server;
     if (!server.start(Robot::port())) {
         std::cout << "Server setup failed " << std::endl;
@@ -108,11 +112,19 @@ int main(int argc, char *argv[])
     limits.load("../config/robot_simulator_operational_limits.json");
     Robot_agent robot(limits);
     robot.connect("127.0.0.1");
-
     Controller_service::set_logs_folder("controller_logs/");
     Controller_server controller_server("../config/pid.json", robot, tracking_client, controller_experiment_client);
     if (!controller_server.start(Controller_service::get_port())) {
-        cout << "failed to start controller" << endl;
+        cout << "failed to start predator controller" << endl;
+        exit(1);
+    }
+
+
+    Tick_robot_agent prey_robot;
+    prey_robot.connect("127.0.0.1");
+    Prey_controller_server prey_controller_server(prey_robot, prey_tracking_client, prey_controller_experiment_client);
+    if (!prey_controller_server.start(Prey_controller_service::get_port())) {
+        cout << "failed to start prey controller" << endl;
         exit(1);
     }
 

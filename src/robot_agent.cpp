@@ -199,7 +199,7 @@ namespace robot{
     }
 
     int Tick_robot_agent::port() {
-        string port_str (std::getenv("ROBOT_PORT")?std::getenv("ROBOT_PORT"):"4500");   // 4500
+        string port_str (std::getenv("ROBOT_PORT")?std::getenv("ROBOT_PORT"):"4700");   // 4500
         return atoi(port_str.c_str());
     }
 

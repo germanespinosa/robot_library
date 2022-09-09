@@ -19,6 +19,8 @@ namespace robot {
     double robot_speed = .2;
     double robot_rotation_speed = M_PI ; // 90 degrees at full speed
     Robot_state robot_state;
+    Tick_robot_state prey_robot_state;
+
     Cell_group robot_cells;
     Timer robot_time_stamp;
     World robot_world;
@@ -28,7 +30,7 @@ namespace robot {
     mutex rm;
     Tracking_simulator *tracking_simulator = nullptr;
 
-    Prey_simulator_server prey_simulator;
+    Prey_simulator_server *prey_robot_simulator_server;
 
     unsigned int robot_interval = 50;
     atomic<bool> robot_running = false;
@@ -68,7 +70,7 @@ namespace robot {
         info.location = location;
         info.rotation = to_degrees(theta);
         info.time_stamp = robot_time_stamp.to_seconds();
-        info.frame = ++frame_number;
+        info.frame = frame_number;
         return info;
     }
 
@@ -110,16 +112,12 @@ namespace robot {
     void simulation (){
         ofstream log;
         while (robot_running){
+            frame_number ++;
             robot_state.update();
             auto step = robot_state.to_step();
             tracking_simulator->send_update(step);
-            if (!prey_simulator.last_update.time_out()) {
-                auto prey_step = step;
-                prey_step.location = prey_simulator.location;
-                prey_step.rotation = prey_simulator.rotation;
-                prey_step.agent_name = "prey";
-                tracking_simulator->send_update(prey_step);
-            }
+            auto prey_step = prey_robot_state.to_step();
+            tracking_simulator->send_update(prey_step);
             std::this_thread::sleep_for(std::chrono::milliseconds(robot_interval));
         }
         log.close();
@@ -128,7 +126,7 @@ namespace robot {
 
     thread simulation_thread;
 
-    void Robot_simulator::start_simulation(cell_world::World world, Location location, double rotation, unsigned int interval, Tracking_simulator &new_tracking_simulator) {
+    void Robot_simulator::start_simulation(cell_world::World world, Location location, float rotation, Location prey_location, float prey_rotation, unsigned int interval, Tracking_simulator &new_tracking_simulator) {
         tracking_simulator = &new_tracking_simulator;
         robot_world = world;
         habitat_polygon = Polygon(robot_world.space.center, robot_world.space.shape, robot_world.space.transformation);
@@ -148,6 +146,8 @@ namespace robot {
         robot_state.led2 = false;
         robot_interval = interval;
         robot_running = true;
+        prey_robot_state.location = prey_location;
+        prey_robot_state.theta = prey_rotation;
         simulation_thread=thread(&simulation);
     }
 
@@ -178,8 +178,111 @@ namespace robot {
         }
     }
 
-    bool Robot_simulator::start_prey() {
-        return prey_simulator.start(Prey_simulator_service::get_port());
+    Tick_robot_state Robot_simulator::get_prey_robot_state() {
+        return prey_robot_state;
     }
 
+    void Tick_robot_state::update() {
+        auto now = std::chrono::system_clock::now();
+        double elapsed = 0;
+        if (initialized) {
+            elapsed = ((double) std::chrono::duration_cast<std::chrono::milliseconds>(now - last_update).count()) / 1000.0;
+        }
+        update(elapsed);
+        last_update = now;
+        initialized = true;
+    }
+
+    mutex prm;
+    void Tick_robot_state::update(double elapsed) {
+        prm.lock();
+        // TODO: deal with case where messages sent exceed array size
+        time_stamp = json_cpp::Json_date::now();
+
+        // catch and store new messages
+        if ((left_tick_target != prev_tick_target_L) || (right_tick_target != prev_tick_target_R)){
+            speed_array[message_count] = speed;
+            left_tick_target_array[message_count] = left_tick_target;
+            right_tick_target_array[message_count]= right_tick_target;
+
+            // store desired direction of robot for move request
+            if (left_tick_target > prev_tick_target_L){
+                left_direction_array[message_count] = 1.0;
+            } else if (left_tick_target < prev_tick_target_L)  left_direction_array[message_count] = -1.0;
+            if (right_tick_target > prev_tick_target_R){
+                right_direction_array[message_count] = 1.0;
+            } else if (right_tick_target < prev_tick_target_R)  right_direction_array[message_count] = -1.0;
+            message_count += 1;
+        }
+        direction_L = left_direction_array[move_number] ;
+        direction_R = right_direction_array[move_number];
+
+        float left_tick_error = left_tick_target_array[move_number]-left_tick_counter;       // tick goal - current ticks
+        float right_tick_error = right_tick_target_array[move_number]-right_tick_counter;
+
+        // if move completed stop or execute next move - when error is 0
+        if (!left_tick_error || !right_tick_error){
+
+            // for multiple messages
+            if ((message_count > 0) && (message_count > move_number)){
+                for (auto &client:prey_robot_simulator_server->clients){
+                    client->send_data((char *)&move_number,sizeof(move_number));
+                }
+                //cout << "SHOULD BE TRUE  " << local_robot.is_move_done() << endl;
+                cout << "MOVES_EXECUTED" << move_number << endl;
+                cout << "left_ticks: " << left_tick_counter << "    right_ticks: " << right_tick_counter << endl;
+                move_number += 1;
+            }
+        }
+
+        // Find left and right speed based on tick error
+        if (abs(left_tick_error) > abs(right_tick_error)) {
+            prey_robot_state.left_speed = direction_L * speed_array[move_number];
+            prey_robot_state.right_speed = direction_R * abs(right_tick_error) / abs(left_tick_error) * speed;
+        } else {
+            if (abs(left_tick_error) < abs(right_tick_error)) {
+                prey_robot_state.right_speed = direction_R * speed_array[move_number];
+                prey_robot_state.left_speed = direction_L * abs(left_tick_error) / abs(right_tick_error) * speed;
+            } else {
+                prey_robot_state.right_speed = direction_R * speed_array[move_number];
+                prey_robot_state.left_speed = direction_L * speed_array[move_number];
+            }
+        }
+
+        // check if error is zero or if speed needs to be reduced to prevent overshoot on last move
+        if ((abs(left_tick_error) < abs(left_speed * elapsed)) || (abs(right_tick_error) < abs(right_speed * elapsed))){
+            left_speed = left_tick_error/ elapsed;
+            right_speed = right_tick_error/ elapsed;
+        }
+
+        float dl = 2 *left_speed / 1800.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
+        float dr = 2 *- right_speed / 1800.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
+        float d = (left_speed + right_speed) / 3600.0 * robot_speed * elapsed; // convert motor signal to speed
+        theta = normalize(theta + dl + dr);
+        auto new_location = location.move(theta, d);
+
+        if (habitat_polygon.contains(new_location)) {
+            if (!cell_polygons.contains(new_location)) {
+                location = location.move(theta, d);
+            }
+        }
+        // Measure position of robot
+        left_tick_counter += elapsed * left_speed;    // elapsed: time between updates (0.03), left/right_speed: tick rate
+        right_tick_counter += elapsed * right_speed;
+
+        // store tick target
+        prev_tick_target_L = left_tick_target;
+        prev_tick_target_R = right_tick_target;
+        prm.unlock();
+    }
+
+    cell_world::Step Tick_robot_state::to_step() const {
+        Step info;
+        info.agent_name = "prey";
+        info.location = location;
+        info.rotation = to_degrees(theta);
+        info.time_stamp = robot_time_stamp.to_seconds();
+        info.frame = frame_number;
+        return info;
+    }
 }

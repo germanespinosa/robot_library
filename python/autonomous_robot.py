@@ -173,6 +173,25 @@ def on_step(step: Step):
         controller.set_behavior(ControllerClient.Behavior.Pursue)
 
 
+def prey_on_step(step: Step):
+    """
+    Updates steps and predator behavior
+    """
+    global behavior
+
+    if step.agent_name == "predator":
+        predator.is_valid = Timer(time_out)
+        predator.step = step
+        #display.circle(step.location, 0.002, "royalblue")    # plot predator path (steps)
+        if behavior != ControllerClient.Behavior.Explore:
+            controller.set_behavior(ControllerClient.Behavior.Explore) # explore when prey not seen
+            behavior = ControllerClient.Behavior.Explore
+    else:
+        prey.is_valid = Timer(time_out) # pursue when prey is seen
+        prey.step = step
+        controller.set_behavior(ControllerClient.Behavior.Pursue)
+
+
 def on_click(event):
     """
     Assign destination by clicking on map
@@ -267,7 +286,7 @@ def get_possible_destinations(w: World) -> Cell_group:
     return res
 
 # SET UP GLOBAL VARIABLES
-occlusions = sys.argv[1]
+occlusions = "21_05"
 
 inertia_buffer = 1 #1.8 # 1.5
 time_out = 1.0      # step timer for predator and preyQ
@@ -319,6 +338,14 @@ if not controller.connect("127.0.0.1", 4590):
 controller.set_request_time_out(10000)
 controller.subscribe()
 controller.on_step = on_step
+
+prey_controller = ControllerClient()
+if not prey_controller.connect("127.0.0.1", 4591):
+    print("failed to connect to the controller")
+    exit(1)
+prey_controller.set_request_time_out(10000)
+prey_controller.subscribe()
+prey_controller.on_step = prey_on_step
 
 
 # INITIALIZE KEYBOARD & CLICK INTERRUPTS
