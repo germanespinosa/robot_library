@@ -92,4 +92,10 @@ namespace robot {
         static Tick_robot_state get_prey_robot_state();
     };
 
+    struct Prey_robot_simulator : easy_tcp::Service {
+        void on_connect() override;
+        void on_incoming_data(const char *, int) override;
+        void on_disconnect() override;
+
+    };
 }

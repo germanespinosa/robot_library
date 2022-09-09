@@ -199,7 +199,7 @@ def on_click(event):
     """
     global current_predator_destination
     global destination_list
-
+    print("BUTTON" , event.button)
     if event.button == 1:
         controller.resume()
         location = Location(event.xdata, event.ydata)
@@ -213,6 +213,18 @@ def on_click(event):
         controller.set_destination(destination_cell.location)
         destination_list.append(destination_cell.location)
         display.circle(current_predator_destination, 0.01, "red")
+
+    elif event.button == 2:
+        # press middle button for prey robot
+        global current_prey_destination
+        location = Location(event.xdata, event.ydata)
+        cell_id = world.cells.find(location)
+        destination_cell = world.cells[cell_id]
+        current_prey_destination = destination_cell.location
+        prey_controller.set_destination(destination_cell.location)
+        display.circle(current_prey_destination, 0.01, "orange")
+        # controller_timer.reset()
+
     else:
         print("starting experiment")
         exp = experiment_service.start_experiment(                  # call start experiment
@@ -270,6 +282,10 @@ def get_spawn_locations(w: Cell_group):
     return spawn_locations
 
 
+def get_location(x, y):
+    return world.cells[map[Coordinates(x, y)]].location
+
+
 def get_possible_destinations(w: World) -> Cell_group:
     res = Cell_group()
     map = Cell_map(w.configuration.cell_coordinates)
@@ -298,6 +314,7 @@ world = World.get_from_parameters_names("hexagonal", "canonical")
 robot_world = World.get_from_parameters_names("hexagonal", "canonical")
 load_world()
 load_robot_world()
+map = Cell_map(world.configuration.cell_coordinates)
 possible_destinations = get_possible_destinations(robot_world)
 possible_destinations_weights = [1 for x in possible_destinations]
 spawn_locations = get_spawn_locations(possible_destinations)
@@ -346,6 +363,12 @@ if not prey_controller.connect("127.0.0.1", 4591):
 prey_controller.set_request_time_out(10000)
 prey_controller.subscribe()
 prey_controller.on_step = prey_on_step
+
+# current prey location
+current_prey_destination = prey.step.location
+prey_destination = get_location(-16, 0)
+print(f'destination: {prey_destination}')
+print(prey_controller.set_destination(prey_destination))
 
 
 # INITIALIZE KEYBOARD & CLICK INTERRUPTS
@@ -398,6 +421,9 @@ while running:
         print(prey.step.location, predator.step.location)
         controller.resume()
         #controller_timer.reset()
+
+    ####################################################################################################################
+
 
     # plotting the current location of the predator and prey
     if prey.is_valid:

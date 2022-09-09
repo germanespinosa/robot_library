@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cell_world.h>
 #include <robot_lib/robot_simulator.h>
-#include <robot_lib/robot.h>
+#include <robot_lib/robot_agent.h>
 #include <easy_tcp.h>
 
 using namespace std;
@@ -14,7 +14,7 @@ using namespace tcp_messages;
 int main(int argc, char *argv[])
 {
     cout << "Stopping fake robot... " << flush;
-    Connection connection = Connection::connect_remote("127.0.0.1", Robot::port());
+    Connection connection = Connection::connect_remote("127.0.0.1", Robot_agent::port());
     Message message("stop");
     string msg_string;
     msg_string << message;

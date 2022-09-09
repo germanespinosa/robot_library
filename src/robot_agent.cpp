@@ -80,7 +80,7 @@ namespace robot{
     bool Robot_agent::update() {
         if (!need_update) return true;
 
-        cout << "robot_agent " << int(message[0]) << " : " << int(message[1]) << endl;
+//        cout << "robot_agent " << int(message[0]) << " : " << int(message[1]) << endl;
         bool res = connection.send_data(message,3);
         message[2] &=~(1UL << 3);
         message[2] &=~(1UL << 4);
@@ -163,7 +163,7 @@ namespace robot{
 //            float joystick_left = ((float) -gamepad.axes[1]/ (float) JOYSTICK) * MAX_PWM;
 //            left_value = (int) joystick_left;
 //        }
-//        cout << "LEFT: "<< left_value << endl;
+//        cout << "Prey LEFT: "<< left_value << endl;
         message.left = left_value;
     }
 
@@ -172,7 +172,7 @@ namespace robot{
 //            float joystick_right = ((float) -gamepad.axes[4]/ (float) JOYSTICK) * MAX_PWM;
 //            right_value = (int) joystick_right;
 //        }
-//        cout << "RIGHT: "<< right_value << endl;
+//        cout << "PREY RIGHT: "<< right_value << endl;
         message.right = right_value;
     }
 
@@ -199,7 +199,7 @@ namespace robot{
     }
 
     int Tick_robot_agent::port() {
-        string port_str (std::getenv("ROBOT_PORT")?std::getenv("ROBOT_PORT"):"4700");   // 4500
+        string port_str (std::getenv("ROBOT_PORT")?std::getenv("ROBOT_PORT"):"4501");   // 4500
         return atoi(port_str.c_str());
     }
 

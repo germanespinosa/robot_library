@@ -1,4 +1,3 @@
-#include <robot_lib/robot.h>
 #include <iostream>
 #include <robot_lib/gamepad_wrapper.h>
 #include <robot_lib/robot_agent.h>

@@ -1,7 +1,6 @@
 #include <iostream>
 #include <easy_tcp.h>
 #include <robot_lib/robot_simulator.h>
-#include <robot_lib/robot.h>
 #include <params_cpp.h>
 #include <agent_tracking/tracking_client.h>
 #include <robot_lib/tracking_simulator.h>
@@ -56,7 +55,7 @@ int main(int argc, char *argv[])
     Map map(cells);
     Location_visibility visibility(cells, wc.cell_shape, wi.cell_transformation);
 
-    auto rotation = stof(p.get(rotation_key,"0"));
+    auto rotation = stof(p.get(rotation_key,"1.5707963267948966"));
     auto interval = stoi(p.get(interval_key,"30"));
     auto spawn_coordinates_str = p.get(spawn_coordinates_key, "{\"x\":4,\"y\":0}");
     auto verbose = p.contains(Key("-v"));
@@ -90,7 +89,7 @@ int main(int argc, char *argv[])
 
 
     auto &prey_tracking_client = tracking_server.create_local_client<Prey_controller_server::Controller_tracking_client>(visibility, 270, capture, peeking,"prey", "predator");
-    Coordinates prey_spawn_coordinates(-20,0);
+    Coordinates prey_spawn_coordinates(-18,0); // TODO: change this back to -20, 0
 
     Coordinates spawn_coordinates;
     cout << spawn_coordinates_str << endl;
@@ -102,12 +101,14 @@ int main(int argc, char *argv[])
     }
     Location location = map[spawn_coordinates].location;
     Location prey_location = map[prey_spawn_coordinates].location;
-    Robot_simulator::start_simulation(world, location, rotation, prey_location, 0, interval, tracking_server);
+    Robot_simulator::start_simulation(world, location, rotation, prey_location, rotation, interval, tracking_server);
+
     Server<Robot_simulator> server;
-    if (!server.start(Robot::port())) {
+    if (!server.start(Robot_agent::port())) {
         std::cout << "Server setup failed " << std::endl;
         return EXIT_FAILURE;
     }
+
     Agent_operational_limits limits;
     limits.load("../config/robot_simulator_operational_limits.json");
     Robot_agent robot(limits);
@@ -120,6 +121,11 @@ int main(int argc, char *argv[])
     }
 
 
+    Server<Prey_robot_simulator> prey_server;
+    if (!prey_server.start(Tick_robot_agent::port())) {
+        std::cout << "Prey server setup failed " << std::endl;
+        return EXIT_FAILURE;
+    }
     Tick_robot_agent prey_robot;
     prey_robot.connect("127.0.0.1");
     Prey_controller_server prey_controller_server(prey_robot, prey_tracking_client, prey_controller_experiment_client);
@@ -133,7 +139,10 @@ int main(int argc, char *argv[])
     tracker.subscribe();
     while (Robot_simulator::is_running())
         if (tracker.contains_agent_state("predator")){
-            if (verbose) cout << "track: " << tracker.get_current_state("predator") << endl;
+            if (verbose) {
+                cout << "track: " << tracker.get_current_state("predator") << endl;
+                cout << "track: " << tracker.get_current_state("prey") << endl;
+            }
             Timer::wait(.5);
         }
     server.stop();

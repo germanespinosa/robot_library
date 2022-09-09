@@ -7,6 +7,7 @@
 #include <chrono>
 #include <robot_lib/tracking_simulator.h>
 #include <robot_lib/prey_simulator.h>
+#include <robot_lib/robot_agent.h>
 
 using namespace json_cpp;
 using namespace std;
@@ -284,5 +285,39 @@ namespace robot {
         info.time_stamp = robot_time_stamp.to_seconds();
         info.frame = frame_number;
         return info;
+    }
+
+    void Prey_robot_simulator::on_connect() {
+        Service::on_connect();
+    }
+
+    void Prey_robot_simulator::on_disconnect() {
+        Service::on_disconnect();
+    }
+
+    void Prey_robot_simulator::on_incoming_data(const char *buff, int size) {
+        Tick_robot_agent::Robot_message message;
+        if (size == sizeof (message)){ // instruction
+                message = *((Tick_robot_agent::Robot_message *)buff);
+                rm.lock();
+                prey_robot_state.speed = message.speed;
+                prey_robot_state.left_tick_target += message.left;
+                prey_robot_state.right_tick_target += message.right;
+                rm.unlock();
+        } else {
+            string message_s (buff);
+            try {
+                auto message = json_cpp::Json_create<Message>(message_s);
+                if (message.header == "stop") {
+                    Robot_simulator::end_simulation();
+                    Message response;
+                    response.header = "result";
+                    response.body = "ok";
+                    send_data(response.to_json());
+                }
+            } catch (...) {
+
+            }
+        }
     }
 }
