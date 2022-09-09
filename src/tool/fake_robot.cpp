@@ -1,9 +1,7 @@
 #include <iostream>
-#include <easy_tcp.h>
 #include <robot_lib/robot_simulator.h>
 #include <params_cpp.h>
 #include <agent_tracking/tracking_client.h>
-#include <robot_lib/tracking_simulator.h>
 #include <cell_world.h>
 #include <experiment.h>
 #include <controller.h>
@@ -33,17 +31,17 @@ struct Robot_experiment_client : Experiment_client {
     std::map<string, string> experiment_occlusions;
 };
 
-int main(int argc, char *argv[])
-{
-    Key spawn_coordinates_key{"-s","--spawn_coordinates"};
-    Key rotation_key{"-r","--theta"};
-    Key prey_key{"-p","--prey"};
-    Key interval_key{"-i","--interval"};
-    Key noise_key{"-n","--noise"};
+int main(int argc, char *argv[]) {
+    Key spawn_coordinates_key{"-s", "--spawn_coordinates"};
+    Key rotation_key{"-r", "--theta"};
+    Key prey_key{"-p", "--prey"};
+    Key interval_key{"-i", "--interval"};
+    Key noise_key{"-n", "--noise"};
 
     Parser p(argc, argv);
     auto wc = Resources::from("world_configuration").key("hexagonal").get_resource<World_configuration>();
-    auto wi = Resources::from("world_implementation").key("hexagonal").key("canonical").get_resource<World_implementation>();
+    auto wi = Resources::from("world_implementation").key("hexagonal").key(
+            "canonical").get_resource<World_implementation>();
     auto capture_parameters = Resources::from("capture_parameters").key("default").get_resource<Capture_parameters>();
     auto peeking_parameters = Resources::from("peeking_parameters").key("default").get_resource<Peeking_parameters>();
 
@@ -55,8 +53,8 @@ int main(int argc, char *argv[])
     Map map(cells);
     Location_visibility visibility(cells, wc.cell_shape, wi.cell_transformation);
 
-    auto rotation = stof(p.get(rotation_key,"1.5707963267948966"));
-    auto interval = stoi(p.get(interval_key,"30"));
+    auto rotation = stof(p.get(rotation_key, "1.5707963267948966"));
+    auto interval = stoi(p.get(interval_key, "30"));
     auto spawn_coordinates_str = p.get(spawn_coordinates_key, "{\"x\":4,\"y\":0}");
     auto verbose = p.contains(Key("-v"));
 
@@ -70,47 +68,41 @@ int main(int argc, char *argv[])
     prey_controller_experiment_client.subscribe();
 
 
-    Tracking_simulator tracking_server;
-    if (!p.contains(noise_key)){
-        tracking_server.noise = 0;
-        tracking_server.frame_drop = 0;
-        tracking_server.bad_reads = 0;
+    if (!p.contains(noise_key)) {
+        Robot_simulator::tracking_server.noise = 0;
+        Robot_simulator::tracking_server.frame_drop = 0;
+        Robot_simulator::tracking_server.bad_reads = 0;
     }
-    auto &experiment_tracking_client = tracking_server.create_local_client<Experiment_tracking_client>();
+
+    auto &experiment_tracking_client = Robot_simulator::tracking_server.create_local_client<Experiment_tracking_client>();
     experiment_tracking_client.subscribe();
     experiment_server.set_tracking_client(experiment_tracking_client);
     experiment_server.start(Experiment_service::get_port());
 
+    auto &tracking_client = Robot_simulator::tracking_server.create_local_client<Controller_server::Controller_tracking_client>(
+            visibility, 90, capture, peeking, "predator", "prey");
 
-    auto &tracking_client = tracking_server.create_local_client<Controller_server::Controller_tracking_client>(visibility, 90, capture, peeking, "predator", "prey");
-
-    auto &experiment_client= experiment_server.create_local_client<Robot_experiment_client>();
+    auto &experiment_client = experiment_server.create_local_client<Robot_experiment_client>();
     experiment_client.subscribe();
 
-
-    auto &prey_tracking_client = tracking_server.create_local_client<Prey_controller_server::Controller_tracking_client>(visibility, 270, capture, peeking,"prey", "predator");
-    Coordinates prey_spawn_coordinates(-18,0); // TODO: change this back to -20, 0
+    auto &prey_tracking_client = Robot_simulator::tracking_server.create_local_client<Prey_controller_server::Controller_tracking_client>(
+            visibility, 270, capture, peeking, "prey", "predator");
+    Coordinates prey_spawn_coordinates(-20, 0);
 
     Coordinates spawn_coordinates;
     cout << spawn_coordinates_str << endl;
     try {
         spawn_coordinates = json_cpp::Json_create<Coordinates>(spawn_coordinates_str);
     } catch (...) {
-        cout << "Wrong parameters "<< endl;
+        cout << "Wrong parameters " << endl;
         exit(1);
     }
     Location location = map[spawn_coordinates].location;
     Location prey_location = map[prey_spawn_coordinates].location;
-    Robot_simulator::start_simulation(world, location, rotation, prey_location, rotation, interval, tracking_server);
-
-    Robot_simulator_server server;
-    if (!server.start(Robot_agent::port())) {
-        std::cout << "Server setup failed " << std::endl;
-        return EXIT_FAILURE;
-    }
-
+    Robot_simulator::start_simulation(world, location, rotation, prey_location, rotation, interval);
     Agent_operational_limits limits;
     limits.load("../config/robot_simulator_operational_limits.json");
+
     Robot_agent robot(limits);
     robot.connect("127.0.0.1");
     Controller_service::set_logs_folder("controller_logs/");
@@ -120,14 +112,6 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-
-    Prey_robot_simulator_server prey_server;
-    if (!prey_server.start(Tick_robot_agent::port())) {
-        std::cout << "Prey server setup failed " << std::endl;
-        return EXIT_FAILURE;
-    }
-    Robot_simulator::set_prey_robot_simulator_server(prey_server);
-
     Tick_robot_agent prey_robot;
     prey_robot.connect("127.0.0.1");
     Prey_controller_server prey_controller_server(prey_robot, prey_tracking_client, prey_controller_experiment_client);
@@ -136,17 +120,17 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    auto &tracker = tracking_server.create_local_client<agent_tracking::Tracking_client>();
+    auto &tracker = Robot_simulator::tracking_server.create_local_client<agent_tracking::Tracking_client>();
     tracker.connect();
     tracker.subscribe();
-    while (Robot_simulator::is_running())
-        if (tracker.contains_agent_state("predator")){
+    while (Robot_simulator::is_running()){
+        if (tracker.contains_agent_state("predator")) {
             if (verbose) {
                 cout << "track: " << tracker.get_current_state("predator") << endl;
                 cout << "track: " << tracker.get_current_state("prey") << endl;
             }
             Timer::wait(.5);
         }
-    server.stop();
+    }
     return 0;
 }

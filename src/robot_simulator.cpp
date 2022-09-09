@@ -29,13 +29,18 @@ namespace robot {
     int frame_number = 0;
     mutex rm;
     Tracking_simulator *tracking_simulator = nullptr;
-    Prey_robot_simulator_server *prey_robot_simulator_server = nullptr;
 
     unsigned int robot_interval = 50;
     atomic<bool> robot_running = false;
     atomic<bool> robot_finished = false;
 
-    void Robot_state::update() {
+    Tracking_simulator Robot_simulator::tracking_server;
+
+    Robot_simulator_server predator_server;
+    Prey_robot_simulator_server prey_server;
+
+
+void Robot_state::update() {
         auto now = std::chrono::system_clock::now();
         double elapsed = 0;
         if (initialized) {
@@ -126,8 +131,7 @@ namespace robot {
 
     thread simulation_thread;
 
-    void Robot_simulator::start_simulation(cell_world::World world, Location location, float rotation, Location prey_location, float prey_rotation, unsigned int interval, Tracking_simulator &new_tracking_simulator) {
-        tracking_simulator = &new_tracking_simulator;
+    void Robot_simulator::start_simulation(cell_world::World world, Location location, float rotation, Location prey_location, float prey_rotation, unsigned int interval) {
         robot_world = world;
         habitat_polygon = Polygon(robot_world.space.center, robot_world.space.shape, robot_world.space.transformation);
         robot_cells = robot_world.create_cell_group();
@@ -149,6 +153,14 @@ namespace robot {
         prey_robot_state.location = prey_location;
         prey_robot_state.theta = prey_rotation;
         simulation_thread=thread(&simulation);
+        if (!predator_server.start(Robot_agent::port())) {
+            std::cout << "Server setup failed " << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        if (!prey_server.start(Tick_robot_agent::port())) {
+            std::cout << "Prey server setup failed " << std::endl;
+            exit(EXIT_FAILURE);
+        }
     }
 
     Robot_state Robot_simulator::get_robot_state() {
@@ -180,10 +192,6 @@ namespace robot {
 
     Tick_robot_state Robot_simulator::get_prey_robot_state() {
         return prey_robot_state;
-    }
-
-    void Robot_simulator::set_prey_robot_simulator_server(Prey_robot_simulator_server &prss) {
-        prey_robot_simulator_server = &prss;
     }
 
     void Tick_robot_state::update() {
@@ -233,10 +241,8 @@ namespace robot {
 
             // for multiple messages
             if ((message_count > 0) && (message_count > move_number)){
-                if (prey_robot_simulator_server) {
-                    for (auto &client: prey_robot_simulator_server->clients) {
-                        client->send_data((char *) &move_number, sizeof(move_number));
-                    }
+                for (auto &client: prey_server.clients) {
+                    client->send_data((char *) &move_number, sizeof(move_number));
                 }
                 //cout << "SHOULD BE TRUE  " << local_robot.is_move_done() << endl;
                 cout << "MOVES_EXECUTED" << move_number << endl;
