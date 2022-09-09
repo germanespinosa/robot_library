@@ -88,9 +88,7 @@ namespace robot {
 
     struct Prey_robot_simulator : easy_tcp::Service {
         void on_connect() override;
-
         void on_incoming_data(const char *, int) override;
-
         void on_disconnect() override;
 
     };
@@ -101,28 +99,17 @@ namespace robot {
 
     struct Robot_simulator : easy_tcp::Service {
         void on_connect() override;
-
         void on_incoming_data(const char *, int) override;
-
         void on_disconnect() override;
-
         static void set_robot_speed(double);
-
         static void set_robot_rotation_speed(double);
-
         static void start_simulation(cell_world::World world, cell_world::Location, float, cell_world::Location, float,
                                      unsigned int, Tracking_simulator &);
-
         static void set_occlusions(cell_world::Cell_group_builder occlusions);
-
         static void end_simulation();
-
         static bool is_running();
-
         static Robot_state get_robot_state();
-
         static Tick_robot_state get_prey_robot_state();
-
         static void set_prey_robot_simulator_server(Prey_robot_simulator_server &);
     };
 

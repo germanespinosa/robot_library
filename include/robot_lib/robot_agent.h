@@ -46,11 +46,11 @@ namespace robot {
             uint32_t move_number{};
         } message;
         static int port();
+        unsigned int robot_move_orientation = 0;
     private:
         unsigned int move_counter{};
         std::atomic<int> completed_move = -1;
         std::atomic<bool> move_done;
-        unsigned int robot_move_orientation = 0;
         cell_world::Move_list robot_moves;
     };
 }
