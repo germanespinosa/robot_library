@@ -10,11 +10,11 @@ namespace robot {
         bool connect();
         bool connect(const std::string &);
         bool connect(const std::string &, int);
-        virtual void set_left(double) override;
-        virtual void set_right(double) override;
-        virtual void capture() override;
-        virtual bool update() override;
-        virtual bool stop() override;
+        void set_left(double) override;
+        void set_right(double) override;
+        void capture() override;
+        bool update() override;
+        bool stop() override;
         void set_led(int, bool);
         void set_leds(bool);
         void increase_brightness();
@@ -39,7 +39,7 @@ namespace robot {
         void set_speed(int) override;
         void capture() override;
         int update() override;
-        virtual void received_data(char *, size_t) override;
+        void received_data(char *, size_t) override;
         bool is_move_done();
         struct Robot_message {
             int32_t left, right, speed;
