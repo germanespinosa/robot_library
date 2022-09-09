@@ -1,6 +1,7 @@
 #include <robot_lib/robot_agent.h>
 
 using namespace std;
+using namespace cell_world;
 // temp constants
 #define MAX_J 55
 #define MIN_J 0
@@ -152,23 +153,17 @@ namespace robot{
         return true;
     }
 
+
+    /////////////////////////////////////////////////////////////////////////////////////////////
+
     Tick_robot_agent::Tick_robot_agent()
     {
-    }
-
-    void Tick_robot_agent::set_left(int left_value) {
-        message.left = left_value;
-    }
-
-    void Tick_robot_agent::set_right(int right_value) {
-        message.right = right_value;
-    }
-
-    void Tick_robot_agent::set_speed(int speed_value) {
-        message.speed = speed_value;
-    }
-
-    void Tick_robot_agent::capture() {
+        robot_moves.push_back(Move(2,0));
+        robot_moves.push_back(Move(1,-1));
+        robot_moves.push_back(Move(-1,-1));
+        robot_moves.push_back(Move(-2,0));
+        robot_moves.push_back(Move(-1,1));
+        robot_moves.push_back(Move(1,1));
     }
 
 
@@ -178,10 +173,6 @@ namespace robot{
         bool res = ((easy_tcp::Connection *)this)->send_data((const char*) &message,sizeof(message));
         if (!res) return -1;
         return (int) message.move_number;
-    }
-
-    Tick_robot_agent::~Tick_robot_agent() {
-        stop();
     }
 
     int Tick_robot_agent::port() {
@@ -194,7 +185,6 @@ namespace robot{
     }
 
     bool Tick_robot_agent::connect() {
-        //return connect("192.168.137.155");
         return connect("127.0.0.1");
     }
 
@@ -211,10 +201,19 @@ namespace robot{
         // receives move number from robot
         move_done = true;
         completed_move = (int)*((uint32_t *) buffer);
-        move_finished(completed_move);
     }
 
-    bool Tick_robot_agent::ready() {
-        return (move_done >= move_counter - 1);
+    bool Tick_robot_agent::is_ready() {
+        return (completed_move >= move_counter - 1);
+    }
+
+    void Tick_robot_agent::execute_move(cell_world::Move move) {
+        auto move_number = robot_moves.index_of(move);
+        robot_move_orientation = (robot_move_orientation + move_number) % 6;
+        current_coordinates += move;
+        message.left = 1;
+        message.right = 2;
+        message.speed = 3;
+        update();
     }
 }

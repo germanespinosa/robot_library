@@ -1,6 +1,8 @@
 #pragma once
+#include <cell_world.h>
 #include <controller/agent.h>
 #include <robot_lib/gamepad_wrapper.h>
+#include <easy_tcp.h>
 
 namespace robot {
     struct Robot_agent : controller::Agent {
@@ -31,26 +33,24 @@ namespace robot {
 
     struct Tick_robot_agent : controller::Tick_agent , easy_tcp::Client {
 
-        Tick_robot_agent();  // TODO: not sure if this is correct, need to add operational limits
+        Tick_robot_agent();
         bool connect();
         bool connect(const std::string &);
-        void set_left(int) override;
-        void set_right(int) override;
-        void set_speed(int) override;
-        void capture() override;
-        int update() override;
+        void execute_move(cell_world::Move) override;
+        int update();
         void received_data(char *, size_t) override;
-        bool ready() override;
+        bool is_ready() override;
         bool is_move_done();
         struct Robot_message {
             int32_t left, right, speed;
             uint32_t move_number{};
         } message;
-        ~Tick_robot_agent();
         static int port();
     private:
         unsigned int move_counter{};
         std::atomic<int> completed_move = -1;
         std::atomic<bool> move_done;
+        unsigned int robot_move_orientation = 0;
+        cell_world::Move_list robot_moves;
     };
 }
