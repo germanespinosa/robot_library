@@ -117,6 +117,7 @@ namespace robot {
             robot_state.update();
             auto step = robot_state.to_step();
             tracking_simulator->send_update(step);
+            prey_robot_state.update();
             auto prey_step = prey_robot_state.to_step();
             tracking_simulator->send_update(prey_step);
             std::this_thread::sleep_for(std::chrono::milliseconds(robot_interval));
@@ -210,6 +211,7 @@ namespace robot {
             if (left_tick_target > prev_tick_target_L){
                 left_direction_array[message_count] = 1.0;
             } else if (left_tick_target < prev_tick_target_L)  left_direction_array[message_count] = -1.0;
+
             if (right_tick_target > prev_tick_target_R){
                 right_direction_array[message_count] = 1.0;
             } else if (right_tick_target < prev_tick_target_R)  right_direction_array[message_count] = -1.0;
@@ -300,6 +302,7 @@ namespace robot {
         if (size == sizeof (message)){ // instruction
                 message = *((Tick_robot_agent::Robot_message *)buff);
                 rm.lock();
+                cout << "PREY DATA " << message.left << endl;
                 prey_robot_state.speed = message.speed;
                 prey_robot_state.left_tick_target += message.left;
                 prey_robot_state.right_tick_target += message.right;
