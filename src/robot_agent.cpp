@@ -208,7 +208,7 @@ namespace robot{
     }
 
     void Tick_robot_agent::execute_move(cell_world::Move move) {
-        auto move_number = robot_moves.index_of(move);
+        auto move_number = (robot_moves.index_of(move) - robot_move_orientation) % 6;
         robot_move_orientation = (robot_move_orientation + move_number) % 6;
         current_coordinates += move;
         message.left = 1;
