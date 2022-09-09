@@ -6,7 +6,6 @@
 #include <atomic>
 #include <chrono>
 #include <robot_lib/tracking_simulator.h>
-#include <robot_lib/prey_simulator.h>
 #include <robot_lib/robot_agent.h>
 
 using namespace json_cpp;
@@ -30,8 +29,7 @@ namespace robot {
     int frame_number = 0;
     mutex rm;
     Tracking_simulator *tracking_simulator = nullptr;
-
-    Prey_simulator_server *prey_robot_simulator_server;
+    Prey_robot_simulator_server *prey_robot_simulator_server = nullptr;
 
     unsigned int robot_interval = 50;
     atomic<bool> robot_running = false;
@@ -184,6 +182,10 @@ namespace robot {
         return prey_robot_state;
     }
 
+    void Robot_simulator::set_prey_robot_simulator_server(Prey_robot_simulator_server &prss) {
+        prey_robot_simulator_server = &prss;
+    }
+
     void Tick_robot_state::update() {
         auto now = std::chrono::system_clock::now();
         double elapsed = 0;
@@ -196,6 +198,9 @@ namespace robot {
     }
 
     mutex prm;
+
+#define tick_robot_error (.001 * rand())
+
     void Tick_robot_state::update(double elapsed) {
         prm.lock();
         // TODO: deal with case where messages sent exceed array size
@@ -217,19 +222,21 @@ namespace robot {
             } else if (right_tick_target < prev_tick_target_R)  right_direction_array[message_count] = -1.0;
             message_count += 1;
         }
-        direction_L = left_direction_array[move_number] ;
+        direction_L = left_direction_array[move_number];
         direction_R = right_direction_array[move_number];
 
-        float left_tick_error = left_tick_target_array[move_number]-left_tick_counter;       // tick goal - current ticks
-        float right_tick_error = right_tick_target_array[move_number]-right_tick_counter;
+        float left_tick_error = left_tick_target_array[move_number] - left_tick_counter;       // tick goal - current ticks
+        float right_tick_error = right_tick_target_array[move_number] - right_tick_counter;
 
         // if move completed stop or execute next move - when error is 0
         if (!left_tick_error || !right_tick_error){
 
             // for multiple messages
             if ((message_count > 0) && (message_count > move_number)){
-                for (auto &client:prey_robot_simulator_server->clients){
-                    client->send_data((char *)&move_number,sizeof(move_number));
+                if (prey_robot_simulator_server) {
+                    for (auto &client: prey_robot_simulator_server->clients) {
+                        client->send_data((char *) &move_number, sizeof(move_number));
+                    }
                 }
                 //cout << "SHOULD BE TRUE  " << local_robot.is_move_done() << endl;
                 cout << "MOVES_EXECUTED" << move_number << endl;
@@ -258,9 +265,9 @@ namespace robot {
             right_speed = right_tick_error/ elapsed;
         }
 
-        float dl = 2 *left_speed / 1800.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
-        float dr = 2 *- right_speed / 1800.0 * robot_rotation_speed * elapsed; // convert motor signal to angle
-        float d = (left_speed + right_speed) / 3600.0 * robot_speed * elapsed; // convert motor signal to speed
+        float dl = 2 *left_speed / 1800.0 * robot_rotation_speed * elapsed + tick_robot_error * elapsed; // convert motor signal to angle
+        float dr = 2 *- right_speed / 1800.0 * robot_rotation_speed * elapsed + tick_robot_error * elapsed; // convert motor signal to angle
+        float d = (left_speed + right_speed) / 3600.0 * robot_speed * elapsed + tick_robot_error * elapsed; // convert motor signal to speed
         theta = normalize(theta + dl + dr);
         auto new_location = location.move(theta, d);
 

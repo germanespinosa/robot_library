@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
     Location prey_location = map[prey_spawn_coordinates].location;
     Robot_simulator::start_simulation(world, location, rotation, prey_location, rotation, interval, tracking_server);
 
-    Server<Robot_simulator> server;
+    Robot_simulator_server server;
     if (!server.start(Robot_agent::port())) {
         std::cout << "Server setup failed " << std::endl;
         return EXIT_FAILURE;
@@ -121,11 +121,13 @@ int main(int argc, char *argv[])
     }
 
 
-    Server<Prey_robot_simulator> prey_server;
+    Prey_robot_simulator_server prey_server;
     if (!prey_server.start(Tick_robot_agent::port())) {
         std::cout << "Prey server setup failed " << std::endl;
         return EXIT_FAILURE;
     }
+    Robot_simulator::set_prey_robot_simulator_server(prey_server);
+
     Tick_robot_agent prey_robot;
     prey_robot.connect("127.0.0.1");
     Prey_controller_server prey_controller_server(prey_robot, prey_tracking_client, prey_controller_experiment_client);

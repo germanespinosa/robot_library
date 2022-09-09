@@ -28,7 +28,7 @@ set(robot_lib_files
         src/tracking_simulator.cpp
         src/gamepad_wrapper.cpp
         src/robot_agent.cpp
-        src/prey_simulator.cpp)
+        )
 
 dependency_include(include)
 
