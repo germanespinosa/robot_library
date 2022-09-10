@@ -37,7 +37,7 @@ namespace robot {
         bool connect();
         bool connect(const std::string &);
         void execute_move(cell_world::Move) override;
-        int update(int move_status);       // TODO: make sure adding this argument works
+        int update();
         void received_data(char *, size_t) override;
         bool is_ready() override;
         bool is_move_done();
@@ -47,10 +47,8 @@ namespace robot {
         } message;
         static int port();
         unsigned int robot_move_orientation = 0;
-    private:
-        unsigned int move_counter{};
-        unsigned int message_counter{};
-        std::atomic<int> completed_move = -1;
+        int move_counter = 1;
+        std::atomic<int> completed_move = 0;
         std::atomic<bool> move_done;
         cell_world::Move_list robot_moves;
     };

@@ -82,13 +82,10 @@ int main(int argc, char *argv[])
 
 
     auto &tracking_client = Robot_simulator::tracking_server.create_local_client<Controller_server::Controller_tracking_client>(visibility, 90, capture, peeking, "predator", "prey");
-
     auto &experiment_client= experiment_server.create_local_client<Robot_experiment_client>();
     experiment_client.subscribe();
-
-
     auto &prey_tracking_client = Robot_simulator::tracking_server.create_local_client<Prey_controller_server::Controller_tracking_client>(visibility, 270, capture, peeking,"prey", "predator");
-    Coordinates prey_spawn_coordinates(20,0);
+    Coordinates prey_spawn_coordinates(-20,0);
 
     Coordinates spawn_coordinates;
     cout << spawn_coordinates_str << endl;
@@ -101,33 +98,61 @@ int main(int argc, char *argv[])
     Location location = map[spawn_coordinates].location;
     Location prey_location = map[prey_spawn_coordinates].location;
     Robot_simulator::start_simulation(world, location, rotation, prey_location, rotation, interval);
-    Agent_operational_limits limits;
-    limits.load("../config/robot_simulator_operational_limits.json");
-    Robot_agent robot(limits);
-    robot.connect("127.0.0.1");
-    Controller_service::set_logs_folder("controller_logs/");
-    Controller_server controller_server("../config/pid.json", robot, tracking_client, controller_experiment_client);
-    if (!controller_server.start(Controller_service::get_port())) {
-        cout << "failed to start predator controller" << endl;
-        exit(1);
-    }
     Tick_robot_agent prey_robot;
     prey_robot.connect("127.0.0.1");
-    Prey_controller_server prey_controller_server(prey_robot, prey_tracking_client, prey_controller_experiment_client);
-    if (!prey_controller_server.start(Prey_controller_service::get_port())) {
-        cout << "failed to start prey controller" << endl;
-        exit(1);
-    }
     auto &tracker = Robot_simulator::tracking_server.create_local_client<agent_tracking::Tracking_client>();
     tracker.connect();
     tracker.subscribe();
-    while (Robot_simulator::is_running())
-        if (tracker.contains_agent_state("prey")){
-            if (verbose) {
-                cout << "track: " << tracker.get_current_state("predator") << endl;
-                cout << "track: " << tracker.get_current_state("prey") << endl;
-            }
-            Timer::wait(.5);
+    Move_list moves;
+    moves.emplace_back(2,0);
+    moves.emplace_back(2,0);
+    moves.emplace_back(2,0);
+    moves.emplace_back(2,0);
+    moves.emplace_back(2,0);
+    moves.emplace_back(2,0);
+    moves.emplace_back(2,0);
+    moves.emplace_back(2,0);
+    moves.emplace_back(2,0);
+    moves.emplace_back(2,0);
+    moves.emplace_back(2,0);
+    moves.emplace_back(2,0);
+    moves.emplace_back(2,0);
+    moves.emplace_back(2,0);
+    moves.emplace_back(2,0);
+    int i = 0;
+    Coordinates target_coordinates(-20,0);
+    Cell target_cell = map[target_coordinates];
+    Timer t(3);
+    while(!tracker.contains_agent_state("prey"));
+    Coordinates last_coordinates;
+    float target_distance = 0;
+    while (Robot_simulator::is_running()) {
+        //cout << "\r prey location: " << tracker.get_current_state("prey").location ;
+        if (prey_robot.is_ready() && i < moves.size()){
+            auto move = moves[i++];
+            target_coordinates += move;
+            target_cell = map[target_coordinates];
+            cout << "target cell: " << target_cell << endl;
+            prey_robot.execute_move(move);
         }
+        if (i == moves.size()){
+            if (prey_robot.completed_move == prey_robot.move_counter - 1) {
+                if (t.time_out()) {
+                    cout << "done" << endl;
+                    break;
+                }
+            } else {
+                t.reset();
+            }
+        }
+        Timer::wait(.2);
+        cout << "prey location: "<< tracker.get_current_state("prey").location << endl;
+    }
+    target_distance = (map[{10,0}].location - map[{-20,0}].location).mod();
+    cout << "error: " << (tracker.get_current_state("prey").location - map[{10,0}].location).mod() << " of " << target_distance << endl;
+    auto prey_cell = cells[cells.find(tracker.get_current_state("prey").location)];
+    cout << "prey cell: "<< prey_cell << endl;
+    cout << "prey location: "<< tracker.get_current_state("prey").location << endl;
+    Robot_simulator::stop_simulation();
     return 0;
 }

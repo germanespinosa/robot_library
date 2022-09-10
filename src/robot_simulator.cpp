@@ -6,7 +6,6 @@
 #include <atomic>
 #include <chrono>
 #include <robot_lib/tracking_simulator.h>
-#include <robot_lib/robot_agent.h>
 
 using namespace json_cpp;
 using namespace std;
@@ -149,11 +148,13 @@ void Robot_state::update() {
         robot_state.led2 = false;
         robot_interval = interval;
         robot_running = true;
+        prey_robot_state.queued.move_number = 0;
+        prey_robot_state.in_progress.move_number = 0;
         prey_robot_state.location = prey_location;
         prey_robot_state.theta = prey_rotation;
         simulation_thread=thread(&simulation);
         if (!predator_server.start(Robot_agent::port())) {
-            std::cout << "Server setup failed " << std::endl;
+            std::cout << "Predator server setup failed " << std::endl;
             exit(EXIT_FAILURE);
         }
         if (!prey_server.start(Tick_robot_agent::port())) {
@@ -193,6 +194,11 @@ void Robot_state::update() {
         return prey_robot_state;
     }
 
+    void Robot_simulator::stop_simulation() {
+        prey_server.stop();
+        predator_server.stop();
+    }
+
     void Tick_robot_state::update() {
         auto now = std::chrono::system_clock::now();
         double elapsed = 0;
@@ -206,73 +212,19 @@ void Robot_state::update() {
 
     mutex prm;
 
-#define tick_robot_error (.001 * rand())
+#define tick_robot_error_range .001
+#define tick_robot_error (tick_robot_error_range * Chance::dice_float(1) - tick_robot_error_range / 2)
 
     void Tick_robot_state::update(double elapsed) {
         prm.lock();
-        // TODO: deal with case where messages sent exceed array size
-        time_stamp = json_cpp::Json_date::now();
 
-        // catch and store new messages
-        if ((left_tick_target != prev_tick_target_L) || (right_tick_target != prev_tick_target_R)){
-            speed_array[message_count] = speed;
-            left_tick_target_array[message_count] = left_tick_target;
-            right_tick_target_array[message_count]= right_tick_target;
+        // simulation
+        left_tick_counter_f += elapsed * left_speed;    // elapsed: time between updates (0.03), left/right_speed: tick rate
+        right_tick_counter_f += elapsed * right_speed;
 
-            // store desired direction of robot for move request
-            if (left_tick_target > prev_tick_target_L){
-                left_direction_array[message_count] = 1.0;
-            } else if (left_tick_target < prev_tick_target_L)  left_direction_array[message_count] = -1.0;
-
-            if (right_tick_target > prev_tick_target_R){
-                right_direction_array[message_count] = 1.0;
-            } else if (right_tick_target < prev_tick_target_R)  right_direction_array[message_count] = -1.0;
-            message_count += 1;
-        }
-        direction_L = left_direction_array[move_number];
-        direction_R = right_direction_array[move_number];
-
-        float left_tick_error = left_tick_target_array[move_number] - left_tick_counter;       // tick goal - current ticks
-        float right_tick_error = right_tick_target_array[move_number] - right_tick_counter;
-
-        // if move completed stop or execute next move - when error is 0
-        if (!left_tick_error || !right_tick_error){
-
-            // for multiple messages
-            if ((message_count > 0) && (message_count > move_number)){
-                for (auto &client: prey_server.clients) {
-                    client->send_data((char *) &move_number, sizeof(move_number));
-                }
-                //cout << "SHOULD BE TRUE  " << local_robot.is_move_done() << endl;
-                cout << "MOVES_EXECUTED" << move_number << endl;
-                cout << "left_ticks: " << left_tick_counter << "    right_ticks: " << right_tick_counter << endl;
-                move_number += 1;
-            }
-        }
-
-        // Find left and right speed based on tick error
-        if (abs(left_tick_error) > abs(right_tick_error)) {
-            prey_robot_state.left_speed = direction_L * speed_array[move_number];
-            prey_robot_state.right_speed = direction_R * abs(right_tick_error) / abs(left_tick_error) * speed;
-        } else {
-            if (abs(left_tick_error) < abs(right_tick_error)) {
-                prey_robot_state.right_speed = direction_R * speed_array[move_number];
-                prey_robot_state.left_speed = direction_L * abs(left_tick_error) / abs(right_tick_error) * speed;
-            } else {
-                prey_robot_state.right_speed = direction_R * speed_array[move_number];
-                prey_robot_state.left_speed = direction_L * speed_array[move_number];
-            }
-        }
-
-        // check if error is zero or if speed needs to be reduced to prevent overshoot on last move
-        if ((abs(left_tick_error) < abs(left_speed * elapsed)) || (abs(right_tick_error) < abs(right_speed * elapsed))){
-            left_speed = left_tick_error/ elapsed;
-            right_speed = right_tick_error/ elapsed;
-        }
-
-        float dl = 2 *left_speed / 1800.0 * robot_rotation_speed * elapsed + tick_robot_error * elapsed; // convert motor signal to angle
-        float dr = 2 *- right_speed / 1800.0 * robot_rotation_speed * elapsed + tick_robot_error * elapsed; // convert motor signal to angle
-        float d = (left_speed + right_speed) / 3600.0 * robot_speed * elapsed + tick_robot_error * elapsed; // convert motor signal to speed
+        float dl = 2 * left_speed / 1800.0 * robot_rotation_speed * elapsed ; // convert motor signal to angle
+        float dr = 2 * (-right_speed) / 1800.0 * robot_rotation_speed * elapsed ; // convert motor signal to angle
+        float d = (left_speed + right_speed) / 3600.0 * robot_speed * elapsed ; // convert motor signal to speed
         theta = normalize(theta + dl + dr);
         auto new_location = location.move(theta, d);
 
@@ -281,13 +233,50 @@ void Robot_state::update() {
                 location = location.move(theta, d);
             }
         }
-        // Measure position of robot
-        left_tick_counter += elapsed * left_speed;    // elapsed: time between updates (0.03), left/right_speed: tick rate
-        right_tick_counter += elapsed * right_speed;
+        time_stamp = json_cpp::Json_date::now();
+        left_tick_counter = left_tick_counter_f;
+        right_tick_counter = right_tick_counter_f;
 
-        // store tick target
-        prev_tick_target_L = left_tick_target;
-        prev_tick_target_R = right_tick_target;
+        //controller starts
+        static int prev_left_tick_counter = left_tick_counter;
+        static int prev_right_tick_counter = right_tick_counter;
+
+        // if we went over the target since last iteration
+        if ( (prev_left_tick_counter >= left_tick_target && left_tick_counter <= left_tick_target) ||
+             (prev_left_tick_counter <= left_tick_target && left_tick_counter >= left_tick_target) ){
+            if (in_progress.move_number) {
+                for (auto &client: prey_server.clients) {
+                    client->send_data((char *) &in_progress.move_number, sizeof(in_progress.move_number));
+                }
+            }
+            if (queued.move_number) {
+                in_progress = queued;
+                left_tick_target += in_progress.left;
+                right_tick_target += in_progress.right;
+                speed = in_progress.speed;
+                queued.move_number = 0;
+            }
+        }
+
+        float left_tick_error = left_tick_target - left_tick_counter;       // tick goal - current ticks
+        float right_tick_error = right_tick_target - right_tick_counter;
+
+        float direction_L=left_tick_error>0?1:-1;
+        float direction_R=right_tick_error>0?1:-1;
+
+        // Find left and right speed based on tick error
+        if (abs(left_tick_error) > abs(right_tick_error)) {
+            left_speed = direction_L * speed;
+            right_speed = direction_R * abs(right_tick_error) / abs(left_tick_error) * speed;
+        } else {
+            if (abs(left_tick_error) < abs(right_tick_error)) {
+                right_speed = direction_R * speed;
+                left_speed = direction_L * abs(left_tick_error) / abs(right_tick_error) * speed;
+            } else {
+                right_speed = direction_R * speed;
+                left_speed = direction_L * speed;
+            }
+        }
         prm.unlock();
     }
 
@@ -313,12 +302,8 @@ void Robot_state::update() {
         Tick_robot_agent::Robot_message message;
         if (size == sizeof (message)){ // instruction
                 message = *((Tick_robot_agent::Robot_message *)buff);
-                rm.lock();
-                cout << "PREY DATA " << message.left << endl;
-                prey_robot_state.speed = message.speed;
-                prey_robot_state.left_tick_target += message.left;
-                prey_robot_state.right_tick_target += message.right;
-                rm.unlock();
+                while (prey_robot_state.queued.move_number);
+                prey_robot_state.queued =  message;
         } else {
             string message_s (buff);
             try {

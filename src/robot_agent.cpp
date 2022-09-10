@@ -6,7 +6,8 @@ using namespace cell_world;
 #define MAX_J 55
 #define MIN_J 0
 #define JOYSTICK 32767
-#define TICK_RATE 1000
+#define TURN_TICK_RATE 1000
+#define FORWARD_TICK_RATE 2000
 
 namespace robot{
     Robot_agent::Robot_agent(const controller::Agent_operational_limits &limits):
@@ -168,16 +169,13 @@ namespace robot{
     }
 
 
-    int Tick_robot_agent::update(int move_status) {
+    int Tick_robot_agent::update() {
 
+        if (message.left == 0 && message.right == 0) return -1;
         // pause if robot is not ready to receive next command
-        message_counter ++;
-        while (message_counter >= completed_move + 2);
-
+        while (!is_ready());
         // move is complete when move_status arg is 0
-        if (move_status == 0) message.move_number = move_counter ++;
-
-
+        message.move_number = move_counter ++;
         bool res = ((easy_tcp::Connection *)this)->send_data((const char*) &message,sizeof(message));
         if (!res) return -1;
         return (int) message.move_number;
@@ -212,28 +210,26 @@ namespace robot{
     }
 
     bool Tick_robot_agent::is_ready() {
-        return (completed_move >= move_counter - 1);
+        return (completed_move >= move_counter - 2);
     }
 
+#define forward {432,432}
     void Tick_robot_agent::execute_move(cell_world::Move move) {
         auto move_number = (robot_moves.index_of(move) - robot_move_orientation) % 6;
         robot_move_orientation = (robot_move_orientation + move_number) % 6;
         current_coordinates += move;
 
-        vector<pair<int,int>> move_ticks = {{432,432},{150,-150},{300,-300},{450,-450},{-300,300},{-150,150}}; // m0,m1,m2,m3,m4,m5    212,815
+        vector<pair<int,int>> move_ticks = {{0,0}, {150,-150}, {300,-300}, {450,-450}, {-300,300}, {-150,150}}; // m0,m1,m2,m3,m4,m5    212,815
         message.left = move_ticks[move_number].first;
         message.right = move_ticks[move_number].second;
-        message.speed = TICK_RATE;
+        message.speed = TURN_TICK_RATE;
 
-        update(move_number);
-
+        update();
         // if not move 0 move requires 2 updates
-        if (move_number != 0){
-            message.left = move_ticks[0].first;
-            message.right = move_ticks[0].second;
-            message.speed = TICK_RATE;
-            update(0);
-        }
+        message.left = 432;
+        message.right = 432;
+        message.speed = FORWARD_TICK_RATE;
+        update();
     }
 }
 
