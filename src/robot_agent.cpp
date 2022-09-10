@@ -215,9 +215,12 @@ namespace robot{
 
 #define forward {432,432}
     void Tick_robot_agent::execute_move(cell_world::Move move) {
-        auto move_number = (robot_moves.index_of(move) - robot_move_orientation) % 6;
+
+        auto move_number = (robot_moves.index_of(move) - robot_move_orientation + 6) % 6;
         robot_move_orientation = (robot_move_orientation + move_number) % 6;
+
         current_coordinates += move;
+        cout << "move number: " << move_number << endl;
 
         vector<pair<int,int>> move_ticks = {{0,0}, {150,-150}, {300,-300}, {450,-450}, {-300,300}, {-150,150}}; // m0,m1,m2,m3,m4,m5    212,815
         message.left = move_ticks[move_number].first;
