@@ -28,7 +28,7 @@ namespace robot {
     int frame_number = 0;
     mutex rm;
 
-    unsigned int robot_interval = 50;
+    unsigned int robot_interval = 10;
     atomic<bool> robot_running = false;
     atomic<bool> robot_finished = false;
 
@@ -38,7 +38,7 @@ namespace robot {
     Prey_robot_simulator_server prey_server;
 
 
-void Robot_state::update() {
+    void Robot_state::update() {
         auto now = std::chrono::system_clock::now();
         double elapsed = 0;
         if (initialized) {
@@ -121,7 +121,7 @@ void Robot_state::update() {
             prey_robot_state.update();
             auto prey_step = prey_robot_state.to_step();
             Robot_simulator::tracking_server.send_update(prey_step);
-            std::this_thread::sleep_for(std::chrono::milliseconds(robot_interval));
+            std::this_thread::sleep_for(1ms);
         }
         log.close();
     }
@@ -245,10 +245,13 @@ void Robot_state::update() {
         if ( (prev_left_tick_counter >= left_tick_target && left_tick_counter <= left_tick_target) ||
              (prev_left_tick_counter <= left_tick_target && left_tick_counter >= left_tick_target) ){
             if (in_progress.move_number) {
+                cout << "DATA location: " << location << " rotation: " << to_degrees(theta) << endl;
+                cout << "VALUES : " << prev_left_tick_counter << " - " << left_tick_target << " - " << left_tick_counter << endl;
                 for (auto &client: prey_server.clients) {
                     client->send_data((char *) &in_progress.move_number, sizeof(in_progress.move_number));
                 }
             }
+            in_progress.move_number = 0;
             if (queued.move_number) {
                 in_progress = queued;
                 left_tick_target += in_progress.left;
@@ -277,6 +280,8 @@ void Robot_state::update() {
                 left_speed = direction_L * speed;
             }
         }
+        prev_left_tick_counter = left_tick_counter;
+        prev_right_tick_counter = right_tick_counter;
         prm.unlock();
     }
 
@@ -300,24 +305,12 @@ void Robot_state::update() {
 
     void Prey_robot_simulator::on_incoming_data(const char *buff, int size) {
         Tick_robot_agent::Robot_message message;
-        if (size == sizeof (message)){ // instruction
-                message = *((Tick_robot_agent::Robot_message *)buff);
-                while (prey_robot_state.queued.move_number);
-                prey_robot_state.queued =  message;
-        } else {
-            string message_s (buff);
-            try {
-                auto message = json_cpp::Json_create<Message>(message_s);
-                if (message.header == "stop") {
-                    Robot_simulator::end_simulation();
-                    Message response;
-                    response.header = "result";
-                    response.body = "ok";
-                    send_data(response.to_json());
-                }
-            } catch (...) {
-
-            }
+        int offset = 0;
+        while (size-offset >= sizeof (message)) {
+            message = *((Tick_robot_agent::Robot_message *) buff + offset);
+            while (prey_robot_state.queued.move_number);
+            prey_robot_state.queued = message;
+            offset+=sizeof(message);
         }
     }
 }

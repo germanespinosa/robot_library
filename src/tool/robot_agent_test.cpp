@@ -105,20 +105,20 @@ int main(int argc, char *argv[])
 
     Move_list moves;
     moves.emplace_back(2,0);
-    moves.emplace_back(2,0);
-    moves.emplace_back(2,0);
-    moves.emplace_back(2,0);
-    moves.emplace_back(2,0);
-    moves.emplace_back(2,0);
-    moves.emplace_back(2,0);
-    moves.emplace_back(2,0);
-    moves.emplace_back(2,0);
-    moves.emplace_back(2,0);
-    moves.emplace_back(2,0);
-    moves.emplace_back(2,0);
-    moves.emplace_back(2,0);
-    moves.emplace_back(2,0);
-    moves.emplace_back(2,0);
+    moves.emplace_back(1,1);
+//    moves.emplace_back(2,0);
+//    moves.emplace_back(2,0);
+//    moves.emplace_back(2,0);
+//    moves.emplace_back(2,0);
+//    moves.emplace_back(2,0);
+//    moves.emplace_back(2,0);
+//    moves.emplace_back(2,0);
+//    moves.emplace_back(2,0);
+//    moves.emplace_back(2,0);
+//    moves.emplace_back(2,0);
+//    moves.emplace_back(2,0);
+//    moves.emplace_back(2,0);
+//    moves.emplace_back(2,0);
     int i = 0;
     Coordinates target_coordinates(-20,0);
     Cell target_cell = map[target_coordinates];
@@ -132,9 +132,10 @@ int main(int argc, char *argv[])
             auto move = moves[i++];
             target_coordinates += move;
             target_cell = map[target_coordinates];
-            cout << "target cell: " << target_cell << endl;
-            cout << "error: " << prey_robot.location_error << " " << prey_robot.orientation_error << endl;
             prey_robot.execute_move(move);
+
+            auto prey_cell = cells[cells.find(tracker.get_current_state("prey").location)];
+
         }
         if (i == moves.size()){
             if (prey_robot.completed_move == prey_robot.move_counter - 1) {
@@ -147,13 +148,14 @@ int main(int argc, char *argv[])
             }
         }
         Timer::wait(.2);
-        cout << "prey location: "<< tracker.get_current_state("prey") << endl;
+//        cout << "prey location: "<< tracker.get_current_state("prey") << endl;
     }
     target_distance = (map[{10,0}].location - map[{-20,0}].location).mod();
-    cout << "error: " << (tracker.get_current_state("prey").location - map[{10,0}].location).mod() << " of " << target_distance << endl;
-    auto prey_cell = cells[cells.find(tracker.get_current_state("prey").location)];
-    cout << "prey cell: "<< prey_cell << endl;
+//    cout << "error: " << (tracker.get_current_state("prey").location - map[{10,0}].location).mod() << " of " << target_distance << endl;
+//    auto prey_cell = cells[cells.find(tracker.get_current_state("prey").location)];
+//    cout << "prey cell: "<< prey_cell << endl;
     cout << "prey location: "<< tracker.get_current_state("prey").location << endl;
+    cout << "prey orientation: "<< tracker.get_current_state("prey").rotation << endl;
     Robot_simulator::stop_simulation();
     return 0;
 }

@@ -210,10 +210,11 @@ namespace robot{
             tmt = move_targets.front();
             move_targets.pop();
         }
-        if (tmt.move_number = completed_move){
+        if (tmt.move_number == completed_move){
             auto tracking_info = tracking_client.get_current_state("prey");
-            location_error = tmt.location - tracking_info.location;
-            orientation_error = tmt.rotation - tracking_info.rotation;
+            location_error = tmt.location - tracking_info.location;      // desired - actual
+            orientation_error = tmt.rotation - tracking_info.rotation;  // desired - actual
+            cout << tmt.rotation << "   " << tracking_info.rotation << endl;
         }
     }
 
@@ -224,29 +225,41 @@ namespace robot{
     std::vector<float> rotation_target = {90.0, 150.0, -150.0, -90, -30, 30};
 
     void Tick_robot_agent::execute_move(cell_world::Move move) {
+        // finds next move based on orientation
         auto tick_move = tick_agent_moves.find_tick_move(move, robot_move_orientation);
+
+        // updates orientation based on decided move
         robot_move_orientation = tick_move.update_orientation(robot_move_orientation);
-        cout << "move number: " << tick_move.orientation << endl;
+
+//        cout << "move number: " << tick_move << endl;
+//        cout << "robot move orientation: " << robot_move_orientation << endl;
 
         // use location error and rotation error to updates the ticks before sending.
 
+
+
+        // rotation update except if move 0
         message.left = tick_move.left_ticks;
         message.right = tick_move.right_ticks;
         message.speed = tick_move.speed;
         auto move_number = update();
-        // if not move 0 move requires 2 updates
+
+        // move fwd if move 1 - 5
         if (tick_move.orientation != 0) {
+            // update expected coordinate
             move_targets.emplace(move_number, map[current_coordinates].location, rotation_target[robot_move_orientation]);
             auto forward_move = tick_agent_moves.find_tick_move(Move{2,0}, 0);
             message.left = forward_move.left_ticks; //.432;
             message.right = forward_move.right_ticks;
             message.speed = forward_move.speed;
             update();
-            current_coordinates += move ;
+            current_coordinates += move ;  // TODO: why is this updated here
         } else {
+            // update expected coordinates
             current_coordinates += move ;
             move_targets.emplace(move_number, map[current_coordinates].location, rotation_target[robot_move_orientation]);
         }
+        cout << "Orientation Error: " << orientation_error << endl;
     }
 
     Tick_move_target::Tick_move_target(int move_number, cell_world::Location location, float rotation):
