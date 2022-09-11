@@ -245,8 +245,6 @@ namespace robot {
         if ( (prev_left_tick_counter >= left_tick_target && left_tick_counter <= left_tick_target) ||
              (prev_left_tick_counter <= left_tick_target && left_tick_counter >= left_tick_target) ){
             if (in_progress.move_number) {
-                cout << "DATA location: " << location << " rotation: " << to_degrees(theta) << endl;
-                cout << "VALUES : " << prev_left_tick_counter << " - " << left_tick_target << " - " << left_tick_counter << endl;
                 for (auto &client: prey_server.clients) {
                     client->send_data((char *) &in_progress.move_number, sizeof(in_progress.move_number));
                 }
