@@ -300,24 +300,12 @@ void Robot_state::update() {
 
     void Prey_robot_simulator::on_incoming_data(const char *buff, int size) {
         Tick_robot_agent::Robot_message message;
-        if (size == sizeof (message)){ // instruction
-                message = *((Tick_robot_agent::Robot_message *)buff);
-                while (prey_robot_state.queued.move_number);
-                prey_robot_state.queued =  message;
-        } else {
-            string message_s (buff);
-            try {
-                auto message = json_cpp::Json_create<Message>(message_s);
-                if (message.header == "stop") {
-                    Robot_simulator::end_simulation();
-                    Message response;
-                    response.header = "result";
-                    response.body = "ok";
-                    send_data(response.to_json());
-                }
-            } catch (...) {
-
-            }
+        int offset = 0;
+        while (size - offset >= sizeof (message)){ // instruction
+            message = *((Tick_robot_agent::Robot_message *)buff + offset);
+            while (prey_robot_state.queued.move_number);
+            prey_robot_state.queued =  message;
+            offset += sizeof (message);
         }
     }
 }
