@@ -64,5 +64,10 @@ namespace robot {
         float orientation_error{};
         cell_world::Map &map;
         agent_tracking::Tracking_client &tracking_client;
+        float angle_diff_degrees(float, float);
+        float P_orientation;
+        int orientation_correction;
+        int x_correction;
+        int y_correction;
     };
 }
