@@ -2,6 +2,7 @@
 #include <cell_world.h>
 #include <controller/agent.h>
 #include <robot_lib/gamepad_wrapper.h>
+#include <agent_tracking/tracking_client.h>
 #include <easy_tcp.h>
 
 namespace robot {
@@ -31,9 +32,16 @@ namespace robot {
         bool need_update = false;
     };
 
-    struct Tick_robot_agent : controller::Tick_agent , easy_tcp::Client {
+    struct Tick_move_target{
+        Tick_move_target() = default;
+        Tick_move_target(int, cell_world::Location,float);
+        int move_number{};
+        cell_world::Location location;
+        float rotation{};
+    };
 
-        Tick_robot_agent();
+    struct Tick_robot_agent : controller::Tick_agent , easy_tcp::Client {
+        Tick_robot_agent(const controller::Tick_agent_moves &moves, cell_world::Map &, agent_tracking::Tracking_client &);
         bool connect();
         bool connect(const std::string &);
         void execute_move(cell_world::Move) override;
@@ -50,6 +58,11 @@ namespace robot {
         int move_counter = 1;
         std::atomic<int> completed_move = 0;
         std::atomic<bool> move_done;
-        cell_world::Move_list robot_moves;
+        controller::Tick_agent_moves tick_agent_moves;
+        std::queue<Tick_move_target> move_targets;
+        cell_world::Location location_error{};
+        float orientation_error{};
+        cell_world::Map &map;
+        agent_tracking::Tracking_client &tracking_client;
     };
 }

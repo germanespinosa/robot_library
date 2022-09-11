@@ -1,0 +1,37 @@
+[{
+  "move": {"x": 2,"y": 0 },
+  "orientation": 0,
+  "left_ticks": 432,
+  "right_ticks": 432,
+  "speed": 2000
+}, {
+  "move": {"x": 1,"y": -1 },
+  "orientation": 1,
+  "left_ticks": 150,
+  "right_ticks": -150,
+  "speed": 2000
+},{
+  "move": {"x": -1,"y": -1 },
+  "orientation": 2,
+  "left_ticks": 300,
+  "right_ticks": -300,
+  "speed": 2000
+},{
+  "move": {"x": -2,"y": 0 },
+  "orientation": 3,
+  "left_ticks": 450,
+  "right_ticks": -450,
+  "speed": 2000
+},{
+  "move": {"x": -1,"y": 1 },
+  "orientation": 4,
+  "left_ticks": -300,
+  "right_ticks": 300,
+  "speed": 2000
+},{
+  "move": {"x": 1,"y": 1 },
+  "orientation": 5,
+  "left_ticks": -150,
+  "right_ticks": 150,
+  "speed": 2000
+}]

@@ -64,10 +64,6 @@ int main(int argc, char *argv[]) {
     auto &controller_experiment_client = experiment_server.create_local_client<Controller_server::Controller_experiment_client>();
     controller_experiment_client.subscribe();
 
-    auto &prey_controller_experiment_client = experiment_server.create_local_client<Prey_controller_server::Controller_experiment_client>();
-    prey_controller_experiment_client.subscribe();
-
-
     if (!p.contains(noise_key)) {
         Robot_simulator::tracking_server.noise = 0;
         Robot_simulator::tracking_server.frame_drop = 0;
@@ -85,8 +81,6 @@ int main(int argc, char *argv[]) {
     auto &experiment_client = experiment_server.create_local_client<Robot_experiment_client>();
     experiment_client.subscribe();
 
-    auto &prey_tracking_client = Robot_simulator::tracking_server.create_local_client<Prey_controller_server::Controller_tracking_client>(
-            visibility, 270, capture, peeking, "prey", "predator");
     Coordinates prey_spawn_coordinates(-20, 0);
 
     Coordinates spawn_coordinates;
@@ -111,18 +105,15 @@ int main(int argc, char *argv[]) {
         cout << "failed to start predator controller" << endl;
         exit(1);
     }
-
-    Tick_robot_agent prey_robot;
-    prey_robot.connect("127.0.0.1");
-    Prey_controller_server prey_controller_server(prey_robot, prey_tracking_client, prey_controller_experiment_client);
-    if (!prey_controller_server.start(Prey_controller_service::get_port())) {
-        cout << "failed to start prey controller" << endl;
-        exit(1);
-    }
-
     auto &tracker = Robot_simulator::tracking_server.create_local_client<agent_tracking::Tracking_client>();
     tracker.connect();
     tracker.subscribe();
+
+    Tick_agent_moves tick_moves;
+    tick_moves.load("../config/tick_robot_moves.json");
+    Tick_robot_agent prey_robot(tick_moves, map, tracker);
+    prey_robot.connect("127.0.0.1");
+
     while (Robot_simulator::is_running()){
         if (tracker.contains_agent_state("predator")) {
             if (verbose) {
