@@ -210,7 +210,7 @@ namespace robot{
             tmt = move_targets.front();
             move_targets.pop();
         }
-        if (tmt.move_number = completed_move){
+        if (tmt.move_number == completed_move){
             auto tracking_info = tracking_client.get_current_state("prey");
             location_error = tmt.location - tracking_info.location;
             orientation_error = tmt.rotation - tracking_info.rotation;
