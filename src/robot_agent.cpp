@@ -243,27 +243,37 @@ namespace robot{
         auto tick_move = tick_agent_moves.find_tick_move(move, robot_move_orientation);
         robot_move_orientation = tick_move.update_orientation(robot_move_orientation);
         cout << tick_move.orientation << " " << robot_move_orientation <<endl;
-        // how correct for y problems??
-        // if orientatio
 
-        // ORIENTATION/X CORRECTION
-        if (tick_move.orientation != 0){
-            orientation_correction = (int32_t)(2.5 * orientation_error); // correct for orientation // TODO: tune this value for actual robot
+
+        if (tick_move.orientation != 0){ // if not moving straight
+            orientation_correction = (int32_t)(P_rot * orientation_error); // correct for orientation // TODO: tune this value for actual robot
             x_correction = 0;
-        } else { // correct for x
-            x_correction = (int32_t)(location_error.x * 9189.0); // TODO: tune value
+        } else {
             orientation_correction = 0;
-//            cout << "location error: " << location_error.x << endl;
+            if (robot_move_orientation  > 3) {
+                y_correction = (int32_t)(location_error.y * P_y);  // TODO: tune value
+                x_correction = 0;
+                cout <<" y error " << location_error.y << endl;
+            } else if (robot_move_orientation < 3){
+                y_correction =  (int32_t)(-location_error.y * P_y);
+                x_correction = 0;
+                cout <<" y error " << location_error.y << endl;
+            } else{
+                x_correction = (int32_t) (location_error.x * P_x); // TODO: tune value
+                y_correction = 0;
+                cout << "x error " << location_error.x <<  endl;
+            }
         }
 
-        message.left = tick_move.left_ticks + orientation_correction + x_correction;  //+ orientation_error;
-        message.right = tick_move.right_ticks - orientation_correction + x_correction; // - orientation_error;
+
+        message.left = tick_move.left_ticks + orientation_correction + x_correction + y_correction;  //+ orientation_error;
+        message.right = tick_move.right_ticks - orientation_correction + x_correction + y_correction; // - orientation_error;
         message.speed = tick_move.speed;
-//        cout << "LEFT: " << message.left << " RIGHT:  " << message.right <<endl;
         auto move_number = update();
+        cout << "LEFT: " << message.left << " RIGHT:  " << message.right <<endl;
 
 
-        // move fwd if move 1 - 5
+        // MOVE FWD AFTER ROTATE
         if (tick_move.orientation != 0) {
             // update expected coordinate
             move_targets.emplace(move_number, map[current_coordinates].location, rotation_target[robot_move_orientation]);
@@ -272,9 +282,9 @@ namespace robot{
             // correct for y during part 2 of moves 1,2,4,5
             // TODO: fox logic why not working
             if (robot_move_orientation  > 3) {
-                y_correction = (int32_t)(location_error.y * 9189.0);  // TODO: tune value
+                y_correction = (int32_t)(location_error.y * P_y);  // TODO: tune value
             } else if (robot_move_orientation < 3){
-                y_correction =  (int32_t)(-location_error.y * 9189.0);
+                y_correction =  (int32_t)(-location_error.y * P_y);
             } else y_correction = 0;
             cout << "location error y: " << location_error.y << endl;
 

@@ -106,6 +106,13 @@ int main(int argc, char *argv[])
     Move_list moves;
     moves.emplace_back(2,0);
     moves.emplace_back(1,1);
+    moves.emplace_back(1,1);
+    moves.emplace_back(1,1);
+    moves.emplace_back(1,1);
+
+
+//    moves.emplace_back(1,1);
+//    moves.emplace_back(-1,1);
 //    moves.emplace_back(2,0);
 //    moves.emplace_back(2,0);
 //    moves.emplace_back(2,0);
@@ -141,7 +148,9 @@ int main(int argc, char *argv[])
             if (prey_robot.completed_move == prey_robot.move_counter - 1) {
                 if (t.time_out()) {
                     cout << "done" << endl;
-                    break;
+                    auto prey_cell = cells[cells.find(tracker.get_current_state("prey").location)];
+                    cout << "prey cell: "<< prey_cell << endl;
+//                    break;
                 }
             } else {
                 t.reset();
@@ -152,10 +161,12 @@ int main(int argc, char *argv[])
     }
     target_distance = (map[{10,0}].location - map[{-20,0}].location).mod();
 //    cout << "error: " << (tracker.get_current_state("prey").location - map[{10,0}].location).mod() << " of " << target_distance << endl;
-//    auto prey_cell = cells[cells.find(tracker.get_current_state("prey").location)];
-//    cout << "prey cell: "<< prey_cell << endl;
+    auto prey_cell = cells[cells.find(tracker.get_current_state("prey").location)];
+    cout << "prey cell: "<< prey_cell << endl;
     cout << "prey location: "<< tracker.get_current_state("prey").location << endl;
     cout << "prey orientation: "<< tracker.get_current_state("prey").rotation << endl;
     Robot_simulator::stop_simulation();
     return 0;
 }
+
+// TODO: ask german to make angle diff for radians

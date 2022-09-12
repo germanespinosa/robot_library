@@ -225,7 +225,7 @@ namespace robot {
         float dl = 2 * left_speed / 1800.0 * robot_rotation_speed * elapsed ; // convert motor signal to angle
         float dr = 2 * (-right_speed) / 1800.0 * robot_rotation_speed * elapsed ; // convert motor signal to angle
         float d = (left_speed + right_speed) / 3600.0 * robot_speed * elapsed ; // convert motor signal to speed
-        theta = normalize(theta + dl + dr);
+        theta = normalize(theta + dl + dr); // TODO: delete this error
         auto new_location = location.move(theta, d);
 
         if (habitat_polygon.contains(new_location)) {
@@ -305,7 +305,7 @@ namespace robot {
         Tick_robot_agent::Robot_message message;
         int offset = 0;
         while (size-offset >= sizeof (message)) {
-            message = *((Tick_robot_agent::Robot_message *) buff + offset);
+            message = *((Tick_robot_agent::Robot_message *) (buff + offset));
             while (prey_robot_state.queued.move_number);
             prey_robot_state.queued = message;
             offset+=sizeof(message);

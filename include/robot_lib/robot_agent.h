@@ -65,9 +65,12 @@ namespace robot {
         cell_world::Map &map;
         agent_tracking::Tracking_client &tracking_client;
         float angle_diff_degrees(float, float);
-        float P_orientation;
         int orientation_correction;
         int x_correction;
         int y_correction;
+        float P_rot = 2.5;
+        float P_x = 9189.0;
+        float P_y = 9189.0;
+
     };
 }
