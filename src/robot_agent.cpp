@@ -163,7 +163,7 @@ namespace robot{
             map(map),
             tracking_client(tracking_client)
     {
-        current_coordinates = Coordinates{-20,0};
+        current_coordinates = Coordinates{-18,0};
     }
 
 
@@ -219,15 +219,19 @@ namespace robot{
         // receives move number from robot
         move_done = true;
         completed_move = (int)*((uint32_t *) buffer);
+//        cout << "RECEIVED DATA " << completed_move << endl;
         Tick_move_target tmt;
-        while (move_targets.front().move_number <= completed_move){
+        while (!move_targets.empty() && move_targets.front().move_number <= completed_move){
             tmt = move_targets.front();
             move_targets.pop();
         }
         if (tmt.move_number == completed_move){
-            auto tracking_info = tracking_client.get_current_state("prey");
+//            auto tracking_info = tracking_client.get_current_state("prey");
+            auto tracking_info = tracking_client.get_current_state("predator");
             location_error = tmt.location - tracking_info.location;      // desired - actual
             orientation_error = angle_diff_degrees(tmt.rotation, tracking_info.rotation);
+            cout << "ERROR INFO: " << endl;
+            cout << "COMPLETED MOVE: " << completed_move << "rotation: " << tracking_info.rotation << "expected rotation: " << tmt.rotation << endl;
         }
     }
 
@@ -242,7 +246,7 @@ namespace robot{
 
         auto tick_move = tick_agent_moves.find_tick_move(move, robot_move_orientation);
         robot_move_orientation = tick_move.update_orientation(robot_move_orientation);
-        cout << tick_move.orientation << " " << robot_move_orientation <<endl;
+//        cout << tick_move.orientation << " " << robot_move_orientation <<endl;
 
 
         if (tick_move.orientation != 0){ // if not moving straight
@@ -253,24 +257,24 @@ namespace robot{
             if (robot_move_orientation  > 3) {
                 y_correction = (int32_t)(location_error.y * P_y);  // TODO: tune value
                 x_correction = 0;
-                cout <<" y error " << location_error.y << endl;
+//                cout <<" y error " << location_error.y << endl;
             } else if (robot_move_orientation < 3){
                 y_correction =  (int32_t)(-location_error.y * P_y);
                 x_correction = 0;
-                cout <<" y error " << location_error.y << endl;
+//                cout <<" y error " << location_error.y << endl;
             } else{
                 x_correction = (int32_t) (location_error.x * P_x); // TODO: tune value
                 y_correction = 0;
-                cout << "x error " << location_error.x <<  endl;
+//                cout << "x error " << location_error.x <<  endl;
             }
         }
 
-
-        message.left = tick_move.left_ticks + orientation_correction + x_correction + y_correction;  //+ orientation_error;
-        message.right = tick_move.right_ticks - orientation_correction + x_correction + y_correction; // - orientation_error;
+        cout << "tick_move: " << tick_move << endl;
+        message.left = tick_move.left_ticks;// + orientation_correction + x_correction + y_correction;  //+ orientation_error;
+        message.right = tick_move.right_ticks;// - orientation_correction + x_correction + y_correction; // - orientation_error;
         message.speed = tick_move.speed;
         auto move_number = update();
-        cout << "LEFT: " << message.left << " RIGHT:  " << message.right <<endl;
+        cout << "LEFT: " << message.left << " RIGHT:  " << message.right << endl;
 
 
         // MOVE FWD AFTER ROTATE
@@ -286,12 +290,12 @@ namespace robot{
             } else if (robot_move_orientation < 3){
                 y_correction =  (int32_t)(-location_error.y * P_y);
             } else y_correction = 0;
-            cout << "location error y: " << location_error.y << endl;
+//            cout << "location error y: " << location_error.y << endl;
 
-            message.left = forward_move.left_ticks + y_correction;
-            message.right = forward_move.right_ticks + y_correction;
+            message.left = forward_move.left_ticks ;//+ y_correction;
+            message.right = forward_move.right_ticks;// + y_correction;
             message.speed = forward_move.speed;
-            cout << "LEFT: " << message.left << " RIGHT:  " << message.right <<endl;
+//            cout << "LEFT: " << message.left << " RIGHT:  " << message.right <<endl;
             update();
             current_coordinates += move ;  // TODO: why is this updated here
         } else {
