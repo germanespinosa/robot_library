@@ -79,63 +79,67 @@ target_link_libraries( robot_lib
 ###
 ### UTILITIES SETUP
 ###
+if (${BUILD_AS_DEPENDENCY})
+else()
+    include_directories( include )
 
-include_directories( include )
+    add_executable(fake_robot src/tool/fake_robot.cpp)
+    target_link_libraries( fake_robot PUBLIC robot_lib)
 
-add_executable(fake_robot src/tool/fake_robot.cpp)
-target_link_libraries( fake_robot PUBLIC robot_lib)
-
-add_executable(robot_agent_test src/tool/robot_agent_test.cpp)
-target_link_libraries( robot_agent_test PUBLIC robot_lib)
+    add_executable(robot_agent_test src/tool/robot_agent_test.cpp)
+    target_link_libraries( robot_agent_test PUBLIC robot_lib)
 
 
-add_executable(stop_fake_robot src/tool/stop_fake_robot.cpp)
-target_link_libraries( stop_fake_robot PUBLIC robot_lib)
+    add_executable(stop_fake_robot src/tool/stop_fake_robot.cpp)
+    target_link_libraries( stop_fake_robot PUBLIC robot_lib)
 
-add_executable(robot_controller src/tool/controller.cpp)
-target_link_libraries( robot_controller PUBLIC robot_lib)
+    add_executable(robot_controller src/tool/controller.cpp)
+    target_link_libraries( robot_controller PUBLIC robot_lib)
 
-add_executable(gamepad src/tool/gamepad.cpp)
-target_link_libraries( gamepad PUBLIC robot_lib)
+    add_executable(gamepad src/tool/gamepad.cpp)
+    target_link_libraries( gamepad PUBLIC robot_lib)
 
-add_executable(hybrid_gamepad src/tool/hybrid_gamepad.cpp)
-target_link_libraries( hybrid_gamepad PUBLIC robot_lib)
+    add_executable(hybrid_gamepad src/tool/hybrid_gamepad.cpp)
+    target_link_libraries( hybrid_gamepad PUBLIC robot_lib)
 
-#add_executable(hybrid_gamepad2 src/tool/hybrid_gamepad2.cpp)
-#target_link_libraries( hybrid_gamepad2 PUBLIC robot_lib)
+    #add_executable(hybrid_gamepad2 src/tool/hybrid_gamepad2.cpp)
+    #target_link_libraries( hybrid_gamepad2 PUBLIC robot_lib)
 
-add_executable(robot_paths src/tool/robot_paths.cpp)
-target_link_libraries(robot_paths PUBLIC robot_lib)
+    add_executable(robot_paths src/tool/robot_paths.cpp)
+    target_link_libraries(robot_paths PUBLIC robot_lib)
 
-add_executable(robot_worlds src/tool/robot_worlds.cpp)
-target_link_libraries(robot_worlds PUBLIC robot_lib)
+    add_executable(robot_worlds src/tool/robot_worlds.cpp)
+    target_link_libraries(robot_worlds PUBLIC robot_lib)
 
-####
-#### TESTS
-####
+    ####
+    #### TESTS
+    ####
 
-#install_dependency(https://github.com/germanespinosa/catch CatchTests)
-#
-#test_library(robot_lib catchtests/basic.cpp)
+    #install_dependency(https://github.com/germanespinosa/catch CatchTests)
+    #
+    #test_library(robot_lib catchtests/basic.cpp)
+
+    include(GNUInstallDirs)
+
+    install(TARGETS robot_lib EXPORT Robot_libConfig
+            ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+    install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+    install(EXPORT Robot_libConfig
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake/Robot_lib
+            EXPORT_LINK_INTERFACE_LIBRARIES)
+
+    export(TARGETS robot_lib FILE Robot_libConfig.cmake)
+    install(CODE "FILE(APPEND ${CMAKE_INSTALL_FULL_DATADIR}/cmake/Robot_lib/Robot_libConfig.cmake \"find_package(Params-cpp REQUIRED)\n\") ")
+    install(CODE "FILE(APPEND ${CMAKE_INSTALL_FULL_DATADIR}/cmake/Robot_lib/Robot_libConfig.cmake \"find_package(Cellworld REQUIRED)\n\") ")
+    install(CODE "FILE(APPEND ${CMAKE_INSTALL_FULL_DATADIR}/cmake/Robot_lib/Robot_libConfig.cmake \"set(ROBOT_LIBRARIES ${CELLWORLD_LIBRARIES} params-cpp )\n\") ")
+
+endif()
 
 ###
 ### LIBRARY INSTALLATION
 ###
 
-include(GNUInstallDirs)
-
-install(TARGETS robot_lib EXPORT Robot_libConfig
-        ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-install(EXPORT Robot_libConfig
-        DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake/Robot_lib
-        EXPORT_LINK_INTERFACE_LIBRARIES)
-
-export(TARGETS robot_lib FILE Robot_libConfig.cmake)
-install(CODE "FILE(APPEND ${CMAKE_INSTALL_FULL_DATADIR}/cmake/Robot_lib/Robot_libConfig.cmake \"find_package(Params-cpp REQUIRED)\n\") ")
-install(CODE "FILE(APPEND ${CMAKE_INSTALL_FULL_DATADIR}/cmake/Robot_lib/Robot_libConfig.cmake \"find_package(Cellworld REQUIRED)\n\") ")
-install(CODE "FILE(APPEND ${CMAKE_INSTALL_FULL_DATADIR}/cmake/Robot_lib/Robot_libConfig.cmake \"set(ROBOT_LIBRARIES ${CELLWORLD_LIBRARIES} params-cpp )\n\") ")
