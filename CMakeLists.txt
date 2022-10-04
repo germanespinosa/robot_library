@@ -10,14 +10,32 @@ project( robot_lib
 find_package(Dependencies)
 
 string(APPEND CMAKE_CXX_FLAGS " -pthread ")
-install_dependency(https://github.com/germanespinosa/gamepad_lib Gamepad_lib)
-install_dependency(https://github.com/germanespinosa/cellworld Cellworld)
-install_dependency(https://github.com/germanespinosa/params-cpp Params-cpp)
-install_dependency(https://github.com/germanespinosa/easy-tcp Easy-tcp)
-install_dependency(https://github.com/germanespinosa/tcp-messages Tcp_messages)
-install_dependency(https://github.com/germanespinosa/agent_tracking Agent_tracking)
-install_dependency(https://github.com/germanespinosa/experiment_service Experiment_service)
-install_dependency(https://github.com/germanespinosa/cellworld_controller Controller)
+install_git_dependency( Gamepad_lib
+        https://github.com/germanespinosa/gamepad_lib
+        CMAKE_PROJECT
+        IMPORT_TARGETS gamepad_lib)
+install_git_dependency(Cellworld
+        https://github.com/germanespinosa/cellworld
+        CMAKE_PROJECT
+        IMPORT_TARGETS cellworld requests json-cpp)
+install_git_dependency(Params-cpp https://github.com/germanespinosa/params-cpp
+        CMAKE_PROJECT
+        IMPORT_TARGETS params-cpp)
+install_git_dependency(Easy-tcp https://github.com/germanespinosa/easy-tcp
+        CMAKE_PROJECT
+        IMPORT_TARGETS easy-tcp)
+install_git_dependency(Tcp_messages https://github.com/germanespinosa/tcp-messages
+        CMAKE_PROJECT
+        IMPORT_TARGETS tcp_messages)
+install_git_dependency(Agent_tracking https://github.com/germanespinosa/agent_tracking
+        CMAKE_PROJECT
+        IMPORT_TARGETS agent_tracking)
+install_git_dependency(Experiment_service https://github.com/germanespinosa/experiment_service
+        CMAKE_PROJECT
+        IMPORT_TARGETS experiment_service)
+install_git_dependency(Controller https://github.com/germanespinosa/cellworld_controller
+        CMAKE_PROJECT
+        IMPORT_TARGETS controller)
 
 ###
 ### MAIN LIBRARY SETUP
@@ -30,7 +48,7 @@ set(robot_lib_files
         src/robot_agent.cpp
         )
 
-dependency_include(include)
+include_directories(include)
 
 add_library(robot_lib ${robot_lib_files})
 
@@ -96,9 +114,9 @@ target_link_libraries(robot_worlds PUBLIC robot_lib)
 #### TESTS
 ####
 
-install_dependency(https://github.com/germanespinosa/catch CatchTests)
-
-test_library(robot_lib catchtests/basic.cpp)
+#install_dependency(https://github.com/germanespinosa/catch CatchTests)
+#
+#test_library(robot_lib catchtests/basic.cpp)
 
 ###
 ### LIBRARY INSTALLATION
