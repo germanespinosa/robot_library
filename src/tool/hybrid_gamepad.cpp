@@ -43,23 +43,38 @@ int main(){
 
         float left = -j->axes[1];
         float right = -j->axes[4];
+        float joystick_left = abs((float)(left/JOYSTICK_MAX));
+        float joystick_right = abs((float)(right/JOYSTICK_MAX));
 //
 //
         // modify speeds to robot range
         if (left > 0){
 //            left = 47;
-            left = abs((float)(left/JOYSTICK_MAX)) * (MAX - MIN) + MIN;
+            left = joystick_left * (MAX - MIN) + MIN;
         } else if (left < 0){
 //            left = -47;
-            left = -(abs((float)(left/JOYSTICK_MAX)) * (MAX - MIN) + MIN);
+            left = -joystick_left * (MAX - MIN) + MIN;
         }
         if (right > 0){
 //            right = 47;
-            right = abs((float)(right/JOYSTICK_MAX)) * (MAX - MIN) + MIN;
+            right = joystick_right * (MAX - MIN) + MIN;
         } else if (right < 0){
 //            right = -47;
-            right = -(abs((float)(right/JOYSTICK_MAX)) * (MAX - MIN) + MIN);
+            right = -joystick_right * (MAX - MIN) + MIN;
         }
+
+        if (j->axes[7] == -32767){
+            left = left/2 + 30; // max value for char 127
+            right = right/2 + 30;
+
+        }
+        else if (j->axes[7] == 32767){
+            left = left/2 - 30; // max value for char 127
+            right = right/2 - 30;
+
+        }
+
+
 
 //
         if (pleft != left || pright != right) {
@@ -86,43 +101,22 @@ int main(){
             cout << "stop" << endl;
 
         }
-//
+
         pleft = left;
         pright = right;
 
 
-//        if ( j->buttons[5].state == 1 ){
-//            robot.set_puf();
-//            update = true;
-//        }
 
-
-
-
-//        if (update) {
-//            robot.update();
-//        }
 
         // test all joystick inputs
 //        for (int i = 0;i<j->axes.size();i++) {
 //            if (j->axes[i])
 //                cout << "axis " << i << ": " << j->axes[i] << endl;
 //        }
-//         for (int i = 0;i<j->buttons.size();i++) {
-//             if (j->buttons[i].state == 1)
-//                 cout << "button " << i << ": " << j->buttons[i].state << endl;
-//        }
-//         if (j->axes[7] == -32767){
-//             cout << "up" << endl;
-//
-//         }
-//        cout << j->buttons[7].state << endl;
-//        if (j->buttons[7].state == 1){
-//            cout << "hi" << endl;
-//        }
+
 
          if (update) {
-            //robot.update();
+            robot.update();
         }
 
         usleep(30000);
