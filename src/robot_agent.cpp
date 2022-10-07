@@ -163,17 +163,24 @@ namespace robot{
             map(map),
             tracking_client(tracking_client)
     {
-        current_coordinates = Coordinates{-18,0};
+        current_coordinates = Coordinates{-5,7};
+
     }
 
+    void Tick_robot_agent::move_count_reset() {
+        cout << "reset now" << endl;
+        message.speed = -1;
+        update();
+    }
 
     int Tick_robot_agent::update() {
 
-        if (message.left == 0 && message.right == 0) return -1;
+        if (message.left == 0 && message.right == 0 && message.speed >= 0) return -1;
         // pause if robot is not ready to receive next command
         while (!is_ready());
         // move is complete when move_status arg is 0
-        message.move_number = move_counter ++;
+        if (message.speed > 0) message.move_number = move_counter ++;
+
         bool res = ((easy_tcp::Connection *)this)->send_data((const char*) &message,sizeof(message));
         if (!res) return -1;
         return (int) message.move_number;
@@ -229,9 +236,14 @@ namespace robot{
 //            auto tracking_info = tracking_client.get_current_state("prey");
             auto tracking_info = tracking_client.get_current_state("predator");
             location_error = tmt.location - tracking_info.location;      // desired - actual
-            orientation_error = angle_diff_degrees(tmt.rotation, tracking_info.rotation);
+
+            actual_rotation = tracking_info.rotation; // TODO: get pos values from tracker but for now fix here
+            if (actual_rotation < 0) actual_rotation = 360.0 + actual_rotation;
+
+            orientation_error = angle_diff_degrees(tmt.rotation, actual_rotation);
             cout << "ERROR INFO: " << endl;
-            cout << "COMPLETED MOVE: " << completed_move << "rotation: " << tracking_info.rotation << "expected rotation: " << tmt.rotation << endl;
+            cout << "rotation: " << actual_rotation << " expected rotation: " << tmt.rotation << endl;
+            cout << "ORIENTATION ERROR: " << orientation_error << endl;
         }
     }
 
@@ -243,10 +255,10 @@ namespace robot{
     std::vector<float> rotation_target = {90.0, 150.0, 210.0, 270.0, 330.0, 30.0};
 
     void Tick_robot_agent::execute_move(cell_world::Move move) {
-
+        // change this be works for now
         auto tick_move = tick_agent_moves.find_tick_move(move, robot_move_orientation);
         robot_move_orientation = tick_move.update_orientation(robot_move_orientation);
-//        cout << tick_move.orientation << " " << robot_move_orientation <<endl;
+
 
 
         if (tick_move.orientation != 0){ // if not moving straight

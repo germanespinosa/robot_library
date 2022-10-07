@@ -45,6 +45,7 @@ namespace robot {
         bool connect();
         bool connect(const std::string &);
         void execute_move(cell_world::Move) override;
+        void move_count_reset() override;
         int update();
         void received_data(char *, size_t) override;
         bool is_ready() override;
@@ -71,6 +72,7 @@ namespace robot {
         float P_rot{};// = 2.5;
         float P_x{};// = 9189.0;
         float P_y{};// = 9189.0;
+        float actual_rotation = 0;
 
 
     };
