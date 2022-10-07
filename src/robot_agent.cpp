@@ -210,7 +210,7 @@ namespace robot{
 
     float Tick_robot_agent::angle_diff_degrees(float a1, float a2){
         // a1 is goal angle, a2 is measured
-        // if return + value means cw rot needed therefore add to left
+        // if return + value means cw rot needed therefore add to left ******
         if (a1 > a2) {
             auto d = a1 - a2;
             if (d < 180.0) return d;     // 330 - 270 add left
@@ -239,9 +239,9 @@ namespace robot{
 
             actual_rotation = tracking_info.rotation; // TODO: get pos values from tracker but for now fix here
             if (actual_rotation < 0) actual_rotation = 360.0 + actual_rotation;
-
             orientation_error = angle_diff_degrees(tmt.rotation, actual_rotation);
-            cout << "ERROR INFO: " << endl;
+//            cout << "ERROR INFO: " << endl;
+//            cout << "LOCATION ERROR: " << location_error << endl;
             cout << "rotation: " << actual_rotation << " expected rotation: " << tmt.rotation << endl;
             cout << "ORIENTATION ERROR: " << orientation_error << endl;
         }
@@ -255,59 +255,40 @@ namespace robot{
     std::vector<float> rotation_target = {90.0, 150.0, 210.0, 270.0, 330.0, 30.0};
 
     void Tick_robot_agent::execute_move(cell_world::Move move) {
+        P_y = 1000;
+        P_x = 1000;
+
         // change this be works for now
         auto tick_move = tick_agent_moves.find_tick_move(move, robot_move_orientation);
         robot_move_orientation = tick_move.update_orientation(robot_move_orientation);
 
 
-
-        if (tick_move.orientation != 0){ // if not moving straight
-            orientation_correction = (int32_t)(P_rot * orientation_error); // correct for orientation // TODO: tune this value for actual robot
-            x_correction = 0;
-        } else {
-            orientation_correction = 0;
-            if (robot_move_orientation  > 3) {
-                y_correction = (int32_t)(location_error.y * P_y);  // TODO: tune value
-                x_correction = 0;
-//                cout <<" y error " << location_error.y << endl;
-            } else if (robot_move_orientation < 3){
-                y_correction =  (int32_t)(-location_error.y * P_y);
-                x_correction = 0;
-//                cout <<" y error " << location_error.y << endl;
-            } else{
-                x_correction = (int32_t) (location_error.x * P_x); // TODO: tune value
-                y_correction = 0;
-//                cout << "x error " << location_error.x <<  endl;
-            }
-        }
-
-        cout << "tick_move: " << tick_move << endl;
         message.left = tick_move.left_ticks;// + orientation_correction + x_correction + y_correction;  //+ orientation_error;
         message.right = tick_move.right_ticks;// - orientation_correction + x_correction + y_correction; // - orientation_error;
         message.speed = tick_move.speed;
         auto move_number = update();
-        cout << "LEFT: " << message.left << " RIGHT:  " << message.right << endl;
 
-
-        // MOVE FWD AFTER ROTATE
+        // MOVE FWD AFTER ROTATE WITH ERROR CORRECTION
         if (tick_move.orientation != 0) {
             // update expected coordinate
             move_targets.emplace(move_number, map[current_coordinates].location, rotation_target[robot_move_orientation]);
             auto forward_move = tick_agent_moves.find_tick_move(Move{2,0}, 0);
 
-            // correct for y during part 2 of moves 1,2,4,5
-            // TODO: fox logic why not working
-            if (robot_move_orientation  > 3) {
-                y_correction = (int32_t)(location_error.y * P_y);  // TODO: tune value
-            } else if (robot_move_orientation < 3){
-                y_correction =  (int32_t)(-location_error.y * P_y);
-            } else y_correction = 0;
-//            cout << "location error y: " << location_error.y << endl;
+            // correction
+            if (robot_move_orientation  == 0 || robot_move_orientation == 3) { // moving E or W
+                y_correction = 0;
+                x_correction = (int32_t)(location_error.x * P_x);
+            } else { // Moving N or S
+                x_correction = 0;
+                y_correction = (int32_t) (location_error.y * P_y);
+            }
 
-            message.left = forward_move.left_ticks ;//+ y_correction;
-            message.right = forward_move.right_ticks;// + y_correction;
+            message.left = forward_move.left_ticks + x_correction + y_correction;
+            message.right = forward_move.right_ticks + x_correction + y_correction;
             message.speed = forward_move.speed;
-//            cout << "LEFT: " << message.left << " RIGHT:  " << message.right <<endl;
+
+            // plot
+//            cout << x_correction << " " << y_correction << " " << location_error.x << " " << location_error.y <<endl;
             update();
             current_coordinates += move ;  // TODO: why is this updated here
         } else {
