@@ -240,10 +240,10 @@ namespace robot{
             actual_rotation = tracking_info.rotation; // TODO: get pos values from tracker but for now fix here
             if (actual_rotation < 0) actual_rotation = 360.0 + actual_rotation;
             orientation_error = angle_diff_degrees(tmt.rotation, actual_rotation);
-//            cout << "ERROR INFO: " << endl;
+            // TODO: check this timing make sure only using post move goal recordings
 //            cout << "LOCATION ERROR: " << location_error << endl;
-//            cout << "rotation: " << actual_rotation << " expected rotation: " << tmt.rotation << endl;
-//            cout << "ORIENTATION ERROR: " << orientation_error << endl;
+//            cout << " actual rotation: " << actual_rotation << " expected rotation: " << tmt.rotation << endl;
+//            cout << "Completed Move: " << completed_move << endl;
         }
     }
 
@@ -255,9 +255,9 @@ namespace robot{
     std::vector<float> rotation_target = {90.0, 150.0, 210.0, 270.0, 330.0, 30.0};
 
     void Tick_robot_agent::execute_move(cell_world::Move move) {
-        P_y = 21698.0;
+        P_y = 18791.0;
         P_x = 21698.0; // 1000, 21698
-        P_rot = 10.0; // 5, 10
+        P_rot = 5.0;//1.0; // 5, 10
 
         // change this be works for now
         auto tick_move = tick_agent_moves.find_tick_move(move, robot_move_orientation);
@@ -266,16 +266,13 @@ namespace robot{
         // if turning correct based on last angle error
         if (tick_move.orientation != 0)
         {
-            cout << "orientation error: " << orientation_error << " left ticks: " << tick_move.left_ticks << endl;
             orientation_correction = (int32_t)(P_rot * orientation_error);
-            cout << " correction: " << orientation_correction << endl;
         } else orientation_correction = 0;
 
 
         message.left = tick_move.left_ticks + orientation_correction;
         message.right = tick_move.right_ticks - orientation_correction;
         message.speed = tick_move.speed;
-//        cout << "left_tick_after_correct: " << message.left << endl;
         auto move_number = update();
 
         // MOVE FWD AFTER ROTATE WITH ERROR CORRECTION
@@ -288,9 +285,15 @@ namespace robot{
             if (robot_move_orientation  == 0 || robot_move_orientation == 3) { // moving E or W
                 y_correction = 0;
                 x_correction = (int32_t)(location_error.x * P_x);
+                if (robot_move_orientation == 3){
+                    x_correction = -x_correction;
+                }
             } else { // Moving N or S
                 x_correction = 0;
                 y_correction = (int32_t) (location_error.y * P_y);
+                if (robot_move_orientation == 1 || robot_move_orientation == 2){ // moving south
+                    y_correction = -y_correction;
+                }
             }
 
             message.left = forward_move.left_ticks + x_correction + y_correction;
@@ -300,7 +303,7 @@ namespace robot{
             // plot
             auto x_err = location_error.x * 2.34 * 100; // cm
             auto y_err = location_error.y * 2.34 * 100; // cm
-//            cout << x_correction << " " << y_correction << " " << x_err << " " << y_err <<endl;
+            cout << x_correction << " " << y_correction << " " << x_err << " " << y_err <<endl;
             update();
             current_coordinates += move ;  // TODO: why is this updated here
         } else {
