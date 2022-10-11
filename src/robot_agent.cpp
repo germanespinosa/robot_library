@@ -242,7 +242,7 @@ namespace robot{
             orientation_error = angle_diff_degrees(tmt.rotation, actual_rotation);
             // TODO: check this timing make sure only using post move goal recordings
 //            cout << "LOCATION ERROR: " << location_error << endl;
-//            cout << " actual rotation: " << actual_rotation << " expected rotation: " << tmt.rotation << endl;
+            cout << " actual rotation: " << actual_rotation << " expected rotation: " << tmt.rotation << endl;
 //            cout << "Completed Move: " << completed_move << endl;
         }
     }
@@ -257,7 +257,7 @@ namespace robot{
     void Tick_robot_agent::execute_move(cell_world::Move move) {
         P_y = 18791.0;
         P_x = 21698.0; // 1000, 21698
-        P_rot = 5.0;//1.0; // 5, 10
+        P_rot = 11.0;//1.0; // 5, 10
 
         // change this be works for now
         auto tick_move = tick_agent_moves.find_tick_move(move, robot_move_orientation);
@@ -301,11 +301,11 @@ namespace robot{
             message.speed = forward_move.speed;
 
             // plot
-            auto x_err = location_error.x * 2.34 * 100; // cm
-            auto y_err = location_error.y * 2.34 * 100; // cm
-            cout << x_correction << " " << y_correction << " " << x_err << " " << y_err <<endl;
+//            auto x_err = location_error.x * 2.34 * 100; // cm
+//            auto y_err = location_error.y * 2.34 * 100; // cm
+//            cout << x_correction << " " << y_correction << " " << x_err << " " << y_err <<endl;
             update();
-            current_coordinates += move ;  // TODO: why is this updated here
+            current_coordinates += move ;
         } else {
             // update expected coordinates
             current_coordinates += move ;
