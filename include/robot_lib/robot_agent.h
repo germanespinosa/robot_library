@@ -31,7 +31,7 @@ namespace robot {
         easy_tcp::Connection connection{-1};
         bool need_update = false;
     };
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////
     struct Tick_move_target{
         Tick_move_target() = default;
         Tick_move_target(int, cell_world::Location,float);
@@ -73,6 +73,7 @@ namespace robot {
         float P_x{};// = 9189.0;
         float P_y{};// = 9189.0;
         float actual_rotation = 0;
+        enum Move_state {translate, rotate} move_state;
 
 
     };

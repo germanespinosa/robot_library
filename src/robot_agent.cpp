@@ -163,6 +163,7 @@ namespace robot{
             map(map),
             tracking_client(tracking_client)
     {
+        move_state = translate;
         current_coordinates = Coordinates{-5,7};
 
     }
@@ -232,18 +233,23 @@ namespace robot{
             tmt = move_targets.front();
             move_targets.pop();
         }
-        if (tmt.move_number == completed_move){
-//            auto tracking_info = tracking_client.get_current_state("prey");
-            auto tracking_info = tracking_client.get_current_state("predator");
-            location_error = tmt.location - tracking_info.location;      // desired - actual
 
+        // Only compute x and y error when robot is rotating ???
+        if (tmt.move_number == completed_move){
+            auto tracking_info = tracking_client.get_current_state("predator");
+
+            // theta check
             actual_rotation = tracking_info.rotation; // TODO: get pos values from tracker but for now fix here
-            if (actual_rotation < 0) actual_rotation = 360.0 + actual_rotation;
+            if (actual_rotation < 0) actual_rotation = 360.0 + actual_rotation; // TODO: have agent tracker send values 0 to 360
             orientation_error = angle_diff_degrees(tmt.rotation, actual_rotation);
-            // TODO: check this timing make sure only using post move goal recordings
-//            cout << "LOCATION ERROR: " << location_error << endl;
-            cout << " actual rotation: " << actual_rotation << " expected rotation: " << tmt.rotation << endl;
-//            cout << "Completed Move: " << completed_move << endl;
+
+            // position check - only during rotations
+            if (move_state == rotate) {
+                location_error = tmt.location - tracking_info.location;      // desired - actual
+                cout << "X Error: " << location_error.x << " Y Error: " << location_error.y << endl;
+            }
+
+
         }
     }
 
@@ -257,7 +263,7 @@ namespace robot{
     void Tick_robot_agent::execute_move(cell_world::Move move) {
         P_y = 18791.0;
         P_x = 21698.0; // 1000, 21698
-        P_rot = 11.0;//1.0; // 5, 10
+        P_rot = 11.0;//1.0; // 5, 10, 11
 
         // change this be works for now
         auto tick_move = tick_agent_moves.find_tick_move(move, robot_move_orientation);
@@ -266,8 +272,12 @@ namespace robot{
         // if turning correct based on last angle error
         if (tick_move.orientation != 0)
         {
+            move_state = rotate;
             orientation_correction = (int32_t)(P_rot * orientation_error);
-        } else orientation_correction = 0;
+        } else{
+            move_state = translate;
+            orientation_correction = 0;
+        }
 
 
         message.left = tick_move.left_ticks + orientation_correction;
@@ -278,6 +288,7 @@ namespace robot{
         // MOVE FWD AFTER ROTATE WITH ERROR CORRECTION
         if (tick_move.orientation != 0) {
             // update expected coordinate
+            move_state = translate;
             move_targets.emplace(move_number, map[current_coordinates].location, rotation_target[robot_move_orientation]);
             auto forward_move = tick_agent_moves.find_tick_move(Move{2,0}, 0);
 
@@ -319,3 +330,4 @@ namespace robot{
     }
 }
 
+// TODO: need to check new move_state correction feature
