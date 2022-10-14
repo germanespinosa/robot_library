@@ -246,10 +246,8 @@ namespace robot{
             // position check - only during rotations
             if (move_state == rotate) {
                 location_error = tmt.location - tracking_info.location;      // desired - actual
-                cout << "X Error: " << location_error.x << " Y Error: " << location_error.y << endl;
+                cout << "time: " << timer.to_seconds() << " X Error: " << location_error.x << " Y Error: " << location_error.y << endl;
             }
-
-
         }
     }
 
