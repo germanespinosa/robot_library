@@ -165,11 +165,12 @@ namespace robot{
     {
         move_state = translate;
         current_coordinates = Coordinates{-5,7};
+//        move_count_reset();
 
     }
 
     void Tick_robot_agent::move_count_reset() {
-        cout << "reset now" << endl;
+        cout << "reset move done count" << endl;
         message.speed = -1;
         update();
     }
@@ -245,8 +246,9 @@ namespace robot{
 
             // position check - only during rotations
             if (move_state == rotate) {
+                move_state = translate;
                 location_error = tmt.location - tracking_info.location;      // desired - actual
-                cout << "time: " << timer.to_seconds() << " X Error: " << location_error.x << " Y Error: " << location_error.y << endl;
+                cout << "E" << " " << location_error.x << " " << location_error.y << " " << timer.to_seconds() << endl;
             }
         }
     }
@@ -261,7 +263,7 @@ namespace robot{
     void Tick_robot_agent::execute_move(cell_world::Move move) {
         P_y = 18791.0;
         P_x = 21698.0; // 1000, 21698
-        P_rot = 11.0;//1.0; // 5, 10, 11
+        P_rot = 5.0;//1.0; // 5, 10, 11
 
         // change this be works for now
         auto tick_move = tick_agent_moves.find_tick_move(move, robot_move_orientation);
@@ -270,10 +272,9 @@ namespace robot{
         // if turning correct based on last angle error
         if (tick_move.orientation != 0)
         {
-            move_state = rotate;
+            move_state = rotate; // only measuring position error at this moment
             orientation_correction = (int32_t)(P_rot * orientation_error);
         } else{
-            move_state = translate;
             orientation_correction = 0;
         }
 
@@ -286,7 +287,6 @@ namespace robot{
         // MOVE FWD AFTER ROTATE WITH ERROR CORRECTION
         if (tick_move.orientation != 0) {
             // update expected coordinate
-            move_state = translate;
             move_targets.emplace(move_number, map[current_coordinates].location, rotation_target[robot_move_orientation]);
             auto forward_move = tick_agent_moves.find_tick_move(Move{2,0}, 0);
 
@@ -310,9 +310,10 @@ namespace robot{
             message.speed = forward_move.speed;
 
             // plot
-//            auto x_err = location_error.x * 2.34 * 100; // cm
-//            auto y_err = location_error.y * 2.34 * 100; // cm
-//            cout << x_correction << " " << y_correction << " " << x_err << " " << y_err <<endl;
+            cout << "C" << " " <<  robot_move_orientation << " ";
+            cout << x_correction << " " << y_correction << " ";
+            cout << location_error.x << " " << location_error.y << " " << timer.to_seconds() << endl;
+
             update();
             current_coordinates += move ;
         } else {
@@ -328,4 +329,6 @@ namespace robot{
     }
 }
 
-// TODO: need to check new move_state correction feature
+
+//            auto x_err = location_error.x * 2.34 * 100; // cm
+//            auto y_err = location_error.y * 2.34 * 100; // cm
