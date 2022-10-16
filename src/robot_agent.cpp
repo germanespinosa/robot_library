@@ -243,12 +243,13 @@ namespace robot{
             actual_rotation = tracking_info.rotation; // TODO: get pos values from tracker but for now fix here
             if (actual_rotation < 0) actual_rotation = 360.0 + actual_rotation; // TODO: have agent tracker send values 0 to 360
             orientation_error = angle_diff_degrees(tmt.rotation, actual_rotation);
+            cout << "E" << " " <<orientation_error << " " << timer.to_seconds() << endl;
 
             // position check - only during rotations
             if (move_state == rotate) {
                 move_state = translate;
                 location_error = tmt.location - tracking_info.location;      // desired - actual
-                cout << "E" << " " << location_error.x << " " << location_error.y << " " << timer.to_seconds() << endl;
+//                cout << "E" << " " << location_error.x << " " << location_error.y << " " << timer.to_seconds() << endl;
             }
         }
     }
@@ -262,8 +263,9 @@ namespace robot{
 
     void Tick_robot_agent::execute_move(cell_world::Move move) {
         P_y = 18791.0;
-        P_x = 21698.0; // 1000, 21698
-        P_rot = 5.0;//1.0; // 5, 10, 11
+        P_x = 21698.0; // 21698.0
+        P_rot = 10.0;//5.0
+        P_rot2 = 10.0; // have not tuned this at all
 
         // change this be works for now
         auto tick_move = tick_agent_moves.find_tick_move(move, robot_move_orientation);
@@ -274,8 +276,15 @@ namespace robot{
         {
             move_state = rotate; // only measuring position error at this moment
             orientation_correction = (int32_t)(P_rot * orientation_error);
+            //C : tick move number, orientation correction, error,time
+//            cout << "C" << " " << tick_move.orientation << " " << orientation_correction << " ";
+//            cout << orientation_error << " " << timer.to_seconds() << endl;
         } else{
-            orientation_correction = 0;
+            // straight line orientation correction here - continuous straight line
+//            orientation_correction = 0;
+            orientation_correction = (int32_t)(P_rot2 * orientation_error); // if error + more left
+            // error, correction, time
+            cout << "C" << " " << orientation_error << " " << orientation_correction << " " << timer.to_seconds() << endl;
         }
 
 
@@ -310,9 +319,9 @@ namespace robot{
             message.speed = forward_move.speed;
 
             // plot
-            cout << "C" << " " <<  robot_move_orientation << " ";
-            cout << x_correction << " " << y_correction << " ";
-            cout << location_error.x << " " << location_error.y << " " << timer.to_seconds() << endl;
+//            cout << "C" << " " <<  robot_move_orientation << " ";
+//            cout << x_correction << " " << y_correction << " ";
+//            cout << location_error.x << " " << location_error.y << " " << timer.to_seconds() << endl;
 
             update();
             current_coordinates += move ;

@@ -70,6 +70,7 @@ namespace robot {
         int x_correction{};
         int y_correction{};
         float P_rot{};// = 2.5;
+        float P_rot2{};
         float P_x{};// = 9189.0;
         float P_y{};// = 9189.0;
         float actual_rotation = 0;
