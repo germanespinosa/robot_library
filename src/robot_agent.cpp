@@ -336,6 +336,31 @@ namespace robot{
     move_number(move_number), location(location), rotation(rotation){
 
     }
+
+    void Tick_robot_agent::set_rotation(float rotation) {
+        if (!tracking_client.contains_agent_state("predator")) return;
+        auto target = to_radians(rotation);
+        auto &tracking_info = tracking_client.get_current_state("predator");
+        auto theta = to_radians(tracking_info.rotation);
+        auto error = angle_difference(theta, target);
+        auto error_direction = direction(theta, target);
+        while (to_degrees(error) > 1){
+            if (error_direction < 0) {
+                message.left = 25;
+                message.right = -25;
+                message.speed = 1000;
+            }else {
+                message.left = -25;
+                message.right = 25;
+                message.speed = 1000;
+            }
+            auto move_number = update();
+            while(completed_move!=move_number) this_thread::sleep_for(10ms);
+            theta = to_radians(tracking_info.rotation);
+            error = angle_difference(theta, target);
+            error_direction = direction(theta, target);
+        }
+    }
 }
 
 

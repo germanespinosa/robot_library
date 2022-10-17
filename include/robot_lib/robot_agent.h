@@ -34,7 +34,7 @@ namespace robot {
 /////////////////////////////////////////////////////////////////////////////////////////////////////
     struct Tick_move_target{
         Tick_move_target() = default;
-        Tick_move_target(int, cell_world::Location,float);
+        Tick_move_target(int, cell_world::Location, float);
         int move_number{};
         cell_world::Location location;
         float rotation{};
@@ -48,6 +48,7 @@ namespace robot {
         void move_count_reset() override;
         int update();
         void received_data(char *, size_t) override;
+        void set_rotation(float) override;
         bool is_ready() override;
         bool is_move_done();
         struct Robot_message {
