@@ -407,6 +407,7 @@ namespace robot{
         // robot coordinate management
         current_coordinates = correction_coordinate;
 
+        // robot state management - dont want to measure error while correcting
         // TODO: might need to improve catch for overshoot right now going slow enough
     }
 
