@@ -164,7 +164,7 @@ namespace robot{
             tracking_client(tracking_client)
     {
         move_state = translate;
-        current_coordinates = Coordinates{-5,7};
+//        current_coordinates = Coordinates{-3,9};
 
     }
 
