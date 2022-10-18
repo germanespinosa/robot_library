@@ -165,7 +165,6 @@ namespace robot{
     {
         move_state = translate;
         current_coordinates = Coordinates{-5,7};
-//        move_count_reset();
 
     }
 
@@ -337,13 +336,16 @@ namespace robot{
 
     }
 
+    // when called set rotation -- then translate to destination -- then set rotation again
     void Tick_robot_agent::set_rotation(float rotation) {
         if (!tracking_client.contains_agent_state("predator")) return;
         auto target = to_radians(rotation);
         auto &tracking_info = tracking_client.get_current_state("predator");
+
         auto theta = to_radians(tracking_info.rotation);
         auto error = angle_difference(theta, target);
         auto error_direction = direction(theta, target);
+
         while (to_degrees(error) > 1){
             if (error_direction < 0) {
                 message.left = 25;
@@ -354,11 +356,70 @@ namespace robot{
                 message.right = 25;
                 message.speed = 1000;
             }
+            // move number management
             auto move_number = update();
             while(completed_move!=move_number) this_thread::sleep_for(10ms);
+
             theta = to_radians(tracking_info.rotation);
             error = angle_difference(theta, target);
             error_direction = direction(theta, target);
+        }
+        // TODO: coordinate and robot_orientation management
+        // robot orientation management
+        auto new_orientation = get_corrected_orientation(rotation);
+        if (new_orientation != 6) robot_move_orientation = new_orientation;
+
+        // check that everything is good after reset
+        cout << "Completed Move: " << completed_move << " Move Counter: " << move_counter << endl;
+        cout << "Currrent Coordinate: " << current_coordinates << " Robot move orientation: " << robot_move_orientation << endl;
+    }
+
+    // send coordinate instead of location
+    void Tick_robot_agent::set_coordinate(cell_world::Coordinates correction_coordinate){
+        if (!tracking_client.contains_agent_state("predator")) return;
+        auto &tracking_info = tracking_client.get_current_state("predator");
+
+        auto current_location = tracking_info.location;
+        auto correction_location = map[correction_coordinate].location;
+
+        auto distance_error = current_location.dist(correction_location);
+        float previous_distance_error = distance_error + 1;
+
+        int overshoot_count = 0;
+
+        // will always be moving fwd to destination so just go slow will exit if overshoot
+        while(distance_error > 0.006 && overshoot_count < 2){
+            message.left = 15;
+            message.right = 15;
+            message.speed = 1000;
+
+            // move number management
+            auto move_number = update();
+            while(completed_move!=move_number) this_thread::sleep_for(10ms);
+
+            current_location = tracking_info.location;
+            previous_distance_error = distance_error;
+            distance_error = current_location.dist(correction_location);
+
+            if (previous_distance_error < distance_error) overshoot_count++;
+            else overshoot_count = 0; // reset overshoot count want sequential confirmation
+        }
+        // robot coordinate management
+        current_coordinates = correction_coordinate;
+
+        // TODO: might need to improve catch for overshoot right now going slow enough
+    }
+
+    unsigned int Tick_robot_agent::get_corrected_orientation(float rotation){
+        if (rotation == 150.0) return 1;
+        else if (rotation == 210.0 || rotation == -150.0) return 2;
+        else if (rotation == 270.0 || rotation ==-90.0) return 3;
+        else if (rotation == 330.0 || rotation == -30.0) return 4;
+        else if (rotation == 30.0) return 5;
+        else if (rotation == 90.0) return 0;
+        else{
+            cout << "no orientation found" << endl;
+            return 6;
         }
     }
 }

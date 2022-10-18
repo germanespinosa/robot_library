@@ -49,6 +49,8 @@ namespace robot {
         int update();
         void received_data(char *, size_t) override;
         void set_rotation(float) override;
+        void set_coordinate(cell_world::Coordinates) override;
+        unsigned int get_corrected_orientation(float);
         bool is_ready() override;
         bool is_move_done();
         struct Robot_message {
