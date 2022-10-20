@@ -41,7 +41,7 @@ namespace robot {
     };
 
     struct Tick_robot_agent : controller::Tick_agent , easy_tcp::Client {
-        Tick_robot_agent(const controller::Tick_agent_moves &moves, cell_world::Map &, agent_tracking::Tracking_client &);
+        Tick_robot_agent(const controller::Tick_agent_moves &moves, agent_tracking::Tracking_client &);
         bool connect();
         bool connect(const std::string &);
         void execute_move(cell_world::Move) override;
@@ -66,7 +66,9 @@ namespace robot {
         std::queue<Tick_move_target> move_targets;
         cell_world::Location location_error{};
         float orientation_error{};
-        cell_world::Map &map;
+        cell_world::World world;
+        cell_world::Cell_group cells;
+        cell_world::Map map;
         agent_tracking::Tracking_client &tracking_client;
         float angle_diff_degrees(float, float);
         int orientation_correction{};
@@ -78,7 +80,5 @@ namespace robot {
         float P_y{};// = 9189.0;
         float actual_rotation = 0;
         enum Move_state {translate, rotate, correct} move_state;
-
-
     };
 }

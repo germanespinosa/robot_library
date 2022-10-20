@@ -158,13 +158,15 @@ namespace robot{
 
     /////////////////////////////////////////////////////////////////////////////////////////////
 
-    Tick_robot_agent::Tick_robot_agent(const controller::Tick_agent_moves &moves, cell_world::Map &map, agent_tracking::Tracking_client &tracking_client):
+    Tick_robot_agent::Tick_robot_agent(const controller::Tick_agent_moves &moves, agent_tracking::Tracking_client &tracking_client):
             tick_agent_moves(moves),
-            map(map),
+            world(World::get_from_parameters_name("robot","canonical")),
+            cells(world.create_cell_group()),
+            map(cells),
             tracking_client(tracking_client)
     {
         move_state = translate;
-//        current_coordinates = Coordinates{-3,9};
+        current_coordinates = Coordinates{-8,10};
 
     }
 
@@ -235,7 +237,7 @@ namespace robot{
         }
 
         // Only compute x and y error when robot is rotating ???
-        if (tmt.move_number == completed_move){
+        if (tmt.move_number == completed_move && move_state != correct){
             auto tracking_info = tracking_client.get_current_state("predator");
 
             // theta check
@@ -248,7 +250,7 @@ namespace robot{
             if (move_state == rotate) {
                 move_state = translate;
                 location_error = tmt.location - tracking_info.location;      // desired - actual
-//                cout << "E" << " " << location_error.x << " " << location_error.y << " " << timer.to_seconds() << endl;
+                cout << "E" << " " << location_error.x << " " << location_error.y << " " << timer.to_seconds() << endl;
             }
         }
     }
@@ -329,6 +331,7 @@ namespace robot{
             current_coordinates += move ;
             move_targets.emplace(move_number, map[current_coordinates].location, rotation_target[robot_move_orientation]);
         }
+        if (move_state == completed_move ) move_state = translate;
     }
 
     Tick_move_target::Tick_move_target(int move_number, cell_world::Location location, float rotation):
@@ -338,6 +341,7 @@ namespace robot{
 
     // when called set rotation -- then translate to destination -- then set rotation again
     void Tick_robot_agent::set_rotation(float rotation) {
+        move_state = correct;
         if (!tracking_client.contains_agent_state("predator")) return;
         auto target = to_radians(rotation);
         auto &tracking_info = tracking_client.get_current_state("predator");
@@ -369,13 +373,13 @@ namespace robot{
         auto new_orientation = get_corrected_orientation(rotation);
         if (new_orientation != 6) robot_move_orientation = new_orientation;
 
-        // check that everything is good after reset
-        cout << "Completed Move: " << completed_move << " Move Counter: " << move_counter << endl;
+
         cout << "Currrent Coordinate: " << current_coordinates << " Robot move orientation: " << robot_move_orientation << endl;
     }
 
     // send coordinate instead of location
     void Tick_robot_agent::set_coordinate(cell_world::Coordinates correction_coordinate){
+        move_state = correct;
         if (!tracking_client.contains_agent_state("predator")) return;
         auto &tracking_info = tracking_client.get_current_state("predator");
 
@@ -388,9 +392,9 @@ namespace robot{
         int overshoot_count = 0;
 
         // will always be moving fwd to destination so just go slow will exit if overshoot
-        while(distance_error > 0.006 && overshoot_count < 2){
-            message.left = 15;
-            message.right = 15;
+        while(distance_error > 0.003 && overshoot_count < 2){
+            message.left = 10;
+            message.right = 10;
             message.speed = 1000;
 
             // move number management
@@ -407,8 +411,6 @@ namespace robot{
         // robot coordinate management
         current_coordinates = correction_coordinate;
 
-        // robot state management - dont want to measure error while correcting
-        // TODO: might need to improve catch for overshoot right now going slow enough
     }
 
     unsigned int Tick_robot_agent::get_corrected_orientation(float rotation){
@@ -423,6 +425,7 @@ namespace robot{
             return 6;
         }
     }
+
 }
 
 
