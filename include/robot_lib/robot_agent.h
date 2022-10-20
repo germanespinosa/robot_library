@@ -51,7 +51,8 @@ namespace robot {
         void set_rotation(float) override;
         void set_coordinate(cell_world::Coordinates) override;
         unsigned int get_corrected_orientation(float);
-        void correct_robot();
+        void correct_robot() override;
+        bool needs_correction () override;
         bool is_ready() override;
         bool is_move_done();
         struct Robot_message {
@@ -80,6 +81,7 @@ namespace robot {
         float P_x{};// = 9189.0;
         float P_y{};// = 9189.0;
         float actual_rotation = 0;
+        bool needs_correction_now = false;
         enum Move_state {translate, rotate, correct} move_state;
     };
 }

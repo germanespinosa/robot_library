@@ -166,7 +166,7 @@ namespace robot{
             tracking_client(tracking_client)
     {
         move_state = translate;
-        current_coordinates = Coordinates{-8,10};
+        //current_coordinates = Coordinates{-8,10};
     }
 
     void Tick_robot_agent::move_count_reset() {
@@ -213,6 +213,7 @@ namespace robot{
     float Tick_robot_agent::angle_diff_degrees(float a1, float a2){
         // a1 is goal angle, a2 is measured
         // if return + value means cw rot needed therefore add to left ******
+        // TODO: fix this use direction and difference
         if (a1 > a2) {
             auto d = a1 - a2;
             if (d < 180.0) return d;     // 330 - 270 add left
@@ -243,15 +244,20 @@ namespace robot{
             actual_rotation = tracking_info.rotation; // TODO: get pos values from tracker but for now fix here
             if (actual_rotation < 0) actual_rotation = 360.0 + actual_rotation; // TODO: have agent tracker send values 0 to 360
             orientation_error = angle_diff_degrees(tmt.rotation, actual_rotation);
-            cout << "E" << " " <<orientation_error << " " << timer.to_seconds() << endl;
+//            cout << "E" << " " <<orientation_error << " " << timer.to_seconds() << endl;
 
             // position check - only during rotations
             if (move_state == rotate) {
                 move_state = translate;
                 location_error = tmt.location - tracking_info.location;      // desired - actual
-                cout << "E" << " " << location_error.x << " " << location_error.y << " " << timer.to_seconds() << endl;
-
-                //if (tmt.location.dist(tracking_info.location) > 0.006) correct_robot();
+//                cout << "E" << " " << location_error.x << " " << location_error.y << " " << timer.to_seconds() << endl;
+                if (tmt.location.dist(tracking_info.location) > 0.054){ // cell size 0.054 world.implementation.cell_transformation.size??
+                    cout << "error too big" << endl;
+                    location_error.x = 0;
+                    location_error.y = 0;
+                    orientation_error = 0;
+                    needs_correction_now = true;
+                }
             }
         }
     }
@@ -264,6 +270,7 @@ namespace robot{
     std::vector<float> rotation_target = {90.0, 150.0, 210.0, 270.0, 330.0, 30.0};
 
     void Tick_robot_agent::execute_move(cell_world::Move move) {
+        if (needs_correction_now) return;
         P_y = 18791.0;
         P_x = 21698.0; // 21698.0
         P_rot = 10.0;//5.0
@@ -319,12 +326,6 @@ namespace robot{
             message.left = forward_move.left_ticks + x_correction + y_correction;
             message.right = forward_move.right_ticks + x_correction + y_correction;
             message.speed = forward_move.speed;
-
-            // plot
-//            cout << "C" << " " <<  robot_move_orientation << " ";
-//            cout << x_correction << " " << y_correction << " ";
-//            cout << location_error.x << " " << location_error.y << " " << timer.to_seconds() << endl;
-
             update();
             current_coordinates += move ;
         } else {
@@ -342,6 +343,7 @@ namespace robot{
 
     void Tick_robot_agent::correct_robot(){
         cout << "Correcting..." << endl;
+        move_state = correct;
         Coordinates coordinates;
         float rotation1;
         float rotation2;
@@ -377,6 +379,10 @@ namespace robot{
         set_rotation(rotation1);
         set_coordinate(coordinates);
         set_rotation(rotation2);
+        needs_correction_now  = false;
+        cout << "done correcting" << endl;
+        cout << "Currrent Coordinate: " << current_coordinates << " Robot move orientation: " << robot_move_orientation << endl;
+
     }
 
     // when called set rotation -- then translate to destination -- then set rotation again
@@ -412,9 +418,6 @@ namespace robot{
         // robot orientation management
         auto new_orientation = get_corrected_orientation(rotation);
         if (new_orientation != 6) robot_move_orientation = new_orientation;
-
-
-        cout << "Currrent Coordinate: " << current_coordinates << " Robot move orientation: " << robot_move_orientation << endl;
     }
 
     // send coordinate instead of location
@@ -461,11 +464,15 @@ namespace robot{
         else if (rotation == 30.0) return 5;
         else if (rotation == 90.0) return 0;
         else{
-            cout << "no orientation found" << endl;
+//            cout << "no orientation found" << endl;
             return 6;
         }
     }
 
+    bool Tick_robot_agent::needs_correction() {
+
+        return needs_correction_now;
+    }
 }
 
 
