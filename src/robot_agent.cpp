@@ -160,14 +160,13 @@ namespace robot{
 
     Tick_robot_agent::Tick_robot_agent(const controller::Tick_agent_moves &moves, agent_tracking::Tracking_client &tracking_client):
             tick_agent_moves(moves),
-            world(World::get_from_parameters_name("robot","canonical")),
+            world(World::get_from_parameters_name("robot","canonical", "21_05")),
             cells(world.create_cell_group()),
             map(cells),
             tracking_client(tracking_client)
     {
         move_state = translate;
         current_coordinates = Coordinates{-8,10};
-
     }
 
     void Tick_robot_agent::move_count_reset() {
@@ -251,6 +250,8 @@ namespace robot{
                 move_state = translate;
                 location_error = tmt.location - tracking_info.location;      // desired - actual
                 cout << "E" << " " << location_error.x << " " << location_error.y << " " << timer.to_seconds() << endl;
+
+                //if (tmt.location.dist(tracking_info.location) > 0.006) correct_robot();
             }
         }
     }
@@ -337,6 +338,45 @@ namespace robot{
     Tick_move_target::Tick_move_target(int move_number, cell_world::Location location, float rotation):
     move_number(move_number), location(location), rotation(rotation){
 
+    }
+
+    void Tick_robot_agent::correct_robot(){
+        cout << "Correcting..." << endl;
+        Coordinates coordinates;
+        float rotation1;
+        float rotation2;
+        auto robot_state = tracking_client.get_current_state("predator");
+        auto robot_theta = to_radians(robot_state.rotation);
+        auto best_candidate = cells[cells.find(robot_state.location)].coordinates;
+        auto candidates = world.connection_pattern.get_candidates(best_candidate);
+        auto best_angle_diff = angle_difference(robot_state.location.atan(map[best_candidate].location), robot_theta);
+        for (auto &candidate:candidates) {
+            if (map.find(candidate)!=Not_found && !map[candidate].occluded){
+                auto angle_diff = angle_difference(robot_state.location.atan(map[candidate].location), robot_theta);
+                if (angle_diff < best_angle_diff){
+                    best_candidate = candidate;
+                    best_angle_diff = angle_diff;
+                }
+            }
+        }
+        coordinates = best_candidate;
+        float new_theta = robot_state.location.atan(map[best_candidate].location);
+        rotation1 = to_degrees(new_theta);
+
+        float new_theta2 = to_radians(rotation_target[0]);
+        best_angle_diff = angle_difference(new_theta, to_radians(rotation2));
+        for(auto rt : rotation_target) {
+            auto angle_diff = angle_difference(new_theta,
+                                               to_radians(rt));
+            if (angle_diff < best_angle_diff){
+                new_theta2 = to_radians(rt);
+                best_angle_diff = angle_diff;
+            }
+        }
+        rotation2 = to_degrees(new_theta2);
+        set_rotation(rotation1);
+        set_coordinate(coordinates);
+        set_rotation(rotation2);
     }
 
     // when called set rotation -- then translate to destination -- then set rotation again
