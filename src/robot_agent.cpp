@@ -245,6 +245,12 @@ namespace robot{
                 move_state = translate;
                 location_error = tmt.location - tracking_info.location;      // desired - actual
             }
+
+            // auto reset
+            if (tmt.location.dist(tracking_info.location) > 0.054 || orientation_error > 15.0){ // cell size 0.054 world.implementation.cell_transformation.size??
+                cout << "error too big auto correct" << endl;
+                needs_correction_now = true;
+            }
         }
     }
 
@@ -262,7 +268,7 @@ namespace robot{
         P_y = 18791.0;
         P_x = 21698.0; // 21698.0
         P_rot = 10.0;//5.0
-        P_rot2 = 8.0; // have not tuned this at all
+        P_rot2 = 10.0; // 8.0, 10.0
 
         // change this be works for now
         auto tick_move = tick_agent_moves.find_tick_move(move, robot_move_orientation);
@@ -380,16 +386,34 @@ namespace robot{
         auto error = angle_difference(theta, target);
         auto error_direction = direction(theta, target);
 
+        // if rotation takes to long move backwards and repeat
+        float t0 = timer.to_seconds();
+        float delta_t = 0;
+        float t1 = 0;
+
         while (to_degrees(error) > 1){
             if (error_direction < 0) {
                 message.left = 30;
                 message.right = -30;
-                message.speed = 2000;
+                message.speed = 3000;
             }else {
                 message.left = -30;
                 message.right = 30;
-                message.speed = 2000;
+                message.speed = 3000;
             }
+
+            // move back if taking too long to rotate
+            t1 = timer.to_seconds();
+            delta_t = t1 - t0;  // if time in loop exceeds 5 seconds
+            if (delta_t > 7.0){
+                // move backward
+                cout << "moving backwards rot" << endl;
+                message.left = -500;
+                message.right = -500;
+                message.speed = 2000;
+                t0 = timer.to_seconds();
+            }
+
             // move number management
             auto move_number = update();
             while(completed_move!=move_number) this_thread::sleep_for(10ms);
@@ -421,11 +445,27 @@ namespace robot{
 
         int overshoot_count = 0;
 
+        // error timer - consider time and distance
+        auto t0 = timer.to_seconds();
+        float delta_t = 0;
+        float t1 = 0;
+
         // will always be moving fwd to destination so just go slow will exit if overshoot
         while(distance_error > 0.003 && overshoot_count < 2){
-            message.left = 20;
-            message.right = 20;
-            message.speed = 2000;
+            message.left = 30;
+            message.right = 30;
+            message.speed = 3000;
+
+            t1 = timer.to_seconds();
+            delta_t = t1 - t0;  // if time in loop exceeds 5 seconds
+            if (delta_t > 7.0){
+                // move backward
+                cout << "moving backwards coor" << endl;
+                message.left = -500;
+                message.right = -500;
+                message.speed = 2000;
+                t0 = timer.to_seconds();
+            }
 
             // move number management
             auto move_number = update();
