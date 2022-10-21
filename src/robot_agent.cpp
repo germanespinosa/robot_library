@@ -246,19 +246,27 @@ namespace robot{
             orientation_error = angle_diff_degrees(tmt.rotation, actual_rotation);
 //            cout << "E" << " " <<orientation_error << " " << timer.to_seconds() << endl;
 
+
             // position check - only during rotations
             if (move_state == rotate) {
                 move_state = translate;
                 location_error = tmt.location - tracking_info.location;      // desired - actual
 //                cout << "E" << " " << location_error.x << " " << location_error.y << " " << timer.to_seconds() << endl;
-                if (tmt.location.dist(tracking_info.location) > 0.054){ // cell size 0.054 world.implementation.cell_transformation.size??
-                    cout << "error too big" << endl;
-                    location_error.x = 0;
-                    location_error.y = 0;
-                    orientation_error = 0;
-                    needs_correction_now = true;
-                }
+//                if (tmt.location.dist(tracking_info.location) > 0.054){ // cell size 0.054 world.implementation.cell_transformation.size??
+//                    cout << "error too big" << endl;
+//                    location_error.x = 0;
+//                    location_error.y = 0;
+//                    orientation_error = 0;
+//                    needs_correction_now = true;
+//                }
             }
+//            if (tmt.location.dist(tracking_info.location) > 0.054 || orientation_error > 15.0){ // cell size 0.054 world.implementation.cell_transformation.size??
+//                cout << "error too big" << endl;
+//                location_error.x = 0;
+//                location_error.y = 0;
+//                orientation_error = 0;
+//                needs_correction_now = true;
+//            }
         }
     }
 
@@ -293,8 +301,9 @@ namespace robot{
 //            orientation_correction = 0;
             orientation_correction = (int32_t)(P_rot2 * orientation_error); // if error + more left
             // error, correction, time
-            cout << "C" << " " << orientation_error << " " << orientation_correction << " " << timer.to_seconds() << endl;
+//            cout << "C" << " " << orientation_error << " " << orientation_correction << " " << timer.to_seconds() << endl;
         }
+
 
 
         message.left = tick_move.left_ticks + orientation_correction;
@@ -398,13 +407,13 @@ namespace robot{
 
         while (to_degrees(error) > 1){
             if (error_direction < 0) {
-                message.left = 25;
-                message.right = -25;
-                message.speed = 1000;
+                message.left = 30;
+                message.right = -30;
+                message.speed = 2000;
             }else {
-                message.left = -25;
-                message.right = 25;
-                message.speed = 1000;
+                message.left = -30;
+                message.right = 30;
+                message.speed = 2000;
             }
             // move number management
             auto move_number = update();
@@ -436,9 +445,9 @@ namespace robot{
 
         // will always be moving fwd to destination so just go slow will exit if overshoot
         while(distance_error > 0.003 && overshoot_count < 2){
-            message.left = 10;
-            message.right = 10;
-            message.speed = 1000;
+            message.left = 20;
+            message.right = 20;
+            message.speed = 2000;
 
             // move number management
             auto move_number = update();
