@@ -214,15 +214,9 @@ namespace robot{
         // a1 is goal angle, a2 is measured
         // if return + value means cw rot needed therefore add to left ******
         // TODO: fix this use direction and difference
-        if (a1 > a2) {
-            auto d = a1 - a2;
-            if (d < 180.0) return d;     // 330 - 270 add left
-            else return -(a2 + 360.0 - a1);   // 330 - 90  add right
-        } else {
-            auto d = a2 - a1;               // 330 - 350 add right
-            if (d < 180.0) return -d;
-            else return a1 + 360.0 - a2;    // 90 - 330 add left
-        }
+        auto desired = to_radians(a1);
+        auto actual = to_radians(a2);
+        return to_degrees(angle_difference(desired, actual) * direction(desired, actual));
     }
 
     void Tick_robot_agent::received_data(char *buffer, size_t size) {
@@ -244,29 +238,12 @@ namespace robot{
             actual_rotation = tracking_info.rotation; // TODO: get pos values from tracker but for now fix here
             if (actual_rotation < 0) actual_rotation = 360.0 + actual_rotation; // TODO: have agent tracker send values 0 to 360
             orientation_error = angle_diff_degrees(tmt.rotation, actual_rotation);
-//            cout << "E" << " " <<orientation_error << " " << timer.to_seconds() << endl;
-
-
+            cout << "MY WAY" << " " << orientation_error << " " << timer.to_seconds() << endl;
             // position check - only during rotations
             if (move_state == rotate) {
                 move_state = translate;
                 location_error = tmt.location - tracking_info.location;      // desired - actual
-//                cout << "E" << " " << location_error.x << " " << location_error.y << " " << timer.to_seconds() << endl;
-//                if (tmt.location.dist(tracking_info.location) > 0.054){ // cell size 0.054 world.implementation.cell_transformation.size??
-//                    cout << "error too big" << endl;
-//                    location_error.x = 0;
-//                    location_error.y = 0;
-//                    orientation_error = 0;
-//                    needs_correction_now = true;
-//                }
             }
-//            if (tmt.location.dist(tracking_info.location) > 0.054 || orientation_error > 15.0){ // cell size 0.054 world.implementation.cell_transformation.size??
-//                cout << "error too big" << endl;
-//                location_error.x = 0;
-//                location_error.y = 0;
-//                orientation_error = 0;
-//                needs_correction_now = true;
-//            }
         }
     }
 
@@ -282,7 +259,7 @@ namespace robot{
         P_y = 18791.0;
         P_x = 21698.0; // 21698.0
         P_rot = 10.0;//5.0
-        P_rot2 = 10.0; // have not tuned this at all
+        P_rot2 = 8.0; // have not tuned this at all
 
         // change this be works for now
         auto tick_move = tick_agent_moves.find_tick_move(move, robot_move_orientation);
@@ -294,14 +271,11 @@ namespace robot{
             move_state = rotate; // only measuring position error at this moment
             orientation_correction = (int32_t)(P_rot * orientation_error);
             //C : tick move number, orientation correction, error,time
-//            cout << "C" << " " << tick_move.orientation << " " << orientation_correction << " ";
-//            cout << orientation_error << " " << timer.to_seconds() << endl;
         } else{
             // straight line orientation correction here - continuous straight line
 //            orientation_correction = 0;
             orientation_correction = (int32_t)(P_rot2 * orientation_error); // if error + more left
             // error, correction, time
-//            cout << "C" << " " << orientation_error << " " << orientation_correction << " " << timer.to_seconds() << endl;
         }
 
 
@@ -331,7 +305,7 @@ namespace robot{
                     y_correction = -y_correction;
                 }
             }
-
+//            cout << "x_correct " << x_correction << " y correct " << y_correction << endl;
             message.left = forward_move.left_ticks + x_correction + y_correction;
             message.right = forward_move.right_ticks + x_correction + y_correction;
             message.speed = forward_move.speed;
