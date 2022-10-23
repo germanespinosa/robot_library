@@ -41,7 +41,9 @@ namespace robot {
     };
 
     struct Tick_robot_agent : controller::Tick_agent , easy_tcp::Client {
-        Tick_robot_agent(const controller::Tick_agent_moves &moves, agent_tracking::Tracking_client &);
+        Tick_robot_agent(const controller::Tick_agent_moves &moves, agent_tracking::Tracking_client &, std::string &);
+
+//        Tick_robot_agent(const controller::Tick_agent_moves &moves, agent_tracking::Tracking_client &, std::string &);
         bool connect();
         bool connect(const std::string &);
         void execute_move(cell_world::Move) override;
@@ -52,7 +54,9 @@ namespace robot {
         void set_coordinate(cell_world::Coordinates) override;
         unsigned int get_corrected_orientation(float);
         void correct_robot() override;
+        void joystick_control() override;
         bool needs_correction () override;
+        bool use_joystick () override;
         bool is_ready() override;
         bool is_move_done();
         struct Robot_message {
@@ -82,6 +86,9 @@ namespace robot {
         float P_y{};// = 9189.0;
         float actual_rotation = 0;
         bool needs_correction_now = false;
+        bool joystick_on = false;
         enum Move_state {translate, rotate, correct} move_state;
+
+        Gamepad_wrapper tick_gamepad;
     };
 }

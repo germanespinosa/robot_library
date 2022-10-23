@@ -8,6 +8,8 @@ using namespace cell_world;
 #define JOYSTICK 32767
 #define TURN_TICK_RATE 1000
 #define FORWARD_TICK_RATE 2000
+#define MAX_TICKS 200
+#define STRAIGHT_TICKS 500
 
 namespace robot{
     Robot_agent::Robot_agent(const controller::Agent_operational_limits &limits):
@@ -158,12 +160,13 @@ namespace robot{
 
     /////////////////////////////////////////////////////////////////////////////////////////////
 
-    Tick_robot_agent::Tick_robot_agent(const controller::Tick_agent_moves &moves, agent_tracking::Tracking_client &tracking_client):
+    Tick_robot_agent::Tick_robot_agent(const controller::Tick_agent_moves &moves, agent_tracking::Tracking_client &tracking_client, std::string &joystick_path):
             tick_agent_moves(moves),
             world(World::get_from_parameters_name("robot","canonical", "21_05")),
             cells(world.create_cell_group()),
             map(cells),
-            tracking_client(tracking_client)
+            tracking_client(tracking_client),
+            tick_gamepad(joystick_path)
     {
         move_state = translate;
         //current_coordinates = Coordinates{-8,10};
@@ -500,9 +503,39 @@ namespace robot{
         }
     }
 
+    void Tick_robot_agent::joystick_control(){
+        cout << "JOYSTICK ON" << endl;
+        while (!tick_gamepad.buttons.empty() && tick_gamepad.buttons[5].state == 1){
+            float left = (float)-tick_gamepad.axes[1]/JOYSTICK;
+            float right = (float)-tick_gamepad.axes[4]/JOYSTICK;
+            float move_straight = (float)-tick_gamepad.axes[7]/JOYSTICK * STRAIGHT_TICKS;
+
+            message.left = (int)(left * MAX_TICKS) + move_straight;
+            message.right = (int)(right * MAX_TICKS) + move_straight;
+            message.speed = 2000;
+
+
+            // move number management
+            auto move_number = update();
+            if (move_number != -1) cout << move_number << " " << completed_move<< endl;
+            //while(completed_move!=move_number) this_thread::sleep_for(10ms);
+        }
+        needs_correction_now = true;
+        cout << "JOYSTICK OFF " << endl;
+        joystick_on = false;
+    }
+
     bool Tick_robot_agent::needs_correction() {
         return needs_correction_now;
     }
+
+    bool Tick_robot_agent::use_joystick(){
+        if (!tick_gamepad.buttons.empty() && tick_gamepad.buttons[5].state == 1){
+            joystick_on = true;
+        } //else joystick_on = false;
+        return joystick_on;
+    }
+
 }
 
 
