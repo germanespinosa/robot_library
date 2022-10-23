@@ -69,7 +69,7 @@ namespace robot{
         message[1] = right;
     }
 
-    void Robot_agent::capture() {
+        void Robot_agent::capture() {
         message[2] |= 1UL << 3; //puff
         message[2] |= 1UL << 6; // stop
         need_update = true;
@@ -523,6 +523,12 @@ namespace robot{
         needs_correction_now = true;
         cout << "JOYSTICK OFF " << endl;
         joystick_on = false;
+    }
+
+    void Tick_robot_agent::capture(){
+        // test could just add double to embedded
+        message.speed = -2;
+        update();
     }
 
     bool Tick_robot_agent::needs_correction() {

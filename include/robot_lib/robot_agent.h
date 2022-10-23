@@ -55,6 +55,7 @@ namespace robot {
         unsigned int get_corrected_orientation(float);
         void correct_robot() override;
         void joystick_control() override;
+        void capture() override;
         bool needs_correction () override;
         bool use_joystick () override;
         bool is_ready() override;
