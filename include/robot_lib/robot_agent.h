@@ -46,7 +46,7 @@ namespace robot {
 //        Tick_robot_agent(const controller::Tick_agent_moves &moves, agent_tracking::Tracking_client &, std::string &);
         bool connect();
         bool connect(const std::string &);
-        void execute_move(cell_world::Move) override;
+        void execute_move(cell_world::Move_list) override;
         void move_count_reset() override;
         int update();
         void received_data(char *, size_t) override;

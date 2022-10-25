@@ -267,9 +267,25 @@ namespace robot{
     }
 
     // TODO: for tracker change to 360 orientation
-    std::vector<float> rotation_target = {90.0, 150.0, 210.0, 270.0, 330.0, 30.0};
+    std::vector<float> rotation_target = {90.0, 120.0, 150.0, 180.0, 210.0, 240.0, 270.0, 300.0, 330.0, 0.0, 30.0, 60.0};
 
-    void Tick_robot_agent::execute_move(cell_world::Move move) {
+    void Tick_robot_agent::execute_move(cell_world::Move_list moves) {
+        Move best_move;
+        float min_rotation_diff = -1;
+        auto current_rotation = rotation_target[robot_move_orientation];
+        auto moves_list = moves;
+        for (auto &move:moves_list){
+            auto tick_move = tick_agent_moves.find_tick_move(move, robot_move_orientation);
+            auto new_orientation = tick_move.update_orientation(robot_move_orientation);
+            auto new_rotation = rotation_target[new_orientation];
+            auto rotation_diff = abs(angle_diff_degrees(current_rotation, new_rotation));
+            if (min_rotation_diff==-1 || min_rotation_diff > rotation_diff){
+                min_rotation_diff = rotation_diff;
+                best_move = move;
+            }
+        }
+        cout << "BEST MOVE "  << best_move << endl;
+
         if (needs_correction_now) return;
 //        if (use_joystick()) return;
 
@@ -280,8 +296,9 @@ namespace robot{
         P_rot2 = 10.0; // 8.0, 10.0
 
         // change this be works for now
-        auto tick_move = tick_agent_moves.find_tick_move(move, robot_move_orientation);
+        auto tick_move = tick_agent_moves.find_tick_move(best_move, robot_move_orientation);
         robot_move_orientation = tick_move.update_orientation(robot_move_orientation);
+        cout << "KLJHNFDKJLFHNDKLF" << tick_move << endl;
 
         // if turning correct based on last angle error
         if (tick_move.orientation != 0)
@@ -290,11 +307,12 @@ namespace robot{
             orientation_correction = (int32_t)(P_rot * orientation_error);
         } else{
             // straight line orientation correction here - continuous straight line
+            tick_move = tick_agent_moves.get_forward_move(robot_move_orientation);
             orientation_correction = (int32_t)(P_rot2 * orientation_error); // if error + more left
         }
 
 
-
+        cout << "TICK MOVE 1: " << tick_move << endl;
         message.left = tick_move.left_ticks + orientation_correction;
         message.right = tick_move.right_ticks - orientation_correction;
         message.speed = tick_move.speed;
@@ -304,19 +322,19 @@ namespace robot{
         if (tick_move.orientation != 0) {
             // update expected coordinate
             move_targets.emplace(move_number, map[current_coordinates].location, rotation_target[robot_move_orientation]);
-            auto forward_move = tick_agent_moves.find_tick_move(Move{2,0}, 0);
+            auto forward_move = tick_agent_moves.get_forward_move(robot_move_orientation);
 
             // correction
-            if (robot_move_orientation  == 0 || robot_move_orientation == 3) { // moving E or W
+            if (robot_move_orientation  == 0 || robot_move_orientation == 6) { // moving E or W
                 y_correction = 0;
                 x_correction = (int32_t)(location_error.x * P_x);
-                if (robot_move_orientation == 3){
+                if (robot_move_orientation == 6){
                     x_correction = -x_correction;
                 }
             } else { // Moving N or S
                 x_correction = 0;
                 y_correction = (int32_t) (location_error.y * P_y);
-                if (robot_move_orientation == 1 || robot_move_orientation == 2){ // moving south
+                if (robot_move_orientation == 1 || robot_move_orientation == 2 || robot_move_orientation == 3 || robot_move_orientation == 4 || robot_move_orientation == 5){ // moving south
                     y_correction = -y_correction;
                 }
             }
@@ -324,11 +342,12 @@ namespace robot{
             message.left = forward_move.left_ticks + x_correction + y_correction;
             message.right = forward_move.right_ticks + x_correction + y_correction;
             message.speed = forward_move.speed;
+            cout << "TICK MOVE 2: " << forward_move << endl;
             update();
-            current_coordinates += move ;
+            current_coordinates += best_move ;
         } else {
             // update expected coordinates
-            current_coordinates += move ;
+            current_coordinates += best_move ;
             move_targets.emplace(move_number, map[current_coordinates].location, rotation_target[robot_move_orientation]);
         }
         if (move_state == completed_move ) move_state = translate;
@@ -374,13 +393,13 @@ namespace robot{
             }
         }
         rotation2 = to_degrees(new_theta2);
-        cout << "parameters found: " <<rotation1 << coordinates << rotation2 << endl;
+//        cout << "parameters found: " <<rotation1 << coordinates << rotation2 << endl;
         set_rotation(rotation1);
-        cout << "rotation1 finished .. " << endl;
+//        cout << "rotation1 finished .. " << endl;
         set_coordinate(coordinates);
-        cout << "coordinates finished .. "<< endl;
+//        cout << "coordinates finished .. "<< endl;
         set_rotation(rotation2);
-        cout << "rotation2 finished .. " << endl;
+//        cout << "rotation2 finished .. " << endl;
         needs_correction_now  = false;
 
         cout << "done correcting" << endl;
@@ -408,17 +427,17 @@ namespace robot{
 
         while (to_degrees(error) > 1 && !joystick_on){  // exit corrector when joystick control
             if (error_direction < 0) {
-                message.left = 25;
-                message.right = -25;
-                message.speed = 3000;
+                message.left = 20;
+                message.right = -20;
+                message.speed = 2000;
             }else {
-                message.left = -25;
-                message.right = 25;
-                message.speed = 3000;
+                message.left = -20;
+                message.right = 20;
+                message.speed = 2000;
             }
             t1 = timer.to_seconds();
             delta_t = t1 - t0;
-            if (delta_t > 3){
+            if (delta_t > 4.0){
                 cout << "BACK UP!" << endl;
                 message.left = -300;
                 message.right = -300;
@@ -440,7 +459,7 @@ namespace robot{
         // TODO: coordinate and robot_orientation management
         // robot orientation management
         auto new_orientation = get_corrected_orientation(rotation);
-        if (new_orientation != 6) robot_move_orientation = new_orientation;
+        if (new_orientation != 12) robot_move_orientation = new_orientation;
 
         // error management (reset)
         orientation_error = 0;
@@ -497,15 +516,22 @@ namespace robot{
     }
 
     unsigned int Tick_robot_agent::get_corrected_orientation(float rotation){
-        if (rotation == 150.0) return 1;
-        else if (rotation == 210.0 || rotation == -150.0) return 2;
-        else if (rotation == 270.0 || rotation ==-90.0) return 3;
-        else if (rotation == 330.0 || rotation == -30.0) return 4;
-        else if (rotation == 30.0) return 5;
-        else if (rotation == 90.0) return 0;
+        // {90.0, 120.0, 150.0, 180.0, 210.0, 240.0, 270.0, 300.0, 330.0, 0.0, 30.0, 60.0}
+        if (rotation == 90.0) return 0;
+        else if (rotation == 120.0 ) return 1;
+        else if (rotation == 150.0) return 2;
+        else if (rotation == 180.0) return 3;
+        else if (rotation == 210.0 || rotation == -150.0) return 4;
+        else if (rotation == 240.0 || rotation ==-120.0) return 5;
+        else if (rotation == 270.0 || rotation ==-90.0) return 6;
+        else if (rotation == 300.0 || rotation ==-60.0) return 7;
+        else if (rotation == 330.0 || rotation == -30.0) return 8;
+        else if (rotation == 0.0) return 9;
+        else if (rotation == 30.0) return 10;
+        else if (rotation == 60.0) return 11;
         else{
 //            cout << "no orientation found" << endl;
-            return 6;
+            return 12;
         }
     }
 
