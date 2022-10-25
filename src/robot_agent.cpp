@@ -8,8 +8,9 @@ using namespace cell_world;
 #define JOYSTICK 32767
 #define TURN_TICK_RATE 1000
 #define FORWARD_TICK_RATE 2000
-#define MAX_TICKS 200
-#define STRAIGHT_TICKS 500
+#define MAX_TICKS 50
+#define STRAIGHT_TICKS 50
+#define CELL_SIZE 0.054
 
 namespace robot{
     Robot_agent::Robot_agent(const controller::Agent_operational_limits &limits):
@@ -182,8 +183,12 @@ namespace robot{
 
         if (message.left == 0 && message.right == 0 && message.speed >= 0) return -1;
         // pause if robot is not ready to receive next command
-        while (!is_ready());
+
+        //        cout << "update pending..." ;//<< flush;
+        while (!is_ready())this_thread::sleep_for(10ms);
+//        cout << " done" << endl;
         // move is complete when move_status arg is 0
+
         if (message.speed > 0) message.move_number = move_counter ++;
 
         bool res = ((easy_tcp::Connection *)this)->send_data((const char*) &message,sizeof(message));
@@ -249,8 +254,8 @@ namespace robot{
                 location_error = tmt.location - tracking_info.location;      // desired - actual
             }
 
-            // auto reset
-            if (tmt.location.dist(tracking_info.location) > 0.054 || orientation_error > 15.0){ // cell size 0.054 world.implementation.cell_transformation.size??
+//             auto reset
+            if (tmt.location.dist(tracking_info.location) > CELL_SIZE || orientation_error > 10.0){ // cell size 0.054 world.implementation.cell_transformation.size??
                 cout << "error too big auto correct" << endl;
                 needs_correction_now = true;
             }
@@ -266,6 +271,7 @@ namespace robot{
 
     void Tick_robot_agent::execute_move(cell_world::Move move) {
         if (needs_correction_now) return;
+//        if (use_joystick()) return;
 
         move_state = translate;
         P_y = 18791.0;
@@ -368,9 +374,13 @@ namespace robot{
             }
         }
         rotation2 = to_degrees(new_theta2);
+        cout << "parameters found: " <<rotation1 << coordinates << rotation2 << endl;
         set_rotation(rotation1);
+        cout << "rotation1 finished .. " << endl;
         set_coordinate(coordinates);
+        cout << "coordinates finished .. "<< endl;
         set_rotation(rotation2);
+        cout << "rotation2 finished .. " << endl;
         needs_correction_now  = false;
 
         cout << "done correcting" << endl;
@@ -380,6 +390,7 @@ namespace robot{
 
     // when called set rotation -- then translate to destination -- then set rotation again
     void Tick_robot_agent::set_rotation(float rotation) {
+        cout << "ROTATE CORRECT" << endl;
         move_state = correct;
         if (!tracking_client.contains_agent_state("predator")) return;
         auto target = to_radians(rotation);
@@ -393,37 +404,38 @@ namespace robot{
         float t0 = timer.to_seconds();
         float delta_t = 0;
         float t1 = 0;
+        bool loop1 = true;
 
-        while (to_degrees(error) > 1){
+        while (to_degrees(error) > 1 && !joystick_on){  // exit corrector when joystick control
             if (error_direction < 0) {
-                message.left = 30;
-                message.right = -30;
+                message.left = 25;
+                message.right = -25;
                 message.speed = 3000;
             }else {
-                message.left = -30;
-                message.right = 30;
+                message.left = -25;
+                message.right = 25;
                 message.speed = 3000;
             }
-
-            // move back if taking too long to rotate
             t1 = timer.to_seconds();
-            delta_t = t1 - t0;  // if time in loop exceeds 5 seconds
-            if (delta_t > 7.0){
-                // move backward
-                cout << "moving backwards rot" << endl;
-                message.left = -500;
-                message.right = -500;
+            delta_t = t1 - t0;
+            if (delta_t > 3){
+                cout << "BACK UP!" << endl;
+                message.left = -300;
+                message.right = -300;
                 message.speed = 2000;
-                t0 = timer.to_seconds();
+                t0 = t1;
             }
 
-            // move number management
-            auto move_number = update();
-            while(completed_move!=move_number) this_thread::sleep_for(10ms);
 
-            theta = to_radians(tracking_info.rotation);
-            error = angle_difference(theta, target);
-            error_direction = direction(theta, target);
+            // move number management
+            if (!use_joystick()) {
+                auto move_number = update();
+                while (completed_move != move_number) this_thread::sleep_for(10ms);
+
+                theta = to_radians(tracking_info.rotation);
+                error = angle_difference(theta, target);
+                error_direction = direction(theta, target);
+            }
         }
         // TODO: coordinate and robot_orientation management
         // robot orientation management
@@ -436,6 +448,7 @@ namespace robot{
 
     // send coordinate instead of location
     void Tick_robot_agent::set_coordinate(cell_world::Coordinates correction_coordinate){
+        cout << "SET COORDINATE" << endl;
         move_state = correct;
         if (!tracking_client.contains_agent_state("predator")) return;
         auto &tracking_info = tracking_client.get_current_state("predator");
@@ -454,32 +467,25 @@ namespace robot{
         float t1 = 0;
 
         // will always be moving fwd to destination so just go slow will exit if overshoot
-        while(distance_error > 0.003 && overshoot_count < 2){
+        while(distance_error > 0.003 && overshoot_count < 2 && !joystick_on){
             message.left = 30;
             message.right = 30;
-            message.speed = 3000;
-
-            t1 = timer.to_seconds();
-            delta_t = t1 - t0;  // if time in loop exceeds 5 seconds
-            if (delta_t > 7.0){
-                // move backward
-                cout << "moving backwards coor" << endl;
-                message.left = -500;
-                message.right = -500;
-                message.speed = 2000;
-                t0 = timer.to_seconds();
-            }
+            message.speed = 2000;
 
             // move number management
-            auto move_number = update();
-            while(completed_move!=move_number) this_thread::sleep_for(10ms);
+            if (!use_joystick()) {
+                auto move_number = update();
+                while (completed_move != move_number) this_thread::sleep_for(10ms);
 
-            current_location = tracking_info.location;
-            previous_distance_error = distance_error;
-            distance_error = current_location.dist(correction_location);
+                current_location = tracking_info.location;
+                previous_distance_error = distance_error;
+                distance_error = current_location.dist(correction_location);
 
-            if (previous_distance_error < distance_error) overshoot_count++;
-            else overshoot_count = 0; // reset overshoot count want sequential confirmation
+                if (previous_distance_error < distance_error) overshoot_count++;
+                else overshoot_count = 0; // reset overshoot count want sequential confirmation
+            }
+
+
         }
         // robot coordinate management
         current_coordinates = correction_coordinate;
@@ -512,15 +518,14 @@ namespace robot{
 
             message.left = (int)(left * MAX_TICKS) + move_straight;
             message.right = (int)(right * MAX_TICKS) + move_straight;
-            message.speed = 2000;
-
+            message.speed = 1000;
 
             // move number management
             auto move_number = update();
             if (move_number != -1) cout << move_number << " " << completed_move<< endl;
             //while(completed_move!=move_number) this_thread::sleep_for(10ms);
         }
-        needs_correction_now = true;
+        //needs_correction_now = true;
         cout << "JOYSTICK OFF " << endl;
         joystick_on = false;
     }
@@ -538,7 +543,7 @@ namespace robot{
     bool Tick_robot_agent::use_joystick(){
         if (!tick_gamepad.buttons.empty() && tick_gamepad.buttons[5].state == 1){
             joystick_on = true;
-        } //else joystick_on = false;
+        } else joystick_on = false;
         return joystick_on;
     }
 

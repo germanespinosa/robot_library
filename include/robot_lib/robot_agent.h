@@ -52,8 +52,8 @@ namespace robot {
         void received_data(char *, size_t) override;
         void set_rotation(float) override;
         void set_coordinate(cell_world::Coordinates) override;
-        unsigned int get_corrected_orientation(float);
         void correct_robot() override;
+        unsigned int get_corrected_orientation(float);
         void joystick_control() override;
         void capture() override;
         bool needs_correction () override;
