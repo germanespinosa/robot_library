@@ -89,6 +89,7 @@ namespace robot {
         bool needs_correction_now = false;
         bool joystick_on = false;
         enum Move_state {translate, rotate, correct} move_state;
+        enum Correction_state{rotation1, rotation2}correction_state;
 
         Gamepad_wrapper tick_gamepad;
     };
