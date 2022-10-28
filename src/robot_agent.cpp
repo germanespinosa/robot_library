@@ -186,9 +186,9 @@ namespace robot{
         if (message.left == 0 && message.right == 0 && message.speed >= 0) return -1;
         // pause if robot is not ready to receive next command
 
-        cout << timer.to_seconds() << ": update pending..." << flush;
+//        cout << timer.to_seconds() << ": update pending..." << flush;
         while (!is_ready())this_thread::sleep_for(10ms);
-        cout << timer.to_seconds() << ": message " << message.speed << " " << message.left << " " << message.right << endl;
+//        cout << timer.to_seconds() << ": message " << message.speed << " " << message.left << " " << message.right << endl;
         // move is complete when move_status arg is 0
 
         //if (message.speed > 0)
@@ -196,7 +196,7 @@ namespace robot{
 
         bool res = ((easy_tcp::Connection *)this)->send_data((const char*) &message,sizeof(message));
         if (!res) return -1;
-        cout << "MOVE_NUMBER SENT:" << message.move_number << endl;
+//        cout << "MOVE_NUMBER SENT:" << message.move_number << endl;
         return (int) message.move_number;
     }
 
@@ -235,7 +235,6 @@ namespace robot{
         // receives move number from robot
         move_done = true;
         completed_move = (int)*((uint32_t *) buffer);
-        cout << "MOVE_NUMBER_RECEIVED: " << completed_move << endl;
         Tick_move_target tmt;
         while (!move_targets.empty() && move_targets.front().move_number <= completed_move){
             tmt = move_targets.front();
@@ -256,11 +255,13 @@ namespace robot{
             if (move_state == rotate) {
                 move_state = translate;
                 location_error = tmt.location - tracking_info.location;      // desired - actual
+                cout << "X ERR: " << location_error.x << " Y err: " << location_error.y <<endl;
             }
 
 //             auto reset
-            if (tmt.location.dist(tracking_info.location) > CELL_SIZE || orientation_error > 10.0){ // cell size 0.054 world.implementation.cell_transformation.size??
+            if (tmt.location.dist(tracking_info.location) > CELL_SIZE || orientation_error > 15.0){ // cell size 0.054 world.implementation.cell_transformation.size??
                 needs_correction_now = true;
+                cout << "TRIGGER CORRECTOR " << "LOCATION ERROR: " << "X: " << location_error.x << " Y: " << location_error.y <<" ORIENTATION ERROR: " << orientation_error << endl;
             }
         }
     }
@@ -292,10 +293,10 @@ namespace robot{
 //        if (use_joystick()) return;
 
         move_state = translate;
-        P_y = 18791.0;
+        P_y = 20000;//18791.0;
         P_x = 21698.0; // 21698.0
-        P_rot = 10.0;//5.0
-        P_rot2 = 10.0; // 8.0, 10.0
+        P_rot = 3.5;//5.0
+        P_rot2 = 5.0; //10.0; // 8.0, 10.0
 
         // change this be works for now
         auto tick_move = tick_agent_moves.find_tick_move(best_move, robot_move_orientation);
@@ -338,7 +339,7 @@ namespace robot{
                     y_correction = -y_correction;
                 }
             }
-//            cout << "x_correct " << x_correction << " y correct " << y_correction << endl;
+            cout << "x_correct " << x_correction << " y correct " << y_correction << endl;
             message.left = forward_move.left_ticks + x_correction + y_correction;
             message.right = forward_move.right_ticks + x_correction + y_correction;
             message.speed = forward_move.speed;
@@ -423,37 +424,37 @@ namespace robot{
         float delta_t = 0;
         float t1 = 0;
 
-        while (to_degrees(error) > 1 && !joystick_on){  // exit corrector when joystick control
+        while (to_degrees(error) > 1){  // exit corrector when joystick control
+            if (use_joystick()) return;
+
             if (error_direction < 0) {
                 message.left = 20;
                 message.right = -20;
-                message.speed = 1000;
+                message.speed = 2000;
             }else {
                 message.left = -20;
                 message.right = 20;
-                message.speed = 1000;
+                message.speed = 2000;
             }
             t1 = timer.to_seconds();
             delta_t = t1 - t0;
-//            if (delta_t > 4.0){
-//                cout << "BACK UP!" << endl;
-//                message.left = -300;
-//                message.right = -300;
-//                message.speed = 2000;
-//                t0 = t1;
-//                if (rotation2) needs_correction_now = true;
-//            }
+            if (delta_t > 4.0 ){
+                cout << "BACK UP!" << endl;
+                message.left = -300;
+                message.right = -300;
+                message.speed = 2000;
+                t0 = t1;
+                if (rotation2) needs_correction_now = true;
+            }
 
 
             // move number management
-            if (!use_joystick()) {
-                auto move_number = update();
-                while (completed_move != move_number) this_thread::sleep_for(10ms);
+            auto move_number = update();
+            while (completed_move != move_number) this_thread::sleep_for(10ms);
 
-                theta = to_radians(tracking_info.rotation);
-                error = angle_difference(theta, target);
-                error_direction = direction(theta, target);
-            }
+            theta = to_radians(tracking_info.rotation);
+            error = angle_difference(theta, target);
+            error_direction = direction(theta, target);
         }
         // TODO: coordinate and robot_orientation management
         // robot orientation management
@@ -486,25 +487,21 @@ namespace robot{
         float t1 = 0;
 
         // will always be moving fwd to destination so just go slow will exit if overshoot
-        while(distance_error > 0.003 && overshoot_count < 2 && !joystick_on){
-            message.left = 20;
-            message.right = 20;
-            message.speed = 1000;
-
+        while(distance_error > 0.003 && overshoot_count < 2){
+            if (use_joystick()) return;
+            message.left = 30;
+            message.right = 30;
+            message.speed = 2000;
             // move number management
-            if (!use_joystick()) {
-                auto move_number = update();
-                while (completed_move != move_number) this_thread::sleep_for(10ms);
+            auto move_number = update();
+            while (completed_move != move_number) this_thread::sleep_for(10ms);
 
-                current_location = tracking_info.location;
-                previous_distance_error = distance_error;
-                distance_error = current_location.dist(correction_location);
+            current_location = tracking_info.location;
+            previous_distance_error = distance_error;
+            distance_error = current_location.dist(correction_location);
 
-                if (previous_distance_error < distance_error) overshoot_count++;
-                else overshoot_count = 0; // reset overshoot count want sequential confirmation
-            }
-
-
+            if (previous_distance_error < distance_error) overshoot_count++;
+            else overshoot_count = 0; // reset overshoot count want sequential confirmation
         }
         // robot coordinate management
         current_coordinates = correction_coordinate;
@@ -537,7 +534,6 @@ namespace robot{
     }
 
     void Tick_robot_agent::joystick_control(){
-        cout << "JOYSTICK ON" << endl;
         while (!tick_gamepad.buttons.empty() && tick_gamepad.buttons[5].state == 1){
             float left = (float)-tick_gamepad.axes[1]/JOYSTICK;
             float right = (float)-tick_gamepad.axes[4]/JOYSTICK;
@@ -549,11 +545,10 @@ namespace robot{
 
             // move number management
             auto move_number = update();
-            if (move_number != -1) cout << move_number << " " << completed_move<< endl;
+//            if (move_number != -1) cout << move_number << " " << completed_move<< endl;
             //while(completed_move!=move_number) this_thread::sleep_for(10ms);
         }
-        //needs_correction_now = true;
-        cout << "JOYSTICK OFF " << endl;
+        //needs_correction_now = true; // assume this will be caught
         joystick_on = false;
     }
 
@@ -562,7 +557,7 @@ namespace robot{
         message.left = 0;
         message.right = 0;
         message.speed = -2;
-        needs_correction_now = true;
+//        needs_correction_now = true; // assume this will be caughrt
         update();
     }
 
