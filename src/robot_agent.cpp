@@ -249,17 +249,18 @@ namespace robot{
             actual_rotation = tracking_info.rotation; // TODO: get pos values from tracker but for now fix here
             if (actual_rotation < 0) actual_rotation = 360.0 + actual_rotation; // TODO: have agent tracker send values 0 to 360
             orientation_error = angle_diff_degrees(tmt.rotation, actual_rotation);
-//            cout << "OE" << " " << orientation_error << " " << timer.to_seconds() << endl;
+            cout << "OE" << " " << orientation_error << " " << timer.to_seconds() << endl;
 
             // position check - only during rotations
             if (move_state == rotate) {
                 move_state = translate;
                 location_error = tmt.location - tracking_info.location;      // desired - actual
-                cout << "X ERR: " << location_error.x << " Y err: " << location_error.y <<endl;
+//                cout << "X ERR: " << location_error.x << " Y err: " << location_error.y <<endl;
             }
 
 //             auto reset
-            if (tmt.location.dist(tracking_info.location) > CELL_SIZE || orientation_error > 15.0){ // cell size 0.054 world.implementation.cell_transformation.size??
+//            if (tmt.location.dist(tracking_info.location) > CELL_SIZE || orientation_error > 15.0){ // cell size 0.054 world.implementation.cell_transformation.size??
+            if (location_error.x > CELL_SIZE || location_error.y > CELL_SIZE || orientation_error > 15.0){ // cell size 0.054 world.implementation.cell_transformation.size??
                 needs_correction_now = true;
                 cout << "TRIGGER CORRECTOR " << "LOCATION ERROR: " << "X: " << location_error.x << " Y: " << location_error.y <<" ORIENTATION ERROR: " << orientation_error << endl;
             }
@@ -296,7 +297,7 @@ namespace robot{
         P_y = 20000;//18791.0;
         P_x = 21698.0; // 21698.0
         P_rot = 3.5;//5.0
-        P_rot2 = 5.0; //10.0; // 8.0, 10.0
+        P_rot2 = 3.0; // 5.0
 
         // change this be works for now
         auto tick_move = tick_agent_moves.find_tick_move(best_move, robot_move_orientation);
@@ -312,6 +313,7 @@ namespace robot{
             // straight line orientation correction here - continuous straight line
             tick_move = tick_agent_moves.get_forward_move(robot_move_orientation);
             orientation_correction = (int32_t)(P_rot2 * orientation_error); // if error + more left
+            cout << " OOOOO " << orientation_correction << endl;
         }
 
         message.left = tick_move.left_ticks + orientation_correction;
@@ -339,7 +341,12 @@ namespace robot{
                     y_correction = -y_correction;
                 }
             }
-            cout << "x_correct " << x_correction << " y correct " << y_correction << endl;
+
+//            cout << "  " << endl;
+//            cout << "Loc err x " << location_error.x << " Loc err y " << location_error.y << endl;
+//            cout << "x_correct " << x_correction << " y correct " << y_correction << endl;
+//            cout << "  " << endl;
+
             message.left = forward_move.left_ticks + x_correction + y_correction;
             message.right = forward_move.right_ticks + x_correction + y_correction;
             message.speed = forward_move.speed;
@@ -359,7 +366,7 @@ namespace robot{
     }
 
     void Tick_robot_agent::correct_robot(){
-        cout << "Correcting..." << endl;
+//        cout << "Correcting..." << endl;
         move_state = correct;
         Coordinates coordinates;
         float rotation1;
@@ -409,7 +416,7 @@ namespace robot{
 
     // when called set rotation -- then translate to destination -- then set rotation again
     void Tick_robot_agent::set_rotation(float rotation) {
-        cout << "ROTATE CORRECT" << endl;
+//        cout << "ROTATE CORRECT" << endl;
         move_state = correct;
         if (!tracking_client.contains_agent_state("predator")) return;
         auto target = to_radians(rotation);
@@ -438,14 +445,14 @@ namespace robot{
             }
             t1 = timer.to_seconds();
             delta_t = t1 - t0;
-            if (delta_t > 4.0 ){
-                cout << "BACK UP!" << endl;
-                message.left = -300;
-                message.right = -300;
-                message.speed = 2000;
-                t0 = t1;
-                if (rotation2) needs_correction_now = true;
-            }
+//            if (delta_t > 4.0 ){
+//                cout << "BACK UP!" << endl;
+//                message.left = -300;
+//                message.right = -300;
+//                message.speed = 2000;
+//                t0 = t1;
+//                if (rotation2) needs_correction_now = true;
+//            }
 
 
             // move number management
@@ -468,7 +475,7 @@ namespace robot{
 
     // send coordinate instead of location
     void Tick_robot_agent::set_coordinate(cell_world::Coordinates correction_coordinate){
-        cout << "SET COORDINATE" << endl;
+        //cout << "SET COORDINATE" << endl;
         move_state = correct;
         if (!tracking_client.contains_agent_state("predator")) return;
         auto &tracking_info = tracking_client.get_current_state("predator");
@@ -548,7 +555,7 @@ namespace robot{
 //            if (move_number != -1) cout << move_number << " " << completed_move<< endl;
             //while(completed_move!=move_number) this_thread::sleep_for(10ms);
         }
-        //needs_correction_now = true; // assume this will be caught
+        needs_correction_now = true; // assume this will be caught
         joystick_on = false;
     }
 
